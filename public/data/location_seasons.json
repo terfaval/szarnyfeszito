@@ -1,0 +1,280 @@
+[
+  {
+    "location_name": "Hortobágy",
+    "season": "spring",
+    "start_month": 3,
+    "end_month": 5,
+    "peak_weeks": [12, 13, 14],
+    "notes": "Tavaszi átvonulás, hajnalban erős peremzónai mozgás.",
+    "st_typical_species_hu": ["daru", "rétisas", "nagy kócsag", "tőkés réce"],
+    "st_recommended_watch": "Hajnal/alkony; tiszta időben spektívvel nagy távolságok lefedhetők.",
+    "st_largest_colony": "species=daru;type=éjszakázóhely;min=2000;max=8000;unit=egyed;confidence=low"
+  },
+  {
+    "location_name": "Hortobágy",
+    "season": "autumn",
+    "start_month": 9,
+    "end_month": 11,
+    "peak_weeks": [41, 42, 43],
+    "notes": "Őszi daruvonulás és vadlúd-koncentráció.",
+    "st_typical_species_hu": ["daru", "nagy lilik", "vetési lúd", "rétisas"],
+    "st_recommended_watch": "Alkonyati behúzás; október közepe a csúcs.",
+    "st_estimated_total_individuals": "min=20000;max=80000;confidence=medium",
+    "st_largest_colony": "species=daru;type=éjszakázóhely;min=10000;max=50000;unit=egyed;confidence=medium"
+  },
+
+  {
+    "location_name": "Fertő-tó",
+    "season": "spring",
+    "start_month": 4,
+    "end_month": 6,
+    "peak_weeks": [17, 18, 19],
+    "notes": "Sekély öblökben partimadarak, nyílt vízen vöcskök aktívak.",
+    "st_typical_species_hu": ["búbos vöcsök", "küszvágó csér", "nagy kócsag", "tőkés réce"],
+    "st_recommended_watch": "Szélcsendes reggel; kilátópontokról stabil rálátás.",
+    "st_largest_colony": "species=közönséges csér;type=kolónia;min=1000;max=3000;unit=egyed;confidence=medium"
+  },
+  {
+    "location_name": "Fertő-tó",
+    "season": "autumn",
+    "start_month": 9,
+    "end_month": 11,
+    "peak_weeks": [39, 40, 42],
+    "notes": "Vadlibák és récék gyülekezése, estére erősödő mozgás.",
+    "st_typical_species_hu": ["nagy lilik", "tőkés réce", "nagy kócsag", "búbos vöcsök"],
+    "st_recommended_watch": "Alkony; védett öblökben szélben is jó aktivitás.",
+    "st_largest_colony": "species=nagy lilik;type=pihenőhely;min=5000;max=20000;unit=egyed;confidence=low"
+  },
+
+  {
+    "location_name": "Kiskunság",
+    "season": "spring",
+    "start_month": 4,
+    "end_month": 5,
+    "peak_weeks": [16, 17, 18],
+    "notes": "Szikes foltokon partimadár-hullámok, reggel a legerősebb.",
+    "st_typical_species_hu": ["gulipán", "gólyatöcs", "bíbic", "barna rétihéja"],
+    "st_recommended_watch": "Hajnal; alacsony vízállásnál iszapos zónák a legjobbak.",
+    "st_largest_colony": "species=gulipán;type=kolónia;min=200;max=600;unit=egyed;confidence=medium"
+  },
+  {
+    "location_name": "Kiskunság",
+    "season": "autumn",
+    "start_month": 9,
+    "end_month": 10,
+    "peak_weeks": [38, 39, 40],
+    "notes": "Őszi szikes peremeken partimadár- és réceforgalom.",
+    "st_typical_species_hu": ["gulipán", "gólyatöcs", "bíbic", "barna rétihéja"],
+    "st_recommended_watch": "Reggel/alkony; távcső, spektív ajánlott.",
+    "st_largest_colony": "species=bíbic;type=pihenőhely;min=500;max=3000;unit=egyed;confidence=low"
+  },
+
+  {
+    "location_name": "Öreg-tó",
+    "season": "spring",
+    "start_month": 3,
+    "end_month": 4,
+    "peak_weeks": [12, 14, 15],
+    "notes": "Vöcskök és gémfélék aktivitása nő, korai libák továbbállnak.",
+    "st_typical_species_hu": ["daru", "nagy lilik", "tőkés réce", "rétisas"],
+    "st_recommended_watch": "Hajnal; városi háttér ellenére jó megfigyelési pontok.",
+    "st_largest_colony": "species=tőkés réce;type=pihenőhely;min=500;max=2000;unit=egyed;confidence=low"
+  },
+  {
+    "location_name": "Öreg-tó",
+    "season": "autumn",
+    "start_month": 10,
+    "end_month": 12,
+    "peak_weeks": [44, 46, 48],
+    "notes": "Vadlibák és récék nagy számban; behúzás alkonykor.",
+    "st_typical_species_hu": ["daru", "nagy lilik", "tőkés réce", "rétisas"],
+    "st_recommended_watch": "Alkony; keleti part védettebb szélben.",
+    "st_estimated_total_individuals": "min=5000;max=30000;confidence=low",
+    "st_largest_colony": "species=nagy lilik;type=pihenőhely;min=3000;max=15000;unit=egyed;confidence=low"
+  },
+
+  {
+    "location_name": "Kis-Balaton",
+    "season": "spring",
+    "start_month": 3,
+    "end_month": 6,
+    "peak_weeks": [15, 17, 18],
+    "notes": "Nádasok peremén élénk mozgás, gémtelepek környéke aktív.",
+    "st_typical_species_hu": ["nagy kócsag", "szürke gém", "búbos vöcsök", "rétisas"],
+    "st_recommended_watch": "Hajnal; párás reggeleken jobb észlelhetőség.",
+    "st_largest_colony": "species=nagy kócsag;type=kolónia;min=400;max=1600;unit=egyed;confidence=low"
+  },
+  {
+    "location_name": "Kis-Balaton",
+    "season": "autumn",
+    "start_month": 9,
+    "end_month": 11,
+    "peak_weeks": [40, 42, 43],
+    "notes": "Átvonuló récék és gázlók; peremzónákban folyamatos táplálkozás.",
+    "st_typical_species_hu": ["nagy kócsag", "szürke gém", "búbos vöcsök", "rétisas"],
+    "st_recommended_watch": "Reggel; kilátókból jó rálátás a szegélyekre.",
+    "st_largest_colony": "species=récék;type=pihenőhely;min=1000;max=8000;unit=egyed;confidence=low"
+  },
+
+  {
+    "location_name": "Biharugrai-halastavak",
+    "season": "spring",
+    "start_month": 4,
+    "end_month": 5,
+    "peak_weeks": [16, 18],
+    "notes": "Leeresztéskor iszapon partimadár-csúcsok; gátakról jól belátható.",
+    "st_typical_species_hu": ["nagy kócsag", "vetési lúd", "tőkés réce", "barna rétihéja"],
+    "st_recommended_watch": "Hajnal; csatornák védett szakaszai hatékonyak.",
+    "st_largest_colony": "species=partimadarak;type=táplálkozó csapat;min=300;max=1000;unit=egyed;confidence=low"
+  },
+  {
+    "location_name": "Biharugrai-halastavak",
+    "season": "autumn",
+    "start_month": 9,
+    "end_month": 11,
+    "peak_weeks": [39, 41, 44],
+    "notes": "Réce- és gémmozgás; iszapos széleken partimadarak.",
+    "st_typical_species_hu": ["nagy kócsag", "vetési lúd", "tőkés réce", "barna rétihéja"],
+    "st_recommended_watch": "Reggel/alkony; leeresztési ütem erősen befolyásol.",
+    "st_largest_colony": "species=récék;type=pihenőhely;min=2000;max=8000;unit=egyed;confidence=low"
+  },
+
+  {
+    "location_name": "Kardoskúti Fehér-tó",
+    "season": "spring",
+    "start_month": 3,
+    "end_month": 4,
+    "peak_weeks": [13, 15],
+    "notes": "Sekély vízű részeken partimadarak, pusztán ragadozók.",
+    "st_typical_species_hu": ["daru", "nagy lilik", "bíbic", "barna rétihéja"],
+    "st_recommended_watch": "Hajnal; panorámás pontokról nagy terület belátható.",
+    "st_largest_colony": "species=bíbic;type=pihenőhely;min=300;max=1500;unit=egyed;confidence=low"
+  },
+  {
+    "location_name": "Kardoskúti Fehér-tó",
+    "season": "autumn",
+    "start_month": 9,
+    "end_month": 11,
+    "peak_weeks": [41, 42, 43],
+    "notes": "Daru- és vadlúd-behúzás; tiszta időben messziről is látható.",
+    "st_typical_species_hu": ["daru", "nagy lilik", "bíbic", "barna rétihéja"],
+    "st_recommended_watch": "Alkony; hőrezgésben távolabbi pont előnyös.",
+    "st_estimated_total_individuals": "min=3000;max=20000;confidence=low",
+    "st_largest_colony": "species=daru;type=éjszakázóhely;min=3000;max=20000;unit=egyed;confidence=low"
+  },
+
+  {
+    "location_name": "Zemplén-hegység",
+    "season": "spring",
+    "start_month": 4,
+    "end_month": 6,
+    "peak_weeks": [17, 19],
+    "notes": "Erdőszegélyek és gerincek mentén erős ének- és mozgáscsúcs.",
+    "st_typical_species_hu": ["fekete gólya", "darázsölyv", "uráli bagoly", "rétisas"],
+    "st_recommended_watch": "Hajnal; gerincek felett ragadozók termikkelnek.",
+    "st_largest_colony": "species=éneklő erdei fajok;type=koncentráció;min=50;max=200;unit=egyed;confidence=low"
+  },
+  {
+    "location_name": "Zemplén-hegység",
+    "season": "autumn",
+    "start_month": 9,
+    "end_month": 10,
+    "peak_weeks": [38, 40],
+    "notes": "Vonuló fajok völgyek mentén terelődnek; baglyok alkonytól aktívak.",
+    "st_typical_species_hu": ["fekete gólya", "darázsölyv", "uráli bagoly", "rétisas"],
+    "st_recommended_watch": "Hajnal/alkony; szélcsendben jobb észlelés.",
+    "st_largest_colony": "species=ragadozók;type=átvonulási koncentráció;min=30;max=120;unit=egyed;confidence=low"
+  },
+
+  {
+    "location_name": "Bárándi halastavak",
+    "season": "spring",
+    "start_month": 4,
+    "end_month": 5,
+    "peak_weeks": [16, 18],
+    "notes": "Átmeneti vízszintnél élénk partimadár-forgalom.",
+    "st_typical_species_hu": ["nagy kócsag", "tőkés réce", "bíbic", "rétisas"],
+    "st_recommended_watch": "Hajnal; gátakról jó rálátás az iszapzónákra.",
+    "st_largest_colony": "species=partimadarak;type=táplálkozó csapat;min=200;max=800;unit=egyed;confidence=low"
+  },
+  {
+    "location_name": "Bárándi halastavak",
+    "season": "autumn",
+    "start_month": 9,
+    "end_month": 11,
+    "peak_weeks": [39, 41, 43],
+    "notes": "Récék és gémek, estére erősödő mozgás a nyílt víz felé.",
+    "st_typical_species_hu": ["nagy kócsag", "tőkés réce", "bíbic", "rétisas"],
+    "st_recommended_watch": "Reggel/alkony; védettebb medresarkok hatékonyak.",
+    "st_largest_colony": "species=récék;type=pihenőhely;min=1500;max=5000;unit=egyed;confidence=low"
+  },
+
+  {
+    "location_name": "Velencei-tó",
+    "season": "spring",
+    "start_month": 4,
+    "end_month": 6,
+    "peak_weeks": [17, 18],
+    "notes": "Sekély öblökben csérek, vöcskök; nádszegélyben intenzív mozgás.",
+    "st_typical_species_hu": ["búbos vöcsök", "küszvágó csér", "szürke gém", "tőkés réce"],
+    "st_recommended_watch": "Szélcsendes reggel; pallósoroknál jó rálátás.",
+    "st_largest_colony": "species=közönséges csér;type=kolónia;min=800;max=3000;unit=egyed;confidence=low"
+  },
+  {
+    "location_name": "Velencei-tó",
+    "season": "autumn",
+    "start_month": 9,
+    "end_month": 11,
+    "peak_weeks": [40, 42],
+    "notes": "Récék és sirályok gyülekezése; esti mozgás erősödik.",
+    "st_typical_species_hu": ["búbos vöcsök", "küszvágó csér", "szürke gém", "tőkés réce"],
+    "st_recommended_watch": "Alkony; védett öblök szélben hatékonyak.",
+    "st_largest_colony": "species=récék;type=pihenőhely;min=1500;max=6000;unit=egyed;confidence=low"
+  },
+
+  {
+    "location_name": "Dinnyési-fertő",
+    "season": "spring",
+    "start_month": 4,
+    "end_month": 5,
+    "peak_weeks": [16, 17],
+    "notes": "Szikes szegélyeken partimadarak; csúcs a kora reggeli sávban.",
+    "st_typical_species_hu": ["gulipán", "gólyatöcs", "bíbic", "nagy kócsag"],
+    "st_recommended_watch": "Hajnal; kilátópontokról széles rálátás.",
+    "st_largest_colony": "species=gólyatöcs;type=kolónia;min=150;max=400;unit=egyed;confidence=low"
+  },
+  {
+    "location_name": "Dinnyési-fertő",
+    "season": "autumn",
+    "start_month": 9,
+    "end_month": 11,
+    "peak_weeks": [40, 41, 42],
+    "notes": "Őszi gyülekezés a sekély zónákban; alkonykor erős a mozgás.",
+    "st_typical_species_hu": ["gulipán", "gólyatöcs", "bíbic", "nagy kócsag"],
+    "st_recommended_watch": "Alkony; friss iszapfoltok különösen jók.",
+    "st_largest_colony": "species=nagy lilik;type=pihenőhely;min=3000;max=12000;unit=egyed;confidence=low"
+  },
+
+  {
+    "location_name": "Kecskeméti halastavak",
+    "season": "spring",
+    "start_month": 4,
+    "end_month": 5,
+    "peak_weeks": [16, 18],
+    "notes": "Leeresztéskor partimadarak és gémfélék tömörülnek.",
+    "st_typical_species_hu": ["nagy kócsag", "szürke gém", "tőkés réce", "barna rétihéja"],
+    "st_recommended_watch": "Hajnal; gátakról és csatornák mellől jó rálátás.",
+    "st_largest_colony": "species=nagy kócsag;type=kolónia;min=200;max=800;unit=egyed;confidence=low"
+  },
+  {
+    "location_name": "Kecskeméti halastavak",
+    "season": "autumn",
+    "start_month": 9,
+    "end_month": 11,
+    "peak_weeks": [39, 41],
+    "notes": "Récék és sirályok esti mozgása; iszapos szegélyeken táplálkozás.",
+    "st_typical_species_hu": ["nagy kócsag", "szürke gém", "tőkés réce", "barna rétihéja"],
+    "st_recommended_watch": "Reggel/alkony; leeresztési ütemet érdemes figyelni.",
+    "st_largest_colony": "species=récék;type=pihenőhely;min=800;max=3000;unit=egyed;confidence=low"
+  }
+]

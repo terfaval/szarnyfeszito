@@ -1,0 +1,253 @@
+[
+  {
+    "name": "Hortobágy",
+    "region": "Hajdú-Bihar",
+    "lat": 47.583,
+    "lng": 21.15,
+    "habitat_types": [
+      "puszta",
+      "nádas",
+      "szikes tó"
+    ],
+    "access_info": "A terület több kijelölt tanösvényről és megfigyelőtoronyból látogatható; a legnépszerűbb pontok a Hortobágyi-halastó, a Fekete-rét és a Kondás-tó környéke. A látogatás előtt érdemes tájékozódni a nemzeti park időszakos lezárásairól.",
+    "visitor_rules": "A madarak zavartalan pihenése érdekében a kijelölt útvonalakról ne térj le, és használj csendes felszerelést. Alkonyatkor a darvak behúzása idején különösen fontos a távolságtartás.",
+    "difficulty": "könnyű-közepes",
+    "best_time_hint": "Az őszi hónapokban több tízezer daru és vadlúd gyülekezik a pusztán, napnyugtakor látványos behúzásokkal. Tavasszal a vizes élőhelyek újjáéledése hozza a legnagyobb madármozgást, kora reggel a legaktívabb a madárvilág. A nyári hőségben inkább a kora délelőtti órák ajánlottak.",
+    "amenities": [
+      "madárles",
+      "megfigyelőtorony",
+      "látogatóközpont",
+      "tanösvény"
+    ],
+    "is_featured": true
+  },
+  {
+    "name": "Fertő-tó",
+    "region": "Győr-Moson-Sopron",
+    "lat": 47.7,
+    "lng": 16.75,
+    "habitat_types": [
+      "nyílt víz",
+      "nádas",
+      "halastó"
+    ],
+    "access_info": "A tó peremén tanösvények és kilátópontok vezetnek a nádasok és sekély öblök mellé; a gátakon és kijelölt utak mentén lehet megközelíteni a legjobb pontokat. Szeles időben egyes részek zártak lehetnek.",
+    "visitor_rules": "A nádövek és költőszigetek közelében maradj a kijelölt útvonalakon; a csér- és sirálykolóniák zavarása tilos. Viharos szélben a part menti szakaszok csúszósak lehetnek.",
+    "difficulty": "könnyű",
+    "best_time_hint": "Szélcsendes reggeleken a víztükör fölött aktív a csérek és vöcskök mozgása. Tavasszal partimadarak és gémfélék húzódnak a sekély öblökbe, nyáron a fiókanevelés miatt élénk a nádszegély. Ősszel a vadludak és récék alkonyati mozgása a legerősebb.",
+    "amenities": [
+      "tanösvény",
+      "madárles",
+      "megfigyelőtorony"
+    ],
+    "is_featured": false
+  },
+  {
+    "name": "Kiskunság",
+    "region": "Bács-Kiskun",
+    "lat": 46.9,
+    "lng": 19.3,
+    "habitat_types": [
+      "puszta",
+      "szikes tó",
+      "nádas"
+    ],
+    "access_info": "Szikes tavak és homokpuszták peremén vezetnek a kijelölt útvonalak; néhány megfigyelőpont földúton közelíthető meg, eső után nehézkes lehet a behajtás.",
+    "visitor_rules": "A szikes medrek kérges felszínét ne taposd, a parti zónákra ne lépj rá; a homokpusztai területeken fokozott tűzveszély esetén korlátozások léphetnek életbe. Kutyát pórázon vezess.",
+    "difficulty": "könnyű-közepes",
+    "best_time_hint": "Tavasszal és ősszel a sekély, szikes foltokon tömeges a partimadarak mozgása. Nyári melegben a kora reggeli és alkonyi sáv a legeredményesebb, a rétihéják késő délután aktívak. Hűvös, szeles napokon a nyílt felszínek felett csökken az aktivitás.",
+    "amenities": [
+      "tanösvény",
+      "madárles",
+      "megfigyelőtorony"
+    ],
+    "is_featured": false
+  },
+  {
+    "name": "Öreg-tó",
+    "region": "Komárom-Esztergom",
+    "lat": 47.64,
+    "lng": 18.32,
+    "habitat_types": [
+      "nyílt víz",
+      "nádas",
+      "városi tó"
+    ],
+    "access_info": "A tópart több ponton megközelíthető sétányokról és kijelölt kilátókról; városi környezetben parkolók és információs táblák segítik a látogatást.",
+    "visitor_rules": "A pihenő vadludak és récék zavarását kerüld, a part menti behúzás idején tarts nagyobb távolságot. Etetésre és drónhasználatra vonatkozó tiltásokat tartsd be.",
+    "difficulty": "könnyű",
+    "best_time_hint": "Ősszel és télen nagy lúd- és récekoncentráció figyelhető meg; hajnalban és alkonyatkor történik a leglátványosabb mozgás. Tavasszal vöcskök és gémfélék aktívak, a városi háttér ellenére jó fotólehetőségek adódnak. Szeles időben a keleti part védettebb.",
+    "amenities": [
+      "tanösvény",
+      "madárles",
+      "megfigyelőtorony"
+    ],
+    "is_featured": false
+  },
+  {
+    "name": "Kis-Balaton",
+    "region": "Zala",
+    "lat": 46.62,
+    "lng": 17.2,
+    "habitat_types": [
+      "láp",
+      "nádas",
+      "nyílt víz"
+    ],
+    "access_info": "A védett lápi terület csak kijelölt tanösvényekről és látogatóközponton keresztül közelíthető meg; egyes szakaszok csak vezetett formában látogathatók.",
+    "visitor_rules": "Érzékeny élőhely: a pallósorokat és kijelölt útvonalakat ne hagyd el. A fészkelési időszakban különösen fontos a csend és a távolságtartás.",
+    "difficulty": "könnyű-közepes",
+    "best_time_hint": "Kora tavasszal és kora nyáron a nádasok és nyílt vízszegélyek különösen aktívak, a gémtelepek környéke élénk. Ősszel átvonuló récék és gázlómadarak adják a fő látványt. A párás reggelek kedveznek a rejtőzködő fajok megfigyelésének.",
+    "amenities": [
+      "látogatóközpont",
+      "tanösvény",
+      "megfigyelőtorony",
+      "madárles"
+    ],
+    "is_featured": false
+  },
+  {
+    "name": "Biharugrai-halastavak",
+    "region": "Békés",
+    "lat": 46.78,
+    "lng": 21.27,
+    "habitat_types": [
+      "halastó",
+      "nádas",
+      "nyílt víz"
+    ],
+    "access_info": "A halastavak gátjain kijelölt szakaszokon lehet közlekedni; a vízszintek kezelése miatt egyes medrek időszakosan zártak lehetnek.",
+    "visitor_rules": "Tartsd tiszteletben a gazdálkodói jelzéseket és a zárt területek tábláit. A parti sáv iszapos részeit ne taposd, a nádasban ne vágj át.",
+    "difficulty": "könnyű",
+    "best_time_hint": "Leeresztés idején az iszapos partokon erős a partimadár-aktivitás; a kora reggeli fények a legjobbak. Ősszel nagy réce- és gémmozgás figyelhető meg, a nap végén gyakori a behúzás. Szeles időben a védettebb csatornaszakaszok hatékonyabbak.",
+    "amenities": [
+      "tanösvény",
+      "madárles",
+      "megfigyelőtorony"
+    ],
+    "is_featured": false
+  },
+  {
+    "name": "Kardoskúti Fehér-tó",
+    "region": "Békés",
+    "lat": 46.48,
+    "lng": 20.53,
+    "habitat_types": [
+      "szikes tó",
+      "puszta"
+    ],
+    "access_info": "Panorámás kilátópontok és útszéli pihenők adnak jó rálátást a szikes tómederre; erős csapadék vagy fészkelési időszak alatt korlátozások lehetnek.",
+    "visitor_rules": "A tómederbe bemenni tilos; a pihenő darvakat és vadludakat nagy távolságból figyeld. Utakon kívüli közlekedést kerüld a pusztai élőhely védelmében.",
+    "difficulty": "könnyű",
+    "best_time_hint": "Ősszel a darvak és vadludak alkonyati behúzása a fő attrakció; tiszta időben nagy távolságból is jól követhető. Tavasszal a sekély vízű részekre partimadarak húzódnak. Nyári délibáb erősítheti a hőrezgést, ezért a reggeli órák hatékonyabbak.",
+    "amenities": [
+      "tanösvény",
+      "madárles",
+      "megfigyelőtorony"
+    ],
+    "is_featured": false
+  },
+  {
+    "name": "Zemplén-hegység",
+    "region": "Borsod-Abaúj-Zemplén",
+    "lat": 48.45,
+    "lng": 21.47,
+    "habitat_types": [
+      "hegyvidék",
+      "erdő",
+      "patakvölgy"
+    ],
+    "access_info": "Jelzett turistaösvényeken és kilátópontokon közelíthetők meg a legjobb helyek; meredekebb szakaszokon stabil lábbeli szükséges.",
+    "visitor_rules": "Költési időszakban fokozott csend és útvonalon maradás ajánlott; éjszakai megfigyelésnél kíméletes megvilágítást (vörös fényt) használj.",
+    "difficulty": "közepes",
+    "best_time_hint": "Tavaszi hajnalokon a hegyvidéki erdők énekcsúcsa erős, a nappali ragadozók a gerincek felett mozognak. Ősszel a vonuló fajok a völgyek és peremgerincek mentén koncentrálódnak. Baglyok alkonyattól aktívak, szélcsendben könnyebb a detektálás.",
+    "amenities": [
+      "tanösvény",
+      "kilátó"
+    ],
+    "is_featured": false
+  },
+  {
+    "name": "Bárándi halastavak",
+    "region": "Hajdú-Bihar",
+    "lat": 47.28,
+    "lng": 21.33,
+    "habitat_types": [
+      "halastó",
+      "nádas",
+      "nyílt víz"
+    ],
+    "access_info": "A tavak gátjain kijelölt szakaszokon lehet haladni; a mezőgazdasági munkák idején egyes utak zártak lehetnek.",
+    "visitor_rules": "A gazdálkodási területeken tartsd tiszteletben a táblákat és útlezárásokat; az iszapos szélekre ne lépj, a nádasokat ne zavard.",
+    "difficulty": "könnyű",
+    "best_time_hint": "Tavasz végén és ősszel az átmeneti vízszintek idején legélénkebb a madármozgás. Kora reggel jó a fény és a nyugalom; délután hosszabb ideig maradnak a part menti sávokban a madarak. Szeles időben a védettebb medresarkok eredményesebbek.",
+    "amenities": [
+      "tanösvény",
+      "madárles",
+      "megfigyelőtorony"
+    ],
+    "is_featured": false
+  },
+  {
+    "name": "Velencei-tó",
+    "region": "Fejér",
+    "lat": 47.22,
+    "lng": 18.63,
+    "habitat_types": [
+      "nyílt víz",
+      "nádas"
+    ],
+    "access_info": "A tó déli és nyugati részén vezető tanösvények, pallósorok és kilátók adnak jó rálátást a nádasokra és sekély öblökre.",
+    "visitor_rules": "A nádasok közelében a fészkelési időszakban fokozottan ügyelj a csendes jelenlétre; vízi sporttevékenységek zavarása esetén válassz távolabbi pontot.",
+    "difficulty": "könnyű",
+    "best_time_hint": "Tavasszal és kora nyáron vöcskök és csérek aktívak, a sekély öblökben zajlik a táplálkozás. Ősszel récék és sirályok gyülekeznek, alkonyatkor erősödik a mozgás. Nyári hőségben a kora délelőtt a leghatékonyabb.",
+    "amenities": [
+      "tanösvény",
+      "madárles",
+      "megfigyelőtorony"
+    ],
+    "is_featured": false
+  },
+  {
+    "name": "Dinnyési-fertő",
+    "region": "Fejér",
+    "lat": 47.19,
+    "lng": 18.56,
+    "habitat_types": [
+      "szikes tó",
+      "nádas",
+      "puszta"
+    ],
+    "access_info": "A védett szikes-lápos területet tanösvények és kilátók hálózzák be; a rálátási pontok a sekély vizek és szikes rétek peremén helyezkednek el.",
+    "visitor_rules": "A parti réteket és szikes foltokat ne taposd; a kolóniák közelében maradj a kijelölt pontokon. Kutyát pórázon vezess.",
+    "difficulty": "könnyű-közepes",
+    "best_time_hint": "Tavasszal partimadarak és gólyatöcsök a sekély sávokban mozognak; nyár elején csérek és sirályok aktívak. Ősszel a récék és vadludak alkonyati mozgása a legerősebb.",
+    "amenities": [
+      "tanösvény",
+      "madárles",
+      "megfigyelőtorony"
+    ],
+    "is_featured": false
+  },
+  {
+    "name": "Kecskeméti halastavak",
+    "region": "Bács-Kiskun",
+    "lat": 46.93,
+    "lng": 19.69,
+    "habitat_types": [
+      "halastó",
+      "nádas",
+      "nyílt víz"
+    ],
+    "access_info": "A tavak gátjain, kijelölt szakaszokon lehet haladni; a vízszintek kezelése miatt az elérhetőség szezonálisan változhat.",
+    "visitor_rules": "A kezelő által jelzett lezárásokat tartsd be; a part menti iszapos zónákra ne lépj. A nádasban mozgó fajokat ne zavard, maradj az úton.",
+    "difficulty": "könnyű",
+    "best_time_hint": "Leeresztéskor az iszapos peremeken partimadarak és gémfélék tömörülnek; kora reggeli fényekkel a legjobb. Ősszel a récék és sirályok mozgása alkonyatkor erősödik.",
+    "amenities": [
+      "tanösvény",
+      "madárles",
+      "megfigyelőtorony"
+    ],
+    "is_featured": false
+  }
+]

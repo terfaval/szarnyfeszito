@@ -1,0 +1,170 @@
+[
+  {
+    "location_name": "Hortobágy",
+    "season": "autumn",
+    "phenology_md": "Az őszi csúcsidőszakban a pusztai rálátási pontokról jól követhető a darvak és vadludak behúzása; a legnagyobb mozgás napnyugta előtt és után jelentkezik. A sekély, szikes peremzónákon partimadarak és récék gyülekeznek, szélcsendben hosszan maradnak a nyílt felületeken. Hűvös, tiszta estéken a csapatok nagy távolságból is detektálhatók.",
+    "conservation_md": "Az éjszakázóhelyek és pihenőzónák csendje elsődleges; a kritikus részek megközelítése tiltott. A pusztai élőhelyen a zavarást és a felszínek taposását kerülni kell, különösen nagy gyülekezések idején.",
+    "management_md": "Időszakos útzárak és kijelölt megfigyelőpontok segítik a látogatói terhelés terítését. A forgalomirányítás az alkonyati behúzás alatt szigorúbb lehet; aktuális információ a kezelőnél érhető el."
+  },
+  {
+    "location_name": "Fertő-tó",
+    "season": "autumn",
+    "phenology_md": "Szélcsendes reggeleken a nyílt vízen vöcskök és récék táplálkoznak, erős szélben a védett öblökbe húzódnak. A nádszegélyben napfelkelte körül van aktivitáscsúcs, késő délután újabb mozgási hullám érkezik. Az őszi vonulás idején a vízszint és a szélirány gyorsan átrendezi a megfigyelési hotspotokat.",
+    "conservation_md": "A költőszigetek és nádövek megközelítése tilos; a csér- és sirálykolóniák zavarása kerülendő. Nyílt vízen a pihenő csapatokhoz szükséges a nagy távolság tartása a felreppenések megelőzésére.",
+    "management_md": "Partszakaszok és gátak időszakos lezárása előfordulhat, a meteorológiai helyzethez igazítva. A látogatói irányítás táblákkal és kijelölt ösvényekkel történik."
+  },
+  {
+    "location_name": "Kiskunság",
+    "season": "autumn",
+    "phenology_md": "A sekély, szikes foltokon ősszel partimadarak és récék mozognak hullámokban; csúcsidő hajnalban és alkonyatkor. Nyílt, pusztai térben a ragadozók távcsővel nagy távolságból is észlelhetők. Száraz, szeles napokon a mozgás a mélyebb, védettebb szakaszokra húzódik.",
+    "conservation_md": "A szikes felszínek taposása és a parti iszapos zónák bolygatása kerülendő. A homokpusztai élőhelyeken a tűzveszély miatti korlátozások betartása kiemelt.",
+    "management_md": "Időszakos behajtási tilalmak és földutas megközelítési korlátozások léphetnek életbe csapadék után. Kijelölt megfigyelőpontok és tanösvények terítik a látogatói nyomást."
+  },
+  {
+    "location_name": "Öreg-tó",
+    "season": "autumn",
+    "phenology_md": "Ősszel és télen jelentős lúd- és récekoncentráció alakul ki; a leghangsúlyosabb mozgás a hajnal és az alkony. A városi háttér ellenére a vízszegélyeknél aktív táplálkozás figyelhető meg, szélben a védettebb öblök dominálnak. Tiszta estéken a behúzó csapatok hosszabban láthatók.",
+    "conservation_md": "A pihenő madarak megközelítése és a part menti zónák zavarása kerülendő. Etetési és drónhasználati tilalmak érvényesek, a távolságtartás alapvető.",
+    "management_md": "Sétányok és kilátópontok kijelölése a terhelés kezelésére szolgál. A forgalomirányítás a pihenőidőszakokban szigorodhat; aktuális jelzések a helyszínen."
+  },
+  {
+    "location_name": "Kis-Balaton",
+    "season": "autumn",
+    "phenology_md": "A lápi és nádas mozaikokban ősszel átvonuló récék és gázlómadarak jelennek meg; a peremzónák adják a fő aktivitást. Párás reggeleken a rejtőzködő fajok észlelhetősége javul. Szélcsendben a nyílt vízszegélyeken hosszan tartó táplálkozás figyelhető meg.",
+    "conservation_md": "A lápi foltok és a nádasok sérülékenyek; kijelölt útról letérni tilos. Fészkelési és pihenő időkben a csend és a távolságtartás elsődleges.",
+    "management_md": "Vezetett látogatás és korlátozott hozzáférés egyes szakaszokon a zavartalanságért. Pallósorok és kilátók terhelése szabályozott; friss információ a látogatóközpontban."
+  },
+  {
+    "location_name": "Biharugrai-halastavak",
+    "season": "autumn",
+    "phenology_md": "Leeresztés idején az iszapos mederszéleken ugrásszerű a partimadár-aktivitás; kora reggel és késő délután csúcsosodik. A gémfélék és récék a védettebb csatornákba húzódnak szeles időben. A mozgás mintázatát a vízszint- és lehalászási ütemezés gyorsan átrendezi.",
+    "conservation_md": "Gazdálkodási területen a zárt medrek és munkaterületek megközelítése tiltott. Iszapos peremzónák taposása kerülendő, a nádas átvágása tilos.",
+    "management_md": "Szezonális vízszintkezelés és ideiglenes útzárak irányítják a bejárást. A forgalom a gátakon kijelölt szakaszokra terelt, jelzésekkel szabályozva."
+  },
+  {
+    "location_name": "Kardoskúti Fehér-tó",
+    "season": "autumn",
+    "phenology_md": "Az őszi csúcsban darvak és vadludak nagy számban húznak be; a látványos mozgás alkonyatra koncentrálódik. A sekély vízű részeken partimadarak is megjelennek, tiszta időben a mozgás nagy távolságból követhető. Délibábos melegben csökken a láthatóság.",
+    "conservation_md": "A tómeder és a pihenő zónák megközelítése tilos; a megfigyelés nagy távolságból, kijelölt pontokról történjen. Pusztai élőhelyen az utak elhagyása kerülendő.",
+    "management_md": "Panorámás megállóhelyek és időszakos korlátozások segítik a zavartalanságot. Csapadékos időben sárérzékeny felületeken behajtási tilalom léphet életbe."
+  },
+  {
+    "location_name": "Zemplén-hegység",
+    "season": "autumn",
+    "phenology_md": "A hegyvidéki erdőkben az őszi vonulás a völgyek és peremgerincek mentén terelődik; ragadozók a feláramlások felett mozognak. Hajnalban az ének- és mozgáscsúcs a legerősebb, alkonytól baglyok aktivizálódnak. Szélcsendben a detektálhatóság jelentősen javul.",
+    "conservation_md": "Költési időszakban a csend és az útvonalon maradás alapvető; éjszakai megfigyelésnél kíméletes megvilágítást használj. Zavarásra érzékeny szurdokok és fészkelőhelyek közelítése kerülendő.",
+    "management_md": "Jelzett turistautak és kilátópontok terítik a forgalmat; meredek szakaszokon biztonsági ajánlások érvényesek. Időszakos lezárások természetvédelmi okból előfordulhatnak."
+  },
+  {
+    "location_name": "Bárándi halastavak",
+    "season": "autumn",
+    "phenology_md": "Átmeneti vízszintek idején élénk a madármozgás; a part menti iszapos sávok adják a fő aktivitási zónákat. Reggel tisztább a levegő és jobb a fény, délután elnyújtottabb a tartózkodás a peremeken. Szélben a védettebb medresarkok hatékonyabbak.",
+    "conservation_md": "Gazdálkodási jelzéseket és útlezárásokat be kell tartani. A nádasok és iszapos szélek bolygatása kerülendő a zavarás csökkentése érdekében.",
+    "management_md": "Gátközlekedés kijelölt szakaszokon engedélyezett; ideiglenes korlátozások lehalászási ütemben várhatók. Információ a helyi kezelőnél elérhető."
+  },
+  {
+    "location_name": "Velencei-tó",
+    "season": "autumn",
+    "phenology_md": "Ősszel récék és sirályok gyülekeznek a sekély öblökben, az esti órákban erősödik a mozgás. Tavaszi–nyári hónapok után a nádszegélyben csökken a zaj, könnyebb a viselkedés megfigyelése. Szélcsendben a nyílt víz felett hosszan tart a táplálkozás.",
+    "conservation_md": "A nádasok közelében a fészkelési időszak utóhatásaként is fontos a csend és a távolság. Vízisport-tevékenységek zavarása esetén alternatív megfigyelőpont választása javasolt.",
+    "management_md": "Tanösvények és kilátók segítik a látogatást; néhány szakasz időszakosan lezárt lehet. A part menti forgalom terelése kihelyezett táblákkal történik."
+  },
+  {
+    "location_name": "Dinnyési-fertő",
+    "season": "autumn",
+    "phenology_md": "A szikes és sekély vizes zónákban ősszel partimadarak, ludak és récék mozognak ciklikusan; a csúcs hajnalban és alkonykor van. A nádszegély pereme adja a rejtőzködő fajok megfigyelési ablakát. Csapadékos napok után friss iszapfelületek vonzzák a táplálkozó csapatokat.",
+    "conservation_md": "A szikes foltok taposása és a parti rétek bolygatása kerülendő; kolóniák közelében kizárólag kijelölt pontról figyelj. Kutyát pórázon vezess.",
+    "management_md": "Kilátópontok és tanösvények irányítják a forgalmat; sárérzékeny szakaszok időszakosan zárhatók. A korlátozások célja a zavarás minimalizálása."
+  },
+  {
+    "location_name": "Kecskeméti halastavak",
+    "season": "autumn",
+    "phenology_md": "Leeresztéskor az iszapos peremeken partimadarak és gémfélék tömörülnek; a reggeli órák adják a legjobb megfigyelési ablakot. Alkonyatkor a récék és sirályok mozgása erősödik a nyílt víz felé. A mintázat a vízszint-kezeléssel gyorsan változik.",
+    "conservation_md": "Kezelői lezárások és jelzések követése kötelező; a part menti iszapos zónákba lépni tilos. A nádasok átvágása és a pihenőhelyek zavarása kerülendő.",
+    "management_md": "Kijelölt gát-szakaszok látogathatók; a forgalom a karbantartási ütem szerint terelhető. Aktuális információ a helyszíni táblákon."
+  },
+  {
+    "location_name": "Hortobágy",
+    "season": "spring",
+    "phenology_md": "Tavasszal a sekély vizek és a szikes peremek gyorsan benépesülnek; hajnalban partimadarak és récék táplálkoznak, délelőtt ragadozók keringenek a puszta felett. A nádasok peremén rejtőzködő fajok éneke felerősödik. Friss csapadék után új iszapos felületek vonzzák a csapatokat.",
+    "conservation_md": "Költési időszakban különösen fontos a kijelölt útvonalak betartása és a csendes jelenlét. A fészekközelítés és a nádasba bemenet tilos.",
+    "management_md": "Szezonális útvonal-terelések és ideiglenes lezárások védenek érzékeny zónákat; az aktuális rend a nemzeti park tájékoztatóin elérhető."
+  },
+  {
+    "location_name": "Fertő-tó",
+    "season": "spring",
+    "phenology_md": "Szélcsendes hajnalokon a nyílt vízen vöcskök nászviselkedése figyelhető meg, a sekély öblökben partimadarak mozognak. A nádszegélyben intenzív az ének, napközben gémfélék és csérek aktívak. Frontátvonuláskor gyorsan átrendeződnek a megfigyelési pontok.",
+    "conservation_md": "A költőszigetek és nádövek zavarása tilos; fészkelő kolóniák környékén fokozott távolságtartás. Vízről történő megközelítésnél a csónakos szabályokat tartsd be.",
+    "management_md": "Időszakos stég- és gátszakasz-zárások lehetnek a költés védelmében; a látogatókat útirányító táblák terelik."
+  },
+  {
+    "location_name": "Kiskunság",
+    "season": "spring",
+    "phenology_md": "A szikes tavak sekély sávjain tavasz végén csúcsos a partimadár-forgalom; hajnal a legeredményesebb. A pusztai tér felett rétihéják és sólymok vadásznak, melegedéssel erősödik a termik. Csapadékos hetek után új táplálkozóhelyek nyílnak.",
+    "conservation_md": "A friss szikes kérget és a sekély parti zónát ne taposd; fészkelő területek közelítését kerüld. Homokpusztai részeken tűzvédelmi korlátozások érvényesek.",
+    "management_md": "Eső után földutak lezárása előfordul; a tanösvények jelzik a kímélendő szakaszokat. Parkolást kijelölt helyeken intézd."
+  },
+  {
+    "location_name": "Öreg-tó",
+    "season": "spring",
+    "phenology_md": "Tavasszal vöcskök és gémfélék jelenléte erős, a városi környezet ellenére zavartalan táplálkozás figyelhető meg a part mentén. Hajnalban a legaktívabb a vízszegély, napközben a nyílt víz felé húzódnak a csapatok. Friss szélben a védett öblök válnak kiemelté.",
+    "conservation_md": "A költési időszakban a part menti zavarás minimalizálandó; drón és etetés tilos. A pihenő csapatokhoz nagy távolságot tarts.",
+    "management_md": "Sétány- és kilátóhasználat szabályozott; egyes szakaszok rövid időre zárhatók a fiókanevelés védelmében."
+  },
+  {
+    "location_name": "Kis-Balaton",
+    "season": "spring",
+    "phenology_md": "A lápi és nádas mozaikokban tavasz elején felerősödik az ének és a mozgás; gémtelepek környékén intenzív a forgalom. Párás reggeleken nő a rejtőzködő fajok észlelhetősége. A nyílt vízszegélyeken vöcskök nászát viszonylag közelről lehet megfigyelni.",
+    "conservation_md": "Érzékeny élőhely: a pallósorok elhagyása tilos, fészkelőhelyek közelében fokozott csend. Csoportos látogatásnál rendezett haladás.",
+    "management_md": "Vezetett bejárás és beléptetés korlátozott kapacitással; információ a látogatóközpontban. Kilátóterhelés kontrollált."
+  },
+  {
+    "location_name": "Biharugrai-halastavak",
+    "season": "spring",
+    "phenology_md": "A vízszint-emelések és -csökkentések mentén gyorsan váltakoznak a táplálkozóhelyek; friss iszapfoltokon partimadarak gyűlnek. Hajnal és késő délelőtt a legerősebb aktivitás. Szélben a csatornák és leárnyékolt gátoldalak válnak hasznossá.",
+    "conservation_md": "Gazdálkodási munkaterületeket ne közelíts; a zárt medrek jelzéseit tartsd tiszteletben. Iszapos peremek taposását kerüld.",
+    "management_md": "Szezonális vízszintmenedzsment és időszakos útlezárás irányítja a forgalmat; kijelölt gát-szakaszok járhatók."
+  },
+  {
+    "location_name": "Kardoskúti Fehér-tó",
+    "season": "spring",
+    "phenology_md": "A sekély vízű részeken tavasz végén partimadár-forgalom erősödik; tiszta hajnalokon a mozgás nagy távolságból is követhető. Délelőtt a szárazabb peremeken táplálkozás figyelhető meg. Szélcsendben hosszabban tartózkodnak a nyílt felszínen.",
+    "conservation_md": "A tómederbe lépni tilos; a pusztai élőhely zavarását kerülni kell. A pihenő zónákhoz nagy távolság tartandó.",
+    "management_md": "Kilátópontok és útszéli pihenők irányítják a forgalmat; csapadékos idő után sár miatt lezárások lehetségesek."
+  },
+  {
+    "location_name": "Zemplén-hegység",
+    "season": "spring",
+    "phenology_md": "Tavaszi hajnalokon erős az énekcsúcs; nappal a gerincek felett ragadozók keringenek. A völgyekben terelődik a mozgás, frontos napokon átvonulási hullámok jelentkezhetnek. Alkonytól baglyok aktivizálódnak.",
+    "conservation_md": "Költési időszakban fokozott csend és útvonalon maradás; szurdokok és fészkelőhelyek közelítése kerülendő. Éjszaka kíméletes fényhasználat.",
+    "management_md": "Jelzett turistaösvények és kilátópontok terítik a látogatást; meredek szakaszokon biztonsági ajánlások érvényesek."
+  },
+  {
+    "location_name": "Bárándi halastavak",
+    "season": "spring",
+    "phenology_md": "Átmeneti vízszintek mellett a part menti sávokban erős a forgalom; hajnal a legproduktívabb. A nap előrehaladtával a csapatok a védettebb öblökbe húzódnak. Eső után friss táplálkozófelületek jelennek meg.",
+    "conservation_md": "Gazdálkodási jelzéseket és útzárakat tarts be; nádas és iszap szélek taposása kerülendő. Kutyát pórázon vezess.",
+    "management_md": "Gátközlekedés kijelölt szakaszokon; a karbantartási ütemezéshez igazodó terelések várhatók."
+  },
+  {
+    "location_name": "Velencei-tó",
+    "season": "spring",
+    "phenology_md": "Tavasszal vöcskök nászát és csérek vadászatát lehet megfigyelni a sekély öblök felett; hajnal és délelőtt a legaktívabb. A nádszegélyben felerősödik az ének, a víztükör fölött hosszan tartó táplálkozás zajlik. Szélben a védettebb öblök kerülnek előtérbe.",
+    "conservation_md": "A fészkelő nádasrészek közelítése tilos; vízisport-zavarás esetén válts alternatív pontra. A pihenő csapatokhoz szükséges a távolságtartás.",
+    "management_md": "Tanösvények, pallósorok és kilátók vezetik a látogatókat; néhány szakasz a költés védelmében ideiglenesen zárható."
+  },
+  {
+    "location_name": "Dinnyési-fertő",
+    "season": "spring",
+    "phenology_md": "A szikes sekélyvizek sávjában tavasz végén gólyatöcsök és partimadarak aktívak; hajnalban csúcsos az aktivitás. A nádszegély peremén rejtőzködő fajok mozognak. Csapadék után új iszapfoltok vonzzák a csapatokat.",
+    "conservation_md": "A szikes foltok és parti rétek taposását kerüld; kolóniák közelében csak kijelölt pontról figyelj. Kutyát pórázon vezess.",
+    "management_md": "Kilátók és tanösvények terelik a forgalmat; sárérzékeny utakon időszakos zárások lehetnek."
+  },
+  {
+    "location_name": "Kecskeméti halastavak",
+    "season": "spring",
+    "phenology_md": "Vízszint-kezeléstől függően tavasz végén partimadarak és gémfélék koncentrálódnak az iszapos peremeken; hajnal a leghatékonyabb. A nyílt vízen vöcskök és récék táplálkoznak. Szélben a csatornák és szélárnyékos oldalak hatékonyabbak.",
+    "conservation_md": "Kezelői lezárásokat és jelzéseket be kell tartani; iszapos sávokra belépni tilos. A nádas átvágása kerülendő.",
+    "management_md": "Kijelölt gát-szakaszok látogathatók; a fenntartási ütemhez igazított terelések és rövid zárások előfordulhatnak."
+  }
+]
