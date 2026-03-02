@@ -1,0 +1,146 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.cardSection {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.cardSectionCompact {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.editorHeader {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.preTitle {
+  margin: 0;
+  font-size: 0.75rem;
+  letter-spacing: 0.4em;
+  text-transform: uppercase;
+  color: #94a3b8;
+}
+
+.birdName {
+  margin: 0.125rem 0;
+  font-size: 2rem;
+  font-weight: 600;
+  color: #fff;
+}
+
+.slugText {
+  margin: 0;
+  font-size: 0.875rem;
+  color: #94a3b8;
+}
+
+.headerActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  text-align: right;
+}
+
+.secondaryButton {
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 0.5rem 1rem;
+  font-size: 0.625rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: #fff;
+  transition: border-color 0.2s ease;
+}
+
+.secondaryButton:hover {
+  border-color: #fff;
+}
+
+.tabList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  padding-block: 0.75rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  font-size: 0.75rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: #94a3b8;
+}
+
+.tab {
+  border-radius: 9999px;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.75rem;
+}
+
+.tabActive {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.tabInactive {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #94a3b8;
+}
+
+.notFoundSection {
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background-color: rgba(15, 23, 42, 0.6);
+  padding: 2rem;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.notFoundTitle {
+  margin: 0;
+  font-size: 2rem;
+  font-weight: 600;
+}
+
+.notFoundText {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #94a3b8;
+}
+
+.backLinkButton {
+  margin-top: 1rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  border: 1px solid rgba(148, 163, 184, 0.6);
+  padding: 0.5rem 1.25rem;
+  font-size: 0.625rem;
+  letter-spacing: 0.4em;
+  text-transform: uppercase;
+  color: #fff;
+  transition: border-color 0.2s ease;
+}
+
+.backLinkButton:hover {
+  border-color: #fff;
+}
+
+.gateHelpText {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  margin: 0;
+}

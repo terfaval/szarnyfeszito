@@ -1,34 +1,32 @@
 {
-  "name": "szarnyfeszito-map",
+  "name": "szarnyfeszito",
   "version": "0.1.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "supabase:smoke": "node scripts/supabase-smoke.mjs"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.58.0",
-    "leaflet": "^1.9.4",
-    "lucide-react": "^0.544.0",
-    "next": "15.5.4",
-    "react": "19.1.0",
-    "react-dom": "19.1.0",
-    "react-leaflet": "^5.0.0"
+    "@supabase/supabase-js": "^2.97.0",
+    "dotenv": "^17.3.1",
+    "lucide-react": "^0.575.0",
+    "next": "16.1.6",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4",
-    "@types/leaflet": "^1.9.20",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "autoprefixer": "^10.4.21",
+    "babel-plugin-react-compiler": "1.0.0",
     "eslint": "^9",
-    "eslint-config-next": "15.5.4",
-    "postcss": "^8.5.6",
-    "tailwindcss": "^3.4.10",
+    "eslint-config-next": "16.1.6",
+    "tailwindcss": "^4",
     "typescript": "^5"
   }
 }

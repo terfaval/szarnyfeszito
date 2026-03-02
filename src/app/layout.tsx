@@ -1,16 +1,38 @@
-import './globals.css';
-import { DataProvider } from '@/lib/DataContext';
+import type { Metadata } from "next";
+import { Geist, Geist_Mono } from "next/font/google";
+import TimeThemeEffect from "@/components/TimeThemeEffect";
+import "./globals.css";
 
-export const metadata = {
-  title: 'Szárnyfeszítő',
-  description: 'Madárles útikalauz – local JSON MVP',
+const geistSans = Geist({
+  variable: "--font-geist-sans",
+  subsets: ["latin"],
+});
+
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
+});
+
+export const metadata: Metadata = {
+  title: "Szárnyfeszítő Admin",
+  description: "Admin surface for Szárnyfeszítő AI story pipeline",
+  icons: {
+    icon: "/favicon.svg",
+  },
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
   return (
-    <html lang="hu">
-      <body className="bg-slate-50 text-slate-900">
-        <DataProvider>{children}</DataProvider>
+    <html lang="en">
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+      >
+        <TimeThemeEffect />
+        {children}
       </body>
     </html>
   );

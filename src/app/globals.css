@@ -1,36 +1,138 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-:root, html, body { height: 100%; }
-#__next, body > div:first-child { height: 100%; }
-.leaflet-container { background: #eef5ef; }
-
-/* Scrollbar finomítás (nem kötelező) */
-*::-webkit-scrollbar { width: 10px; height: 10px; }
-*::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 8px; }
+@import url("https://fonts.googleapis.com/css2?family=Rubik:wght@500;600;700&family=Roboto:wght@400;600&display=swap");
+@import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --bg: #f6efe1;
+  --panel: rgba(5, 118, 141, 0.14);
+  --panel-2: #fffdf8;
+  --input-bg: rgba(5, 118, 141, 0.08);
+  --text: #05768d;
+  --text-alt: #be2d12;
+  --muted: rgba(5, 118, 141, 0.6);
+  --line: rgba(5, 118, 141, 0.25);
+  --focus-ring: rgba(219, 146, 33, 0.5);
+  --shadow: 0 20px 40px rgba(7, 12, 25, 0.35);
+  --page-bg-image: url("/backgrounds/desktop_default.png");
+  --page-scrim: linear-gradient(180deg, rgba(246, 239, 225, 0) 0%, rgba(246, 239, 225, 0.95) 85%);
+  --brand-ink: #05768d;
+  --brand-paper: #f6efe1;
+  --brand-accent: #db9221;
+  --brand-warm: #be2d12;
+  --background: var(--bg);
+  --foreground: var(--text);
+  --shell-main-max: 1120px;
+  --shell-side-pad: 24px;
+  --font-display: "Rubik", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Roboto", "Source Serif Pro", "Times New Roman", serif;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-display);
+  --font-mono: var(--font-body);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
 }
 
 body {
+  margin: 0;
+  min-height: 100vh;
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-body);
+  line-height: 1.5;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+.h1,
+.admin-title {
+  font-family: var(--font-display);
+  color: var(--foreground);
+  letter-spacing: -0.01em;
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.row {
+  display: flex;
+  gap: 1rem;
+}
+
+.page-backdrop {
+  background-image: var(--page-bg-image);
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-time-theme]) {
+    --bg: #050b1d;
+    --panel: rgba(5, 118, 141, 0.35);
+    --panel-2: rgba(9, 17, 31, 0.85);
+    --input-bg: rgba(5, 118, 141, 0.35);
+    --text: #fefefe;
+    --text-alt: #db9221;
+    --muted: rgba(255, 255, 255, 0.65);
+    --line: rgba(255, 255, 255, 0.15);
+    --focus-ring: rgba(219, 146, 33, 0.7);
+    --shadow: 0 20px 40px rgba(0, 0, 0, 0.65);
+    --page-bg-image: url("/backgrounds/mobile_default.png");
+    --page-scrim: linear-gradient(180deg, rgba(5, 11, 29, 0) 0%, rgba(5, 11, 29, 0.9) 90%);
+    --background: var(--bg);
+    --foreground: var(--text);
+  }
+}
+
+:root[data-time-theme="night"] {
+  --bg: #050b1d;
+  --panel: rgba(5, 118, 141, 0.35);
+  --panel-2: rgba(9, 17, 31, 0.85);
+  --input-bg: rgba(5, 118, 141, 0.35);
+  --text: #fefefe;
+  --text-alt: #db9221;
+  --muted: rgba(255, 255, 255, 0.65);
+  --line: rgba(255, 255, 255, 0.15);
+  --focus-ring: rgba(219, 146, 33, 0.7);
+  --shadow: 0 20px 40px rgba(0, 0, 0, 0.65);
+  --page-bg-image: url("/backgrounds/mobile_default.png");
+  --page-scrim: linear-gradient(180deg, rgba(5, 11, 29, 0) 0%, rgba(5, 11, 29, 0.9) 90%);
+  --background: var(--bg);
+  --foreground: var(--text);
+}
+
+button,
+input,
+textarea,
+select {
+  font-family: var(--font-body);
+}
+
+img,
+picture,
+video,
+svg {
+  max-width: 100%;
+  display: block;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
 }
