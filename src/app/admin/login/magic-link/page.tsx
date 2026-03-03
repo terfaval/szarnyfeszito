@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { sanitizeRedirectTarget } from "@/lib/redirect";
 
 export default function MagicLinkCallbackPage() {
   const router = useRouter();
@@ -19,6 +20,9 @@ export default function MagicLinkCallbackPage() {
     const queryParams = new URLSearchParams(window.location.search);
     const accessToken =
       params.get("access_token") ?? queryParams.get("access_token");
+    const redirectParam =
+      params.get("redirect") ?? queryParams.get("redirect") ?? null;
+    const redirectTo = sanitizeRedirectTarget(redirectParam);
 
     if (!accessToken) {
       setStatus("error");
@@ -46,7 +50,7 @@ export default function MagicLinkCallbackPage() {
           throw new Error(payload?.error ?? "Unable to establish an admin session.");
         }
 
-        router.replace("/admin");
+        router.replace(redirectTo);
       } catch (fetchError) {
         setStatus("error");
         setErrorMessage(

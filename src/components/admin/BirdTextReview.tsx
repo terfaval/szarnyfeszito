@@ -86,6 +86,7 @@ export default function BirdTextReview({
   const [approving, setApproving] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [regenerating, setRegenerating] = useState(false);
   const [overlayTarget, setOverlayTarget] = useState<TextReviewSection | null>(
     null
   );
@@ -211,8 +212,48 @@ export default function BirdTextReview({
           ? err.message
           : "Unable to approve the text right now."
       );
+  } finally {
+    setApproving(false);
+  }
+  };
+
+  const handleRegenerate = async () => {
+    if (!contentBlock) {
+      setError("Generate the dossier before regenerating it.");
+      return;
+    }
+
+    setRegenerating(true);
+    setError(null);
+    setStatusMessage(null);
+
+    try {
+      const response = await fetch(
+        `/api/birds/${birdId}/text-review/regenerate`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+
+      const payload = await response.json().catch(() => null);
+
+      if (!response.ok || !payload?.data?.content_block) {
+        throw new Error(payload?.error ?? "Unable to regenerate the dossier.");
+      }
+
+      setContentBlock(payload.data.content_block);
+      setStatusMessage(
+        "Regenerated the dossier draft using the Latin/Hungarian identity lock and any review note."
+      );
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Unable to regenerate the dossier right now."
+      );
     } finally {
-      setApproving(false);
+      setRegenerating(false);
     }
   };
 
@@ -631,6 +672,19 @@ export default function BirdTextReview({
         </div>
 
         <div className="flex flex-col items-end gap-2 text-right">
+          <Button
+            type="button"
+            onClick={handleRegenerate}
+            disabled={!contentBlock || regenerating || approving || isApproved}
+            variant="ghost"
+            className="flex w-full items-center justify-center gap-2 border border-white/10 bg-zinc-950/40 px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-white transition hover:border-white/40 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <Icon name="sync" size={16} />
+            {regenerating ? "Regenerating…" : "Regenerate draft"}
+          </Button>
+          <p className="text-[10px] text-zinc-500">
+            Regenerate re-runs the Field-Guide prompt using the identity-locked names and any review note you saved.
+          </p>
           <Button
             type="button"
             onClick={handleApprove}

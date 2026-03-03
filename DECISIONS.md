@@ -124,3 +124,10 @@ Indok: ez teszi lehetővé a szigorú validálást, a generációk verifikálás
 
 - Places and Phenomena follow AI text generation plus review, then publish, but they do not require image generation or image-based gating. Their publish transitions depend solely on approved textual content and metadata validation.
 - Indok: Differentiates these entities from Bird so we donâ€™t overburden the MVP, yet keeps them ready for the Explorer panels once the read-only surface is active.
+
+---
+
+## D15 â€“ F3 builds mandate paired F4 checks
+
+- Every F3 (Build) engagement that touches implementation code — especially any high-impact or “really big” change — must simultaneously plan, trigger, and document the corresponding F4 (Check) work before the change is closed, so the audit workflow always shows the validation evidence alongside the build.
+- Indok: This guarantees that important implementations stay traceable in the repo and that the agent never leaves automation or manual validation undocumented, matching the request to keep F3 and F4 coupled.

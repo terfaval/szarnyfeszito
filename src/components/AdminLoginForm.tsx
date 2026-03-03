@@ -5,9 +5,13 @@ import { useRouter } from "next/navigation";
 
 type AdminLoginFormProps = {
   allowedEmail: string;
+  redirectTo: string;
 };
 
-export default function AdminLoginForm({ allowedEmail }: AdminLoginFormProps) {
+export default function AdminLoginForm({
+  allowedEmail,
+  redirectTo,
+}: AdminLoginFormProps) {
   const router = useRouter();
   const [email, setEmail] = useState(allowedEmail);
   const [password, setPassword] = useState("");
@@ -35,7 +39,7 @@ export default function AdminLoginForm({ allowedEmail }: AdminLoginFormProps) {
       return;
     }
 
-    router.replace("/admin");
+    router.replace(redirectTo);
   };
 
   const handleMagicLink = async () => {
@@ -50,7 +54,7 @@ export default function AdminLoginForm({ allowedEmail }: AdminLoginFormProps) {
       const response = await fetch("/api/auth/magic-link", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email, redirectTo }),
       });
 
       if (!response.ok) {

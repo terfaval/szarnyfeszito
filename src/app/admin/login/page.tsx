@@ -2,6 +2,7 @@ import AdminLoginForm from "@/components/AdminLoginForm";
 import { ADMIN_EMAIL } from "@/lib/config";
 import { getAdminUserFromCookies } from "@/lib/auth";
 import { redirect } from "next/navigation";
+import { sanitizeRedirectTarget } from "@/lib/redirect";
 
 const adminEmail = ADMIN_EMAIL;
 
@@ -9,7 +10,11 @@ export const metadata = {
   title: "Admin login — Szarnyfeszito",
 };
 
-export default async function AdminLoginPage() {
+export default async function AdminLoginPage({
+  searchParams,
+}: {
+  searchParams: { redirect?: string };
+}) {
   const existingUser = await getAdminUserFromCookies();
   if (existingUser) {
     redirect("/admin");
@@ -44,7 +49,10 @@ export default async function AdminLoginPage() {
           </p>
         </header>
 
-        <AdminLoginForm allowedEmail={allowedEmail} />
+        <AdminLoginForm
+          allowedEmail={allowedEmail}
+          redirectTo={sanitizeRedirectTarget(searchParams?.redirect ?? null)}
+        />
       </section>
     </main>
   );

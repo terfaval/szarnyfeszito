@@ -239,10 +239,23 @@ function buildRepairHintFromZod(error: ZodError) {
 }
 
 // ---------- main ----------
+export type GenerateBirdDossierOptions = {
+  reviewComment?: string;
+};
+
 export async function generateBirdDossier(
-  bird: Bird
+  bird: Bird,
+  options?: GenerateBirdDossierOptions
 ): Promise<DossierGenerationResult> {
-  const baseUserPrompt = `
+  const safeReviewComment = options?.reviewComment
+    ? options.reviewComment.trim().replace(/"/g, '\\"')
+    : "";
+
+  const reviewHint = safeReviewComment
+    ? `Review note: "${safeReviewComment}". Use it to adjust the relevant sections while keeping the identity lock, structure, and tone rules intact.`
+    : "";
+
+  const templatePrompt = `
   Fill the template for this bird:
   - slug: "${bird.slug}"
   - name_hu: "${bird.name_hu}"
@@ -260,6 +273,10 @@ export async function generateBirdDossier(
   
   Output JSON only, matching the template exactly.
 `.trim();
+
+  const baseUserPrompt = reviewHint
+    ? `${templatePrompt}\n\n${reviewHint}`
+    : templatePrompt;
 
   const runCompletion = async (prompt: string): Promise<CompletionResult> => {
     const messages: OpenAIChatMessage[] = [

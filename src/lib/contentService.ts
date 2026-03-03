@@ -1,6 +1,6 @@
 import { GeneratedContent, ContentBlock, ReviewStatus } from "@/types/content";
 import { supabaseServerClient } from "@/lib/supabaseServerClient";
-import { GenerationMeta } from "@/types/dossier";
+import { BirdDossier, GenerationMeta } from "@/types/dossier";
 
 export async function createContentBlockForBird(
   birdId: string,
@@ -53,13 +53,14 @@ export async function getLatestContentBlockForBird(
 type UpdateContentBlockInput = Partial<GeneratedContent> &
   Partial<Pick<ContentBlock, "version" | "review_status">> & {
     generation_meta?: GenerationMeta;
+    blocks_json?: BirdDossier;
   };
 
 export async function updateContentBlock(
   blockId: string,
   input: UpdateContentBlockInput
 ): Promise<ContentBlock> {
-  const { feature_block, generation_meta, ...rest } = input;
+  const { feature_block, generation_meta, blocks_json, ...rest } = input;
   const payload: Record<string, unknown> = { ...rest };
 
   if (feature_block) {
@@ -68,6 +69,10 @@ export async function updateContentBlock(
 
   if (generation_meta) {
     payload.generation_meta = generation_meta;
+  }
+
+  if (blocks_json) {
+    payload.blocks_json = blocks_json;
   }
 
   const { data, error } = await supabaseServerClient
