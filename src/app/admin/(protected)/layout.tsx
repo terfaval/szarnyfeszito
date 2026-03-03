@@ -4,7 +4,7 @@ import { getAdminUserFromCookies } from "@/lib/auth";
 import { AdminShell } from "@/ui/components/AdminShell";
 
 export const metadata = {
-  title: "Admin dashboard â€” Szarnyfeszito",
+  title: "Szárnyfeszítő admin dashboard",
 };
 
 export default async function ProtectedAdminLayout({

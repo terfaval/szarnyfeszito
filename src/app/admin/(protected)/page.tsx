@@ -5,7 +5,7 @@ import { Card } from "@/ui/components/Card";
 import { StatusPill } from "@/ui/components/StatusPill";
 
 export const metadata = {
-  title: "Dashboard â€” Szarnyfeszito Admin",
+  title: "Szárnyfeszítő admin dashboard",
 };
 
 export default async function AdminPage() {
