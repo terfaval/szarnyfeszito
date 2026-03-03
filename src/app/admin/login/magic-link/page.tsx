@@ -30,6 +30,15 @@ export default function MagicLinkCallbackPage() {
       return;
     }
 
+    const refreshToken =
+      params.get("refresh_token") ?? queryParams.get("refresh_token");
+
+    if (!refreshToken) {
+      setStatus("error");
+      setErrorMessage("The magic link did not return a valid refresh token.");
+      return;
+    }
+
     const expiresInValue =
       params.get("expires_in") ?? queryParams.get("expires_in");
     const expiresIn = Number(expiresInValue ?? 0) || 60 * 60;
@@ -41,6 +50,7 @@ export default function MagicLinkCallbackPage() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             access_token: accessToken,
+            refresh_token: refreshToken,
             expires_in: expiresIn,
           }),
         });

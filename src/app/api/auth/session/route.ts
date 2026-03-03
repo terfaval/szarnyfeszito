@@ -1,15 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAdminUserFromToken, setAdminSessionCookie } from "@/lib/auth";
+import { getAdminUserFromToken, setAdminSessionCookies } from "@/lib/auth";
 
 export async function POST(request: NextRequest) {
   const body = await request.json().catch(() => null);
   const accessToken =
     typeof body?.access_token === "string" ? body.access_token.trim() : "";
   const expiresIn = Number(body?.expires_in ?? 0);
+  const refreshToken =
+    typeof body?.refresh_token === "string" ? body.refresh_token.trim() : "";
 
   if (!accessToken) {
     return NextResponse.json(
       { error: "Access token is required to establish a session." },
+      { status: 400 }
+    );
+  }
+
+  if (!refreshToken) {
+    return NextResponse.json(
+      { error: "Refresh token is required to establish a session." },
       { status: 400 }
     );
   }
@@ -23,7 +32,12 @@ export async function POST(request: NextRequest) {
   }
 
   const response = NextResponse.json({ success: true, user });
-  setAdminSessionCookie(response, accessToken, expiresIn || 60 * 60);
+  setAdminSessionCookies(
+    response,
+    accessToken,
+    refreshToken,
+    expiresIn || 60 * 60
+  );
 
   return response;
 }

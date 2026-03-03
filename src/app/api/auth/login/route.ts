@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseServerClient } from "@/lib/supabaseServerClient";
-import { isAllowedAdminEmail, setAdminSessionCookie } from "@/lib/auth";
+import { isAllowedAdminEmail, setAdminSessionCookies } from "@/lib/auth";
 
 export async function POST(request: NextRequest) {
   const body = await request.json().catch(() => null);
@@ -41,10 +41,19 @@ export async function POST(request: NextRequest) {
     },
   });
 
-  setAdminSessionCookie(
+  const session = data.session;
+  if (!session?.refresh_token || !session.access_token) {
+    return NextResponse.json(
+      { error: "Unable to establish a secure session." },
+      { status: 500 }
+    );
+  }
+
+  setAdminSessionCookies(
     response,
-    data.session.access_token,
-    data.session.expires_in ?? 60 * 60
+    session.access_token,
+    session.refresh_token,
+    session.expires_in ?? 60 * 60
   );
 
   return response;
