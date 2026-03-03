@@ -415,7 +415,7 @@ export default function BirdTextReview({
                 {dossier.identification.key_features.map((feature, index) => (
                   <article
                     key={`${feature.title}-${index}`}
-                    className="rounded-[12px] border border-white/10 bg-white/5 p-3"
+                    className="rounded-xl border border-white/10 bg-white/5 p-3"
                   >
                     <p className="text-[10px] uppercase tracking-[0.4em] text-zinc-500">
                       {feature.title}

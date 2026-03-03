@@ -15,18 +15,17 @@ import { hashPrompt } from "@/lib/promptHash";
 import type { BirdDossier } from "@/types/dossier";
 import { normalizeHungarianName } from "@/lib/stringUtils";
 import { ZodError } from "zod";
+import {
+  QualityGateError,
+  buildQualityGateHint,
+  runQualityGates,
+} from "@/lib/dossierQualityGates";
 
 const SCHEMA_VERSION = "v2.1";
 const MAX_TOKENS = 1800;
 
-const SHORT_OPTION_MIN_LEN = 70;
-const SHORT_OPTION_MAX_LEN = 80;
-const SHORT_OPTION_SENSORY_SUFFIXES = [
-  "hangja selymes, mintha a nadas suttog a szelben",
-  "sziluettje kisimul a pircspuha fenyben, mintha arnyekbol emelkedne",
-  "mozgasat susogo, ropkepet hullamzik a lombok kozott",
-  "elohelye nadas peremen rezzen, ahol a viz es az avar talalkozik",
-];
+const SHORT_OPTION_TRIM_MIN = 70;
+const SHORT_OPTION_MAX_LEN = 170;
 
 const trimToWordBoundary = (value: string, limit: number) => {
   if (value.length <= limit) return value;
@@ -36,14 +35,14 @@ const trimToWordBoundary = (value: string, limit: number) => {
     truncated.lastIndexOf("! "),
     truncated.lastIndexOf("? ")
   );
-  if (sentenceBreak > SHORT_OPTION_MIN_LEN) {
+  if (sentenceBreak > SHORT_OPTION_TRIM_MIN) {
     return truncated.slice(0, sentenceBreak + 1).trim();
   }
 
   let lastSpace = truncated.lastIndexOf(" ");
   let fallback = -1;
   while (lastSpace > 0) {
-    if (lastSpace >= SHORT_OPTION_MIN_LEN) {
+    if (lastSpace >= SHORT_OPTION_TRIM_MIN) {
       return truncated.slice(0, lastSpace).trim();
     }
     fallback = lastSpace;
@@ -58,17 +57,20 @@ const trimToWordBoundary = (value: string, limit: number) => {
 const normalizeShortOption = (option: string) => {
   let normalized = option.replace(/\s+/g, " ").trim();
   if (!normalized) return normalized;
-  let suffixIndex = 0;
-  while (normalized.length < SHORT_OPTION_MIN_LEN) {
-    const suffix = SHORT_OPTION_SENSORY_SUFFIXES[suffixIndex % SHORT_OPTION_SENSORY_SUFFIXES.length];
-    const spacer = normalized.endsWith(" ") ? "" : " ";
-    normalized = `${normalized}${spacer}${suffix}`.replace(/\s+/g, " ").trim();
-    suffixIndex += 1;
-    if (normalized.length >= SHORT_OPTION_MAX_LEN) break;
+
+  const needsSentenceEnding = !/[.!?]$/.test(normalized);
+  const limitBeforePunctuation = needsSentenceEnding
+    ? SHORT_OPTION_MAX_LEN - 1
+    : SHORT_OPTION_MAX_LEN;
+
+  if (normalized.length > limitBeforePunctuation) {
+    normalized = trimToWordBoundary(normalized, limitBeforePunctuation);
   }
-  if (normalized.length > SHORT_OPTION_MAX_LEN) {
-    normalized = trimToWordBoundary(normalized, SHORT_OPTION_MAX_LEN);
+
+  if (needsSentenceEnding && normalized.length < SHORT_OPTION_MAX_LEN) {
+    normalized = `${normalized}.`;
   }
+
   return normalized;
 };
 
@@ -85,7 +87,7 @@ const normalizeShortOptionsPayload = (payload: Record<string, unknown>) => {
 
 const MAX_GENERATION_ATTEMPTS = 3;
 const SHORT_OPTION_RETRY_HINT =
-  "short_options must be exactly 3 strings, each 60–80 chars, 1–2 sentences, include a sensory detail (sound/movement/silhouette/habitat).";
+  "short_options must be exactly 3 strings, 90â€“170 chars, full sentences ending in punctuation, each tied to a separate axis (morphology/plumage/beak/sound/movement/habitat/behavior) without suffix dominance.";
 
 const isPlainObject = (v: unknown): v is Record<string, unknown> =>
   typeof v === "object" && v !== null && !Array.isArray(v);
@@ -109,51 +111,51 @@ export type DossierGenerationResult = {
 const JSON_TEMPLATE = `{
   "schema_version": "v2.1",
   "header": {
-    "name_hu": "…",
-    "name_latin": "…",
-    "subtitle": "…",
-    "short_summary": "…"
+    "name_hu": "Ă˘â‚¬Â¦",
+    "name_latin": "Ă˘â‚¬Â¦",
+    "subtitle": "Ă˘â‚¬Â¦",
+    "short_summary": "Ă˘â‚¬Â¦"
   },
   "pill_meta": {
-    "region_teaser": "…",
+    "region_teaser": "Ă˘â‚¬Â¦",
     "size_cm": { "min": null, "max": null },
     "wingspan_cm": { "min": null, "max": null },
-    "diet_short": "…",
+    "diet_short": "Ă˘â‚¬Â¦",
     "lifespan_years": { "min": null, "max": null }
   },
-  "short_options": ["…", "…", "…"],
-  "long_paragraphs": ["…", "…"],
+  "short_options": ["Ă˘â‚¬Â¦", "Ă˘â‚¬Â¦", "Ă˘â‚¬Â¦"],
+  "long_paragraphs": ["Ă˘â‚¬Â¦", "Ă˘â‚¬Â¦"],
   "identification": {
     "key_features": [
-      { "title": "…", "description": "…" },
-      { "title": "…", "description": "…" },
-      { "title": "…", "description": "…" },
-      { "title": "…", "description": "…" }
+      { "title": "Ă˘â‚¬Â¦", "description": "Ă˘â‚¬Â¦" },
+      { "title": "Ă˘â‚¬Â¦", "description": "Ă˘â‚¬Â¦" },
+      { "title": "Ă˘â‚¬Â¦", "description": "Ă˘â‚¬Â¦" },
+      { "title": "Ă˘â‚¬Â¦", "description": "Ă˘â‚¬Â¦" }
     ],
-    "identification_paragraph": "…"
+    "identification_paragraph": "Ă˘â‚¬Â¦"
   },
   "distribution": {
     "taxonomy": { "order": null, "family": null, "genus": null, "species": null },
     "iucn_status": null,
-    "distribution_regions": ["…"],
-    "distribution_note": "…"
+    "distribution_regions": ["Ă˘â‚¬Â¦"],
+    "distribution_note": "Ă˘â‚¬Â¦"
   },
   "nesting": {
     "nesting_type": null,
     "nest_site": null,
     "breeding_season": null,
     "clutch_or_chicks_count": null,
-    "nesting_note": "…"
+    "nesting_note": "Ă˘â‚¬Â¦"
   },
   "migration": {
     "is_migratory": null,
     "timing": null,
     "route": null,
-    "migration_note": "…"
+    "migration_note": "Ă˘â‚¬Â¦"
   },
-  "fun_fact": "…",
-  "ethics_tip": "…",
-  "typical_places": ["…"]
+  "fun_fact": "Ă˘â‚¬Â¦",
+  "ethics_tip": "Ă˘â‚¬Â¦",
+  "typical_places": ["Ă˘â‚¬Â¦"]
 }`;
 
 const SYSTEM_PROMPT = `
@@ -165,10 +167,12 @@ ${JSON_TEMPLATE}
 HARD RULES:
 - Top-level keys must be present: header, pill_meta, short_options, long_paragraphs, identification, distribution, nesting, migration, fun_fact, ethics_tip, typical_places.
 - distribution/nesting/migration MUST be objects (never strings).
-- Use null for nullable fields when unknown.
-- short_options: exactly 3 items, each 60–80 characters, 1–2 Hungarian sentences, include a sensory detail.
-- long_paragraphs: exactly 2 standalone paragraphs (Hungarian).
-- identification.key_features: exactly 4 {title, description}.
+- Use null for nullable fields when unknown; when you do provide numbers keep ranges conservative and avoid false precision (no spans < ~2 units unless null).
+- Identity lock: header.name_hu must equal the normalized Hungarian name provided as input, and header.name_latin must match the provided Latin name exactly.
+- short_options: exactly 3 strings, 90â€“170 chars, complete sentences ending in punctuation, each tied to a distinct axis (morphology/plumage/beak/sound/movement/habitat/behavior), no trailing conjunctions, no shared openings, no reliance on sensory suffix templates.
+- short_summary: 1â€“2 sentences can lean Durrell/Adams but must include at least one concrete axis anchor; avoid being reduced to “különleges madár” or “lenyűgöző faj” without detail.
+- long_paragraphs: two paragraphs; the tone can carry one witty sentence per paragraph but otherwise stay concrete, avoid hearsay/record phrases (“a helyiek szerint”, “gyakran nevezik”, “rekord”, etc.), and do not invent digits or citations.
+- identification.key_features: four entries with distinct titles; each description must mention the axis-specific keywords so the cue is field-usable.
 - Output JSON only.
 `.trim();
 
@@ -239,17 +243,22 @@ export async function generateBirdDossier(
   bird: Bird
 ): Promise<DossierGenerationResult> {
   const baseUserPrompt = `
-Fill the template for this bird:
-- slug: "${bird.slug}"
-- name_hu: "${bird.name_hu}"
-- name_latin: "${bird.name_latin ?? "unknown"}"
-
-Content expectations (Hungarian):
-- Make identification strongly usable for scientific illustration (beak, plumage, sound, movement).
-- distribution/nesting/migration each needs short categorical fields + 2–3 sentence note.
-- Do not invent impossible claims.
-
-Output JSON only, matching the template exactly.
+  Fill the template for this bird:
+  - slug: "${bird.slug}"
+  - name_hu: "${bird.name_hu}"
+  - name_latin: "${bird.name_latin ?? "unknown"}"
+  
+  Content expectations (Hungarian):
+  - Identity lock: use the provided names exactly; do not substitute another species.
+  - short_options: three axis taglines (morphology/plumage/beak/sound/movement/habitat/behavior), 90â€“170 chars, full sentences ending in punctuation, each anchored to a different axis.
+  - short_summary: 1â€“2 sentences can lean Durrell/Adams but must include at least one concrete axis anchor and avoid generic phrases.
+  - long_paragraphs: two paragraphs that stay concrete, avoid hearsay/records, and do not invent digits or citations.
+  - identification: deliver four field-usable cues (Csőr, Tollazat, Hang, Mozgás) with axis-specific keywords in their descriptions.
+  - Structured facts: use null when unknown or offer conservative ranges (≥2 units wide) within plausible caps.
+  - distribution/nesting/migration each needs short categorical fields + 2â€“3 sentence note.
+  - Do not invent impossible claims.
+  
+  Output JSON only, matching the template exactly.
 `.trim();
 
   const runCompletion = async (prompt: string): Promise<CompletionResult> => {
@@ -296,7 +305,7 @@ Output JSON only, matching the template exactly.
         ? baseUserPrompt
         : attempt === 2
           ? `${baseUserPrompt}\n\nREPAIR: keep sentences shorter everywhere; obey template; output JSON only.`
-          : `${baseUserPrompt}\n\nREPAIR: focus on missing keys/types + short_options 60–80 chars; output JSON only.`;
+          : `${baseUserPrompt}\n\nREPAIR: focus on missing keys/types + short_options 60Ă˘â‚¬â€ś80 chars; output JSON only.`;
 
     lastPrompt = prompt;
 
@@ -326,10 +335,11 @@ Output JSON only, matching the template exactly.
 
     validateMinimumShape(payload, lastRawJson);
 
-    try {
-      const normalizedPayload = normalizeShortOptionsPayload(payload);
-      const dossier = parseBirdDossier(normalizedPayload);
-      dossier.header.name_hu = normalizeHungarianName(dossier.header.name_hu);
+      try {
+        const normalizedPayload = normalizeShortOptionsPayload(payload);
+        const dossier = parseBirdDossier(normalizedPayload);
+        runQualityGates(dossier, bird);
+        dossier.header.name_hu = normalizeHungarianName(dossier.header.name_hu);
 
       const concatPrompt = `${SYSTEM_PROMPT}\n\n${prompt}`;
       const generatedAt = new Date().toISOString();
@@ -342,25 +352,29 @@ Output JSON only, matching the template exactly.
         generated_at: generatedAt,
       };
     } catch (err) {
-      if (!(err instanceof ZodError)) throw err;
+      if (!(err instanceof ZodError) && !(err instanceof QualityGateError)) throw err;
+
+      const issues =
+        err instanceof ZodError
+          ? formatDossierValidationErrors(err)
+              .slice(0, 20)
+              .map((i) => `${i.path}: ${i.message}`)
+          : err.issues;
+      const failureLabel = err instanceof ZodError ? "Zod validation failed" : "quality gate failure";
 
       if (attempt === MAX_GENERATION_ATTEMPTS) {
-        const zodIssues = formatDossierValidationErrors(err)
-          .slice(0, 20)
-          .map((i) => `${i.path}: ${i.message}`);
-
         throw new AISchemaMismatchError(
           [
-            `Zod validation failed after ${MAX_GENERATION_ATTEMPTS} attempts.`,
+            `${failureLabel} after ${MAX_GENERATION_ATTEMPTS} attempts.`,
             `model=${lastModel}`,
-            ...zodIssues,
+            ...issues,
           ],
           lastRawJson || response.message
         );
       }
 
-      // One immediate repair attempt with concrete Zod feedback (doesn't consume next loop attempt)
-      const repairHint = buildRepairHintFromZod(err);
+      const repairHint =
+        err instanceof ZodError ? buildRepairHintFromZod(err) : buildQualityGateHint(err);
       const forcedPrompt = `${baseUserPrompt}\n\n${repairHint}\n\nOutput JSON only.`;
 
       const retry = await runCompletion(forcedPrompt);
@@ -391,6 +405,7 @@ Output JSON only, matching the template exactly.
       try {
         const normalizedRetryPayload = normalizeShortOptionsPayload(retryPayload);
         const dossier = parseBirdDossier(normalizedRetryPayload);
+        runQualityGates(dossier, bird);
         dossier.header.name_hu = normalizeHungarianName(dossier.header.name_hu);
 
         const concatPrompt = `${SYSTEM_PROMPT}\n\n${forcedPrompt}`;
@@ -404,7 +419,7 @@ Output JSON only, matching the template exactly.
           generated_at: generatedAt,
         };
       } catch (retryErr) {
-        if (!(retryErr instanceof ZodError)) throw retryErr;
+        if (!(retryErr instanceof ZodError) && !(retryErr instanceof QualityGateError)) throw retryErr;
         // fall through to next loop attempt
       }
     }

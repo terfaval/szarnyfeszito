@@ -1,12 +1,14 @@
 import { ReactNode } from "react";
 
+type CardSize = "standard" | "compact";
+
 export type CardProps = {
   children: ReactNode;
-  size?: "standard" | "compact";
+  size?: CardSize;
   className?: string;
 };
 
-const SIZE_CLASSES: Record<CardProps["size"], string> = {
+const SIZE_CLASSES: Record<CardSize, string> = {
   standard: "rounded-[16px] border border-white/10 bg-zinc-900/50 shadow-[var(--shadow)] p-6",
   compact: "rounded-[16px] border border-white/10 bg-zinc-900/50 shadow-[var(--shadow)] p-4",
 };
