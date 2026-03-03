@@ -40,26 +40,15 @@ export function AdminShell({
               {subtitle && <h1 className="text-3xl font-semibold">{subtitle}</h1>}
             </header>
           ) : null}
-          <div className="grid gap-3 lg:hidden admin-nav">
+          <nav className="admin-nav">
             {NAV_LINKS.map((link) => (
               <Link key={link.href} href={link.href} className="admin-nav-link">
                 {link.label}
               </Link>
             ))}
-          </div>
+          </nav>
 
-          <div className="grid gap-6 lg:grid-cols-[220px,1fr]">
-            <aside className="hidden lg:block">
-              <div className="admin-nav">
-                {NAV_LINKS.map((link) => (
-                  <Link key={link.href} href={link.href} className="admin-nav-link">
-                    {link.label}
-                  </Link>
-                ))}
-              </div>
-            </aside>
-            <main className="space-y-6">{children}</main>
-          </div>
+          <main className="space-y-6">{children}</main>
         </div>
       </div>
     </div>

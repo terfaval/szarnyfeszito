@@ -121,6 +121,43 @@ const validateSignatureCoherence = (dossier: BirdDossier) => {
   return reasons;
 };
 
+const validateSignatureSpecificity = (signature: string): string[] => {
+  const s = signature.toLowerCase();
+  const reasons: string[] = [];
+
+  const generic = ["különleges", "jellegzetes", "lenyűgöző", "látványos", "figyelemfelkeltő"];
+  const genericHits = generic.filter((w) => s.includes(w)).length;
+
+  const concrete = [
+    "hang",
+    "trombit",
+    "sziluett",
+    "v-alak",
+    "vonul",
+    "csapat",
+    "mocsár",
+    "nádas",
+    "puszta",
+    "rét",
+    "repül",
+    "nyak",
+    "láb",
+  ];
+  const hasConcrete = concrete.some((w) => s.includes(w));
+
+  if (!hasConcrete) {
+    reasons.push("signature_trait lacks concrete field-guide anchors");
+  }
+  if (genericHits >= 2 && signature.length < 80) {
+    reasons.push("signature_trait reads generic (adjectives-only)");
+  }
+  if ((signature.match(/[.!?]/g) ?? []).length > 1) {
+    reasons.push("signature_trait should be a single sentence");
+  }
+
+  return reasons;
+};
+
 const MAX_GENERATION_ATTEMPTS = 3;
 const SHORT_OPTION_RETRY_HINT =
   "short_options must be exactly 3 strings, 90â€“170 chars, full sentences ending in punctuation, each tied to a separate axis (morphology/plumage/beak/sound/movement/habitat/behavior) without suffix dominance.";
@@ -340,6 +377,9 @@ Avoid generic filler phrases like:
 "könnyen felismerhető",
 "gyakran megtalálható".
 
+signature_trait MUST contain at least one concrete observable: sound OR silhouette OR habitat OR movement.
+Do not use generic adjectives-only signatures like 'jellegzetes' / 'lenyűgöző' without concrete anchors.
+
 If uncertain about numeric ranges, use null.
 Avoid overly narrow ranges (false precision).
 `.trim();
@@ -427,6 +467,10 @@ Avoid overly narrow ranges (false precision).
         const normalizedPayload = normalizeShortOptionsPayload(payload);
         const dossier = parseBirdDossier(normalizedPayload);
         runQualityGates(dossier, bird);
+        const specIssues = validateSignatureSpecificity(dossier.signature_trait);
+        if (specIssues.length > 0) {
+          throw new AIQualityGateError(specIssues);
+        }
         const signatureIssues = validateSignatureCoherence(dossier);
 
         if (signatureIssues.length > 0) {
@@ -461,23 +505,29 @@ Avoid overly narrow ranges (false precision).
         repairHint = buildQualityGateHint(caughtError);
       } else if (caughtError instanceof AIQualityGateError) {
         issues = caughtError.reasons;
-        failureLabel = "signature coherence failure";
-        repairHint = [
+        failureLabel = "signature gate failure";
+        const baseLines = [
           "Signature coherence gate failure. Keep every narrative block anchored to the signature_trait.",
           ...caughtError.reasons.map((issue) => `- ${issue}`),
-        ].join("\n");
+        ];
+        const allowsSignatureRewrite = caughtError.reasons.some(
+          (reason) =>
+            reason.includes("lacks concrete field-guide anchors") ||
+            reason.includes("reads generic (adjectives-only)")
+        );
+        if (allowsSignatureRewrite) {
+          baseLines.push(
+            "Rewrite signature_trait into a more concrete field-guide hook (sound/silhouette/habitat/movement) and rewrite the supporting texts to match it."
+          );
+        } else {
+          baseLines.push(
+            "Keep the same signature_trait but rewrite texts to consistently reflect it."
+          );
+        }
+        baseLines.push("Return valid JSON only.");
+        repairHint = baseLines.join("\n");
       } else {
         throw caughtError;
-      }
-
-      if (caughtError instanceof AIQualityGateError) {
-        repairHint += `
-Quality gate failures:
-${caughtError.reasons.join("\n")}
-Keep the same signature_trait but rewrite texts
-to consistently reflect it.
-Return valid JSON only.
-`;
       }
 
       if (attempt === MAX_GENERATION_ATTEMPTS) {
@@ -522,6 +572,10 @@ Return valid JSON only.
         const normalizedRetryPayload = normalizeShortOptionsPayload(retryPayload);
         const dossier = parseBirdDossier(normalizedRetryPayload);
         runQualityGates(dossier, bird);
+        const specIssues = validateSignatureSpecificity(dossier.signature_trait);
+        if (specIssues.length > 0) {
+          throw new AIQualityGateError(specIssues);
+        }
         const retrySignatureIssues = validateSignatureCoherence(dossier);
 
         if (retrySignatureIssues.length > 0) {
