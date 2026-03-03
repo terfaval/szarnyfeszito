@@ -25,3 +25,4 @@ export const SUPABASE_IMAGE_BUCKET =
   optionalEnv("SUPABASE_IMAGE_BUCKET", "bird-images") ?? "bird-images";
 export const NODE_ENV = process.env.NODE_ENV?.trim() || "development";
 export const IS_PRODUCTION = NODE_ENV === "production";
+export const APP_URL = optionalEnv("NEXT_PUBLIC_APP_URL") ?? "http://localhost:3000";
