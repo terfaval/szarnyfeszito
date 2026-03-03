@@ -48,12 +48,10 @@ export default function BirdListShell({ birds }: BirdListShellProps) {
 
   return (
     <section className="space-y-6">
-      <header className="flex flex-col gap-2">
-        <p className="text-xs uppercase tracking-[0.4em] text-zinc-400">
-          Birds registry
-        </p>
-        <h1 className="text-3xl font-semibold text-white">Birds list</h1>
-        <p className="text-sm text-zinc-400">
+      <header className="admin-heading">
+        <p className="admin-heading__label">Birds registry</p>
+        <h1 className="admin-heading__title">Birds list</h1>
+        <p className="admin-heading__description">
           {birds.length} birds tracked in the pipeline. Filter by status or
           search names and slugs to find the one you need.
         </p>
@@ -61,7 +59,7 @@ export default function BirdListShell({ birds }: BirdListShellProps) {
 
       <div className="grid gap-4 md:grid-cols-[1.5fr,1fr]">
         <Card className="space-y-4 text-sm">
-          <div className="flex flex-col gap-3 lg:flex-row">
+          <div className="admin-filter-row">
             <Input
               label="Search birds"
               placeholder="Name or slug"
@@ -91,12 +89,9 @@ export default function BirdListShell({ birds }: BirdListShellProps) {
             </label>
           </div>
 
-          <div className="grid gap-3 md:grid-cols-3">
+          <div className="admin-stat-grid">
             {BIRD_STATUS_VALUES.map((status) => (
-              <article
-                key={status}
-                className="rounded-[14px] border border-white/5 bg-zinc-950/60 p-4"
-              >
+              <article key={status} className="admin-stat-card">
                 <p className="text-[10px] uppercase tracking-[0.35em] text-zinc-500">
                   {status}
                 </p>
@@ -105,7 +100,7 @@ export default function BirdListShell({ birds }: BirdListShellProps) {
                 </p>
               </article>
             ))}
-            <article className="rounded-[14px] border border-dashed border-white/10 bg-transparent p-3 text-xs text-zinc-500">
+            <article className="admin-stat-card admin-stat-card--note">
               Bird list is limited to 100 latest records.
             </article>
           </div>
@@ -116,7 +111,7 @@ export default function BirdListShell({ birds }: BirdListShellProps) {
 
       <div className="space-y-4">
         {filteredBirds.length === 0 ? (
-          <Card className="rounded-[14px] border border-dashed border-white/10 bg-transparent p-4 text-sm text-zinc-400">
+          <Card className="admin-stat-card admin-stat-card--note">
             No birds match the current filters. Adjust the search or status to
             continue.
           </Card>
@@ -125,36 +120,26 @@ export default function BirdListShell({ birds }: BirdListShellProps) {
             <Link
               key={bird.id}
               href={`/admin/birds/${bird.id}`}
-              className="group block no-underline transition hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-white/70"
+              className="admin-list-link"
             >
-              <Card className="space-y-3">
-                <div className="flex flex-wrap items-start justify-between gap-4">
-                  <div className="space-y-1">
-                    <p className="text-lg font-semibold text-white">
-                      {bird.name_hu}
-                    </p>
-                    <p className="text-xs uppercase tracking-[0.4em] text-zinc-400">
-                      {bird.slug}
-                    </p>
-                    <p className="text-xs text-zinc-500">
-                      {bird.name_latin ?? "No Latin name yet"}
-                    </p>
-                  </div>
-                  <StatusPill status={bird.status} />
-                </div>
-                <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-zinc-500">
-                  <p>
-                    Updated{" "}
-                    {new Intl.DateTimeFormat(undefined, {
-                      dateStyle: "medium",
-                      timeStyle: "short",
-                    }).format(new Date(bird.updated_at))}
-                  </p>
-                  <span className="rounded-full border border-zinc-700 px-3 py-1 text-xs uppercase tracking-[0.4em] text-white transition group-hover:border-white">
-                    Open editor
-                  </span>
-                </div>
-              </Card>
+              <div className="admin-list-details">
+                <p className="text-lg font-semibold text-white">{bird.name_hu}</p>
+                <p className="admin-list-meta">{bird.slug}</p>
+                <p className="text-xs text-zinc-500">
+                  {bird.name_latin ?? "No Latin name yet"}
+                </p>
+                <p className="admin-list-date">
+                  Updated{" "}
+                  {new Intl.DateTimeFormat(undefined, {
+                    dateStyle: "medium",
+                    timeStyle: "short",
+                  }).format(new Date(bird.updated_at))}
+                </p>
+              </div>
+              <div className="admin-inline-actions">
+                <StatusPill status={bird.status} />
+                <span className="admin-list-action">Open editor</span>
+              </div>
             </Link>
           ))
         )}

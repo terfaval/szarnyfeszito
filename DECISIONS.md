@@ -10,11 +10,12 @@
 
 Indok: A publish művelet csak akkor válik elérhetővé, amikor a SPEC-ben leírt text/images jóváhagyások megvannak, és így a frontend nem engedélyezi a publikálást, amíg a szöveg és a fő habitat + ikonikus kép nem lett approved.
 
-## D12 – Dossier schema v2.1 Field-Guide upgrade
+## D12 – Dossier schema v2.2 Field-Guide upgrade
 
-- Bird dossier content_blocks továbbra is egy JSON struktúrát tartalmaz: mostantól mindegyik draft `schema_version` mezője `"v2.1"`, és a payload kifejezetten a header, pill_meta, short_options (három 120+ karakteres tagline), long_paragraphs (2–5 bekezdés), identification (kulcsjellemzők + összegző bekezdés), distribution (taxonómia + IUCN + régiók + jegyzet), nesting, migration, valamint a fun_fact, ethics_tip és typical_places blokkokat tartalmazza.
+- Bird dossier content_blocks továbbra is egy JSON struktúrát tartalmaz: mostantól mindegyik draft `schema_version` mezője "v2.2", a payload pedig signature_trait-et, header-t, pill_meta-t, short_options-t (három 90–170 karakteres tagline), long_paragraphs-t (2–5 bekezdés), identification-t (kulcsjellemzők + összegző bekezdés), distribution-t (taxonómia + IUCN + régiók + jegyzet), nesting-et, migration-t, valamint a fun_fact, ethics_tip és typical_places blokkokat tartalmazza.
 - A schema szigorú validációval (`z.strict()`) ellenőrzi a mezők jelenlétét, a stringek trimelt állapotát, a minimális számú bejegyzéseket és a short_option karakterhosszt, így ígérvén új, granularizált review útvonalat a blokkoknak.
-- Új generáció csak v2.1 payloadot hozhat létre; ha legacy v1 dossierhoz nyúlunk, azt nem automatikusan migráljuk, de továbbra is lenni kell neki, amíg a pipeline nem migrált visszafelé. A korábbi `fact_box`/`quick_traits` blokkokat centralizáltan a pill_meta/identification/distribution-csoportok váltják fel.
+- A signature_trait mező bevezetése óta egy minőségi kapu ellenőrzi, hogy a header.short_summary, a long_paragraphs és a short_options mind ugyanazon jellegzetesség köré építse a narratívát; a kapu megsértése AIQualityGateError-t eredményez és részletezi az eltérés okát.
+- Új generáció csak v2.2 payloadot hozhat létre; ha legacy v1 dossierhoz nyúlunk, azt nem automatikusan migráljuk, de továbbra is lenni kell neki, amíg a pipeline nem migrált visszafelé. A korábbi `fact_box`/`quick_traits` blokkokat centralizáltan a pill_meta/identification/distribution-csoportok váltják fel.
 
 Indok: így készült el a kontrollált Field-Guide architektúra, ami a későbbi illustrációs és finomhangolási hookokat megengedi, ugyanakkor megőrzi a meglevő route-okat és data model szerkezetet.
 

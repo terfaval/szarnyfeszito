@@ -120,3 +120,10 @@ export class AISchemaMismatchError extends Error {
     Object.setPrototypeOf(this, AISchemaMismatchError.prototype);
   }
 }
+
+export class AIQualityGateError extends Error {
+  constructor(public readonly reasons: string[]) {
+    super("AI quality gate failure");
+    Object.setPrototypeOf(this, AIQualityGateError.prototype);
+  }
+}

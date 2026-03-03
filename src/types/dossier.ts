@@ -58,7 +58,8 @@ export type BirdDossierMigration = {
 };
 
 export type BirdDossierV2 = {
-  schema_version: "v2.1";
+  schema_version: "v2.2";
+  signature_trait: string;
   header: BirdDossierHeader;
   pill_meta: BirdDossierPillMeta;
   short_options: [string, string, string];

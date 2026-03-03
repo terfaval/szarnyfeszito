@@ -18,7 +18,9 @@ const baseBird: Bird = {
 };
 
 const baseDossier: BirdDossier = {
-  schema_version: "v2.1",
+  schema_version: "v2.2",
+  signature_trait:
+    "A nádas peremén elejtett hangja mögött a tollazat árnyéka narancssárgán villan fel.",
   header: {
     name_hu: "Példamadár",
     name_latin: "Exemplaris exemplaris",

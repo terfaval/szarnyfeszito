@@ -6,6 +6,7 @@ import { Card } from "@/ui/components/Card";
 import { Icon } from "@/ui/icons/Icon";
 import { ImageRecord, ImageReviewStatus } from "@/types/image";
 import ReviewRequestOverlay from "@/components/admin/ReviewRequestOverlay";
+import styles from "./BirdImageReview.module.css";
 
 type BirdImageWithPreview = ImageRecord & {
   previewUrl: string | null;
@@ -162,19 +163,19 @@ export default function BirdImageReview({
   };
 
   return (
-    <section className="space-y-4">
+    <section className={styles.section}>
       <Card className="space-y-4">
-        <header className="flex flex-wrap items-center justify-between gap-3">
+        <header className={styles.header}>
           <div>
             <p className="text-xs uppercase tracking-[0.4em] text-zinc-400">Images</p>
-            <h2 className="text-2xl font-semibold text-white">Image review</h2>
-            <p className="text-sm text-zinc-400">
+            <h2 className={styles.headerTitle}>Image review</h2>
+            <p className={styles.headerSubtitle}>
               Approve each variant so the image stage can advance to publication.
             </p>
           </div>
 
           {allApproved && (
-            <span className="inline-flex items-center gap-1 rounded-full border border-emerald-400/40 bg-emerald-950/50 px-3 py-1 text-xs uppercase tracking-[0.3em] text-emerald-300">
+            <span className={styles.headerBadge}>
               <Icon name="accept" size={14} className="text-emerald-300" />
               All approved
             </span>
@@ -187,14 +188,14 @@ export default function BirdImageReview({
             create the placeholders before reviewing.
           </Card>
         ) : (
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className={styles.grid}>
             {images.map((image) => {
               const isApproved = image.review_status === "approved";
               const isLoading = loadingId === image.id;
 
               return (
                 <Card key={image.id} className="space-y-4">
-                  <div className="aspect-[4/3] w-full overflow-hidden rounded-[14px] bg-zinc-900">
+                  <div className={styles.imagePreview}>
                     {image.previewUrl ? (
                       <img
                         src={image.previewUrl}
@@ -208,7 +209,7 @@ export default function BirdImageReview({
                     )}
                   </div>
 
-                  <div className="space-y-1">
+                  <div className={styles.imageMeta}>
                     <div className="flex items-center justify-between gap-3">
                       <p className="text-sm font-semibold text-white">
                         {VARIANT_LABELS[image.variant]}
@@ -239,7 +240,7 @@ export default function BirdImageReview({
                     </div>
                   </div>
 
-                  <div className="flex flex-col gap-2">
+                  <div className={styles.imageActions}>
                     <p className="text-xs uppercase tracking-[0.3em] text-[#05768D]">
                       Review action
                     </p>

@@ -26,9 +26,7 @@ export function AdminShell({
 }: AdminShellProps) {
   return (
     <div className="min-h-screen bg-zinc-950 text-white">
-      <div
-        className="mx-auto flex max-w-[var(--shell-main-max,1120px)] flex-col gap-10 px-[var(--shell-side-pad,24px)] py-8"
-      >
+      <div className="admin-shell">
         <AdminTopBar breadcrumb={breadcrumb} action={action} />
         <div className="space-y-6">
           {title || subtitle ? (
@@ -42,13 +40,9 @@ export function AdminShell({
               {subtitle && <h1 className="text-3xl font-semibold">{subtitle}</h1>}
             </header>
           ) : null}
-          <div className="grid gap-3 lg:hidden">
+          <div className="grid gap-3 lg:hidden admin-nav">
             {NAV_LINKS.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="flex h-12 items-center justify-center rounded-[14px] border border-white/10 bg-white/5 text-xs font-semibold uppercase tracking-[0.3em] text-white transition hover:border-white/20"
-              >
+              <Link key={link.href} href={link.href} className="admin-nav-link">
                 {link.label}
               </Link>
             ))}
@@ -56,13 +50,9 @@ export function AdminShell({
 
           <div className="grid gap-6 lg:grid-cols-[220px,1fr]">
             <aside className="hidden lg:block">
-              <div className="space-y-3">
+              <div className="admin-nav">
                 {NAV_LINKS.map((link) => (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    className="flex h-12 items-center justify-center rounded-[14px] border border-white/10 bg-white/5 text-xs font-semibold uppercase tracking-[0.3em] text-white transition hover:border-white/20"
-                  >
+                  <Link key={link.href} href={link.href} className="admin-nav-link">
                     {link.label}
                   </Link>
                 ))}

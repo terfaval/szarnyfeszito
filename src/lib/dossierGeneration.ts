@@ -7,6 +7,7 @@ import {
 import {
   AISchemaMismatchError,
   AIJsonParseError,
+  AIQualityGateError,
   extractJsonPayload,
 } from "@/lib/aiUtils";
 import { AI_MODEL_TEXT } from "@/lib/config";
@@ -21,13 +22,13 @@ import {
   runQualityGates,
 } from "@/lib/dossierQualityGates";
 
-const SCHEMA_VERSION = "v2.1";
+const SCHEMA_VERSION = "v2.2";
 const MAX_TOKENS = 1800;
 
 const SHORT_OPTION_TRIM_MIN = 70;
 const SHORT_OPTION_MAX_LEN = 170;
 
-const trimToWordBoundary = (value: string, limit: number) => {
+const safeTruncate = (value: string, limit: number) => {
   if (value.length <= limit) return value;
   const truncated = value.slice(0, limit);
   const sentenceBreak = Math.max(
@@ -55,23 +56,21 @@ const trimToWordBoundary = (value: string, limit: number) => {
 };
 
 const normalizeShortOption = (option: string) => {
-  let normalized = option.replace(/\s+/g, " ").trim();
-  if (!normalized) return normalized;
+  const collapsed = option.replace(/\s+/g, " ").trim();
+  if (!collapsed) return collapsed;
 
-  const needsSentenceEnding = !/[.!?]$/.test(normalized);
+  const needsSentenceEnding = !/[.!?]$/.test(collapsed);
   const limitBeforePunctuation = needsSentenceEnding
     ? SHORT_OPTION_MAX_LEN - 1
     : SHORT_OPTION_MAX_LEN;
 
-  if (normalized.length > limitBeforePunctuation) {
-    normalized = trimToWordBoundary(normalized, limitBeforePunctuation);
+  const truncated = safeTruncate(collapsed, limitBeforePunctuation);
+
+  if (needsSentenceEnding && truncated.length < SHORT_OPTION_MAX_LEN) {
+    return `${truncated}.`;
   }
 
-  if (needsSentenceEnding && normalized.length < SHORT_OPTION_MAX_LEN) {
-    normalized = `${normalized}.`;
-  }
-
-  return normalized;
+  return truncated;
 };
 
 const normalizeShortOptionsPayload = (payload: Record<string, unknown>) => {
@@ -83,6 +82,43 @@ const normalizeShortOptionsPayload = (payload: Record<string, unknown>) => {
   const changed = normalizedOptions.some((value, index) => value !== options[index]);
   if (!changed) return payload;
   return { ...payload, short_options: normalizedOptions };
+};
+
+const extractAnchorKeywords = (signature: string): string[] => {
+  const stopwords = ["és", "vagy", "mint", "az", "egy", "ami", "ahol"];
+  return signature
+    .toLowerCase()
+    .split(/\W+/)
+    .filter((word) => word.length >= 4 && !stopwords.includes(word))
+    .slice(0, 3);
+};
+
+const validateSignatureCoherence = (dossier: BirdDossier) => {
+  const reasons: string[] = [];
+  if (!dossier.signature_trait) {
+    reasons.push("Missing signature_trait");
+    return reasons;
+  }
+
+  const anchors = extractAnchorKeywords(dossier.signature_trait);
+  if (anchors.length === 0) {
+    reasons.push("signature_trait too generic");
+    return reasons;
+  }
+
+  const summary = (dossier.header?.short_summary ?? "").toLowerCase();
+  const longText = (dossier.long_paragraphs ?? []).join(" ").toLowerCase();
+  const shortText = (dossier.short_options ?? []).join(" ").toLowerCase();
+
+  const summaryHit = anchors.some((anchor) => summary.includes(anchor));
+  const longHits = anchors.filter((anchor) => longText.includes(anchor)).length;
+  const shortHit = anchors.some((anchor) => shortText.includes(anchor));
+
+  if (!summaryHit) reasons.push("signature not reflected in summary");
+  if (longHits < 2) reasons.push("signature weakly reflected in long_paragraphs");
+  if (!shortHit) reasons.push("signature not reflected in short_options");
+
+  return reasons;
 };
 
 const MAX_GENERATION_ATTEMPTS = 3;
@@ -109,7 +145,8 @@ export type DossierGenerationResult = {
 
 // ---------- strict template ----------
 const JSON_TEMPLATE = `{
-  "schema_version": "v2.1",
+  "schema_version": "v2.2",
+  "signature_trait": "Ä‚ËĂ˘â€šÂ¬Ă‚Â¦",
   "header": {
     "name_hu": "Ă˘â‚¬Â¦",
     "name_latin": "Ă˘â‚¬Â¦",
@@ -198,6 +235,7 @@ function validateMinimumShape(payload: unknown, rawJson: string) {
   };
 
   // We enforce schema_version ourselves too, but require the rest
+  mustHave(payload, "signature_trait");
   mustHave(payload, "header");
   mustHave(payload, "pill_meta");
   mustHave(payload, "short_options");
@@ -274,9 +312,42 @@ export async function generateBirdDossier(
   Output JSON only, matching the template exactly.
 `.trim();
 
+const SIGNATURE_TRAIT_INSTRUCTION = `
+Step 1:
+Choose exactly ONE dominant defining trait of this species
+(visual, acoustic, behavioral, or ecological).
+Output it as "signature_trait" in Hungarian (1 concise sentence).
+
+Step 2:
+Write header.short_summary and both long_paragraphs
+so that they consistently center around this signature_trait.
+Do not switch dominant focus mid-text.
+
+short_options:
+- exactly 3 standalone sentences
+- 90–170 characters
+- each must use a different identification axis
+(silhouette / plumage / sound / behavior / habitat)
+- must end with a period.
+
+identification.key_features:
+- exactly 4 items
+- axis-diverse
+- practical for real identification
+
+Avoid generic filler phrases like:
+"különleges megjelenés",
+"könnyen felismerhető",
+"gyakran megtalálható".
+
+If uncertain about numeric ranges, use null.
+Avoid overly narrow ranges (false precision).
+`.trim();
+
+  const signaturePrompt = `${SIGNATURE_TRAIT_INSTRUCTION}\n\n${templatePrompt}`;
   const baseUserPrompt = reviewHint
-    ? `${templatePrompt}\n\n${reviewHint}`
-    : templatePrompt;
+    ? `${signaturePrompt}\n\n${reviewHint}`
+    : signaturePrompt;
 
   const runCompletion = async (prompt: string): Promise<CompletionResult> => {
     const messages: OpenAIChatMessage[] = [
@@ -356,6 +427,11 @@ export async function generateBirdDossier(
         const normalizedPayload = normalizeShortOptionsPayload(payload);
         const dossier = parseBirdDossier(normalizedPayload);
         runQualityGates(dossier, bird);
+        const signatureIssues = validateSignatureCoherence(dossier);
+
+        if (signatureIssues.length > 0) {
+          throw new AIQualityGateError(signatureIssues);
+        }
         dossier.header.name_hu = normalizeHungarianName(dossier.header.name_hu);
 
       const concatPrompt = `${SYSTEM_PROMPT}\n\n${prompt}`;
@@ -368,16 +444,41 @@ export async function generateBirdDossier(
         model: response.modelName ?? AI_MODEL_TEXT,
         generated_at: generatedAt,
       };
-    } catch (err) {
-      if (!(err instanceof ZodError) && !(err instanceof QualityGateError)) throw err;
+    } catch (caughtError) {
+      let issues: string[];
+      let failureLabel: string;
+      let repairHint: string;
 
-      const issues =
-        err instanceof ZodError
-          ? formatDossierValidationErrors(err)
-              .slice(0, 20)
-              .map((i) => `${i.path}: ${i.message}`)
-          : err.issues;
-      const failureLabel = err instanceof ZodError ? "Zod validation failed" : "quality gate failure";
+      if (caughtError instanceof ZodError) {
+        issues = formatDossierValidationErrors(caughtError)
+          .slice(0, 20)
+          .map((i) => `${i.path}: ${i.message}`);
+        failureLabel = "Zod validation failed";
+        repairHint = buildRepairHintFromZod(caughtError);
+      } else if (caughtError instanceof QualityGateError) {
+        issues = caughtError.issues;
+        failureLabel = "quality gate failure";
+        repairHint = buildQualityGateHint(caughtError);
+      } else if (caughtError instanceof AIQualityGateError) {
+        issues = caughtError.reasons;
+        failureLabel = "signature coherence failure";
+        repairHint = [
+          "Signature coherence gate failure. Keep every narrative block anchored to the signature_trait.",
+          ...caughtError.reasons.map((issue) => `- ${issue}`),
+        ].join("\n");
+      } else {
+        throw caughtError;
+      }
+
+      if (caughtError instanceof AIQualityGateError) {
+        repairHint += `
+Quality gate failures:
+${caughtError.reasons.join("\n")}
+Keep the same signature_trait but rewrite texts
+to consistently reflect it.
+Return valid JSON only.
+`;
+      }
 
       if (attempt === MAX_GENERATION_ATTEMPTS) {
         throw new AISchemaMismatchError(
@@ -390,8 +491,6 @@ export async function generateBirdDossier(
         );
       }
 
-      const repairHint =
-        err instanceof ZodError ? buildRepairHintFromZod(err) : buildQualityGateHint(err);
       const forcedPrompt = `${baseUserPrompt}\n\n${repairHint}\n\nOutput JSON only.`;
 
       const retry = await runCompletion(forcedPrompt);
@@ -423,6 +522,11 @@ export async function generateBirdDossier(
         const normalizedRetryPayload = normalizeShortOptionsPayload(retryPayload);
         const dossier = parseBirdDossier(normalizedRetryPayload);
         runQualityGates(dossier, bird);
+        const retrySignatureIssues = validateSignatureCoherence(dossier);
+
+        if (retrySignatureIssues.length > 0) {
+          throw new AIQualityGateError(retrySignatureIssues);
+        }
         dossier.header.name_hu = normalizeHungarianName(dossier.header.name_hu);
 
         const concatPrompt = `${SYSTEM_PROMPT}\n\n${forcedPrompt}`;
@@ -436,7 +540,12 @@ export async function generateBirdDossier(
           generated_at: generatedAt,
         };
       } catch (retryErr) {
-        if (!(retryErr instanceof ZodError) && !(retryErr instanceof QualityGateError)) throw retryErr;
+        if (
+          !(retryErr instanceof ZodError) &&
+          !(retryErr instanceof QualityGateError) &&
+          !(retryErr instanceof AIQualityGateError)
+        )
+          throw retryErr;
         // fall through to next loop attempt
       }
     }

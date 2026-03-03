@@ -159,7 +159,8 @@ const longParagraphsSchema = z
 
 export const birdDossierSchema = z
   .object({
-    schema_version: z.literal("v2.1"),
+    schema_version: z.literal("v2.2"),
+    signature_trait: z.string().min(12).max(200),
     header: headerSchema,
     pill_meta: pillMetaSchema,
     short_options: shortOptionsSchema,

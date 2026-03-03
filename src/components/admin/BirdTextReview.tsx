@@ -277,9 +277,9 @@ export default function BirdTextReview({
     : [];
 
   return (
-    <section className="space-y-4">
+    <section className="stack">
       <Card className="space-y-6">
-        <header className="flex flex-wrap items-start justify-between gap-4">
+        <header className="admin-header-row">
           <div>
             <div className="flex items-center gap-2 text-xs uppercase tracking-[0.4em] text-zinc-400">
               <Icon name="notes" size={14} className="text-zinc-400" />
@@ -315,27 +315,26 @@ export default function BirdTextReview({
                     })}
                   </span>
                 )}
-                <span
-                  className={`inline-flex items-center justify-center rounded-full px-3 py-1 text-[10px] font-semibold tracking-[0.4em] ${REVIEW_STATUS_BADGES[contentBlock.review_status]
-                    }`}
-                >
-                  {contentBlock.review_status}
-                </span>
-              </>
-            )}
-          </div>
+            <span
+              className={`admin-badge ${REVIEW_STATUS_BADGES[contentBlock.review_status]}`}
+            >
+              {contentBlock.review_status}
+            </span>
+          </>
+        )}
+      </div>
         </header>
 
         {!dossier ? (
-          <p className="rounded-[14px] border border-dashed border-white/10 bg-zinc-900/60 p-4 text-sm text-zinc-400">
+          <div className="admin-panel admin-panel--muted text-sm text-zinc-400">
             No dossier found yet. Run the generator (via quick add or the bird
             editor buttons) to seed the review flow.
-          </p>
+          </div>
         ) : (
           <>
             <div className="grid gap-4 md:grid-cols-2">
               <article
-                className="rounded-[14px] border border-white/5 bg-zinc-950/60 p-4"
+                className="admin-panel"
                 data-ui-section="dossier-scientific-name"
               >
                 <p className="text-xs uppercase tracking-[0.3em] text-zinc-400">
@@ -349,7 +348,7 @@ export default function BirdTextReview({
                 </p>
               </article>
             <article
-              className="rounded-[14px] border border-white/5 bg-zinc-950/60 p-4"
+              className="admin-panel"
               data-ui-section="dossier-summary-text"
             >
               <div className="flex items-start justify-between gap-3">
@@ -375,10 +374,7 @@ export default function BirdTextReview({
 
             <div className="grid gap-4 md:grid-cols-3">
               {pillMetaItems.map((item) => (
-                <article
-                  key={item.label}
-                  className="rounded-[14px] border border-white/5 bg-zinc-950/60 p-4"
-                >
+              <article key={item.label} className="admin-panel">
                   <p className="text-[10px] uppercase tracking-[0.3em] text-zinc-400">
                     {item.label}
                   </p>
@@ -389,7 +385,7 @@ export default function BirdTextReview({
 
             <div className="grid gap-4">
               <article
-                className="rounded-[14px] border border-white/5 bg-white/5 p-4"
+                className="admin-panel admin-panel--muted"
                 data-ui-section="dossier-short-options"
               >
                 <p className="text-xs uppercase tracking-[0.3em] text-zinc-400">
@@ -407,7 +403,7 @@ export default function BirdTextReview({
                 </ol>
               </article>
               <article
-                className="rounded-[14px] border border-white/5 bg-white/5 p-4"
+                className="admin-panel admin-panel--muted"
                 data-ui-section="dossier-long-paragraphs"
               >
                 <div className="flex items-start justify-between gap-3">
@@ -434,7 +430,7 @@ export default function BirdTextReview({
             </div>
 
             <article
-              className="rounded-[14px] border border-white/5 bg-zinc-950/60 p-4"
+              className="admin-panel"
               data-ui-section="dossier-identification"
             >
               <div className="flex items-start justify-between gap-3">
@@ -454,10 +450,10 @@ export default function BirdTextReview({
               </div>
               <div className="mt-3 grid gap-3 md:grid-cols-2">
                 {dossier.identification.key_features.map((feature, index) => (
-                  <article
-                    key={`${feature.title}-${index}`}
-                    className="rounded-xl border border-white/10 bg-white/5 p-3"
-                  >
+                <article
+                  key={`${feature.title}-${index}`}
+                  className="admin-panel admin-panel--muted"
+                >
                     <p className="text-[10px] uppercase tracking-[0.4em] text-zinc-500">
                       {feature.title}
                     </p>
@@ -473,7 +469,7 @@ export default function BirdTextReview({
             </article>
 
             <article
-              className="rounded-[14px] border border-white/5 bg-zinc-950/60 p-4"
+              className="admin-panel"
               data-ui-section="dossier-distribution"
             >
               <p className="text-xs uppercase tracking-[0.3em] text-zinc-400">
@@ -527,7 +523,7 @@ export default function BirdTextReview({
             </article>
 
             <div className="grid gap-4 md:grid-cols-2">
-              <article className="rounded-[14px] border border-white/5 bg-zinc-950/60 p-4">
+              <article className="admin-panel">
                 <p className="text-xs uppercase tracking-[0.3em] text-zinc-400">
                   Nesting
                 </p>
@@ -558,7 +554,7 @@ export default function BirdTextReview({
                   {dossier.nesting.nesting_note}
                 </p>
               </article>
-              <article className="rounded-[14px] border border-white/5 bg-zinc-950/60 p-4">
+              <article className="admin-panel">
                 <p className="text-xs uppercase tracking-[0.3em] text-zinc-400">
                   Migration
                 </p>
@@ -584,7 +580,7 @@ export default function BirdTextReview({
 
             <div className="grid gap-4 md:grid-cols-3">
               <article
-                className="rounded-[14px] border border-white/5 bg-zinc-950/60 p-4"
+                className="admin-panel"
                 data-ui-section="dossier-fun-fact"
               >
                 <div className="flex items-start justify-between gap-3">
@@ -605,7 +601,7 @@ export default function BirdTextReview({
                 <p className="mt-2 text-sm text-zinc-200">{dossier.fun_fact}</p>
               </article>
               <article
-                className="rounded-[14px] border border-white/5 bg-zinc-950/60 p-4"
+                className="admin-panel"
                 data-ui-section="dossier-ethics-tip"
               >
                 <p className="text-xs uppercase tracking-[0.3em] text-zinc-400">
@@ -614,7 +610,7 @@ export default function BirdTextReview({
                 <p className="mt-2 text-sm text-zinc-200">{dossier.ethics_tip}</p>
               </article>
               <article
-                className="rounded-[14px] border border-white/5 bg-zinc-950/60 p-4"
+                className="admin-panel"
                 data-ui-section="dossier-typical-places"
               >
                 <p className="text-xs uppercase tracking-[0.3em] text-zinc-400">
@@ -635,7 +631,7 @@ export default function BirdTextReview({
             </div>
 
             {reviewComment && (
-              <blockquote className="rounded-[14px] border border-[#F1A11E]/30 bg-[#F1A11E]/10 p-4 text-sm text-[#F1A11E]">
+            <blockquote className="admin-review-note">
                 <p className="text-xs uppercase tracking-[0.3em] text-[#F1A11E]/70">
                   Last review note
                 </p>

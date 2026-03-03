@@ -9,8 +9,8 @@ export type CardProps = {
 };
 
 const SIZE_CLASSES: Record<CardSize, string> = {
-  standard: "rounded-[16px] border border-white/10 bg-zinc-900/50 shadow-[var(--shadow)] p-6",
-  compact: "rounded-[16px] border border-white/10 bg-zinc-900/50 shadow-[var(--shadow)] p-4",
+  standard: "admin-card",
+  compact: "admin-card admin-card--compact",
 };
 
 export function Card({ children, size = "standard", className }: CardProps) {
