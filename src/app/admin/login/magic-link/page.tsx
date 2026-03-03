@@ -4,10 +4,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
-export const metadata = {
-  title: "Magic link — Szarnyfeszito",
-};
-
 export default function MagicLinkCallbackPage() {
   const router = useRouter();
   const [status, setStatus] = useState<"verifying" | "error">("verifying");
