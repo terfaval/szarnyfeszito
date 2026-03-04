@@ -497,7 +497,7 @@ svg {
   letter-spacing: 0.22em;
   text-transform: uppercase;
   font-weight: 600;
-  color: var(--foreground);
+  color: #fff;
   text-decoration: none;
   transition: color 0.2s ease, background 0.2s ease;
 }
