@@ -15,7 +15,7 @@ export function AdminShell({
   action,
 }: AdminShellProps) {
   return (
-    <div className="min-h-screen bg-zinc-950 text-white">
+    <div className="admin-shell-canvas">
       <div className="admin-shell">
         <AdminTopBar action={action} />
         <div className="space-y-6">

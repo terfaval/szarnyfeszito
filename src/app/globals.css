@@ -6,8 +6,8 @@
   --panel: rgba(5, 118, 141, 0.14);
   --panel-2: #fffdf8;
   --input-bg: rgba(5, 118, 141, 0.08);
-  --text: #05768d;
-  --text-alt: #be2d12;
+  --text: #be2d12;
+  --text-alt: #05768d;
   --muted: rgba(5, 118, 141, 0.6);
   --line: rgba(5, 118, 141, 0.25);
   --focus-ring: rgba(219, 146, 33, 0.5);
@@ -15,7 +15,7 @@
   --page-bg-image: url("/backgrounds/desktop_default.png");
   --page-scrim: linear-gradient(180deg, rgba(246, 239, 225, 0) 0%, rgba(246, 239, 225, 0.95) 85%);
   --brand-ink: #05768d;
-  --brand-paper: #f6efe1;
+  --brand-paper: #FAE7C6;
   --brand-accent: #db9221;
   --brand-warm: #be2d12;
   --background: var(--bg);
@@ -24,16 +24,13 @@
   --shell-side-pad: 24px;
   --font-display: "Rubik", "Segoe UI", system-ui, sans-serif;
   --font-body: "Roboto", "Source Serif Pro", "Times New Roman", serif;
-}
-
-@theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-display);
   --font-mono: var(--font-body);
 }
 
-*,
+ *,
 *::before,
 *::after {
   box-sizing: border-box;
@@ -140,6 +137,12 @@ svg {
 /* -------------------------------------------------------------------
    Admin helpers (per UI_DESIGN_STOCK: shared tokens)
    ------------------------------------------------------------------- */
+
+.admin-shell-canvas {
+  min-height: 100vh;
+  background: var(--background);
+  color: var(--foreground);
+}
 
 .admin-shell {
   display: flex;
