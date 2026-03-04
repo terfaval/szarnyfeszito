@@ -550,12 +550,23 @@ export default function BirdTextReview({
     );
   };
 
-  const pillMetaItems = dossier
+  const physicalPills = dossier
     ? [
+        {
+          label: "Lifespan",
+          value: formatRange(dossier.pill_meta.lifespan_years, "év"),
+        },
         { label: "Size", value: formatRange(dossier.pill_meta.size_cm) },
         { label: "Wingspan", value: formatRange(dossier.pill_meta.wingspan_cm) },
-        { label: "Diet", value: dossier.pill_meta.diet_short },
-        { label: "Lifespan", value: formatRange(dossier.pill_meta.lifespan_years, "év") },
+      ]
+    : [];
+
+  const dietPills = dossier
+    ? [
+        {
+          label: "Diet",
+          value: dossier.pill_meta.diet_short || "Pending",
+        },
       ]
     : [];
 
@@ -642,12 +653,26 @@ export default function BirdTextReview({
                     "Region teaser is pending generation."}
                 </p>
                 <div className={styles.statPills}>
-                  {pillMetaItems.map((item) => (
-                    <div key={item.label} className={styles.statPill}>
-                      <span className={styles.statLabel}>{item.label}</span>
-                      <span className={styles.statValue}>{item.value}</span>
+                  {physicalPills.length > 0 && (
+                    <div className={styles.statRow}>
+                      {physicalPills.map((item) => (
+                        <div key={item.label} className={styles.statPill}>
+                          <span className={styles.statLabel}>{item.label}</span>
+                          <span className={styles.statValue}>{item.value}</span>
+                        </div>
+                      ))}
                     </div>
-                  ))}
+                  )}
+                  {dietPills.length > 0 && (
+                    <div className={`${styles.statRow} ${styles.statRowDiet}`}>
+                      {dietPills.map((item) => (
+                        <div key={item.label} className={styles.statPill}>
+                          <span className={styles.statLabel}>{item.label}</span>
+                          <span className={styles.statValue}>{item.value}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

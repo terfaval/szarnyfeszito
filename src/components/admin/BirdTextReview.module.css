@@ -157,9 +157,11 @@
 
 .regionRow {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 1rem;
   margin-top: 1.5rem;
+  align-items: stretch;
+  grid-auto-rows: minmax(0, 1fr);
 }
 
 .mapColumn {
@@ -201,8 +203,21 @@
 
 .statPills {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: 0.5rem;
+  width: 100%;
+}
+
+.statRow {
+  display: flex;
+  gap: 0.75rem;
+  align-items: stretch;
+  width: 100%;
+  flex-wrap: wrap;
+}
+
+.statRowDiet {
+  justify-content: space-between;
 }
 
 .statPill {
@@ -214,6 +229,7 @@
   flex-direction: column;
   gap: 0.1rem;
   min-width: 120px;
+  flex: 1;
 }
 
 .statLabel {

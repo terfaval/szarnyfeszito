@@ -3,13 +3,13 @@
 
 :root {
   --bg: #f6efe1;
-  --panel: rgba(5, 118, 141, 0.14);
+  --panel: #FAE7C6;
   --panel-2: #fffdf8;
   --input-bg: rgba(5, 118, 141, 0.08);
-  --text: #be2d12;
+  --text: #000000;
   --text-alt: #05768d;
   --muted: rgba(5, 118, 141, 0.6);
-  --line: rgba(5, 118, 141, 0.25);
+  --line: #db9221;
   --focus-ring: rgba(219, 146, 33, 0.5);
   --shadow: 0 20px 40px rgba(7, 12, 25, 0.35);
   --page-bg-image: url("/backgrounds/desktop_default.png");
