@@ -69,6 +69,7 @@ export type BirdDossierV2 = {
   nesting: BirdDossierNesting;
   migration: BirdDossierMigration;
   fun_fact: string;
+  did_you_know: string;
   ethics_tip: string;
   typical_places: string[];
 };

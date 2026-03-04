@@ -170,6 +170,7 @@ export const birdDossierSchema = z
     nesting: nestingSchema,
     migration: migrationSchema,
     fun_fact: trimmedString(),
+    did_you_know: trimmedString(),
     ethics_tip: trimmedString(),
     typical_places: z.array(trimmedString()).min(1, "Include at least one typical place."),
   })
