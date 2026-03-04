@@ -12,6 +12,10 @@ const VALID_CATEGORIES: Record<ActivityType, string[]> = {
   running: ["run"],
 };
 
+function isActivityType(value: unknown): value is ActivityType {
+  return typeof value === "string" && VALID_TYPES.includes(value as ActivityType);
+}
+
 function buildMonthFilters(month?: string) {
   if (!month) {
     return {};
@@ -64,11 +68,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const body = await request.json().catch(() => ({}));
+  const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;
   const {
     date,
-    activityType,
-    category,
+    activityType: activityTypeRaw,
+    category: categoryRaw,
     label,
     exerciseId,
     durationMinutes,
@@ -80,10 +84,9 @@ export async function POST(request: Request) {
 
   if (
     !date ||
-    !activityType ||
     !label ||
-    !category ||
-    !VALID_TYPES.includes(activityType)
+    !isActivityType(activityTypeRaw) ||
+    typeof categoryRaw !== "string"
   ) {
     return NextResponse.json(
       { error: "date, activityType, category and label are required." },
@@ -91,7 +94,10 @@ export async function POST(request: Request) {
     );
   }
 
-  if (!VALID_CATEGORIES[activityType].includes(category)) {
+  const activityType = activityTypeRaw;
+  const category = categoryRaw;
+
+  if (!VALID_CATEGORIES[activityType].includes(category as string)) {
     return NextResponse.json(
       { error: `Invalid category for ${activityType}.` },
       { status: 400 }
