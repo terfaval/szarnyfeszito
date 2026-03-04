@@ -191,7 +191,7 @@ const parseHungarianSites = (places: string[]): HungarianSite[] =>
   places
     .filter(Boolean)
     .map((value) => {
-      const [name, ...rest] = value.split(/[–-:]/);
+      const [name, ...rest] = value.split(/[–\-:]/);
       const description = rest.join(" ").trim() || value;
 
       return {
