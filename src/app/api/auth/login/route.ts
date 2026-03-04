@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
   }
 
   setAdminSessionCookies(
-    response,
+    response.cookies,
     session.access_token,
     session.refresh_token,
     session.expires_in ?? 60 * 60

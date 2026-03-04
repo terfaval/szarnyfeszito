@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
 
   const response = NextResponse.json({ success: true, user });
   setAdminSessionCookies(
-    response,
+    response.cookies,
     accessToken,
     refreshToken,
     expiresIn || 60 * 60
