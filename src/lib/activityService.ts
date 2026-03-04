@@ -58,7 +58,7 @@ export async function upsertActivityLog(payload: ActivityLogPayload) {
         notes: payload.notes ?? null,
         metadata: payload.metadata ?? null,
       },
-      { onConflict: ["date", "activity_type"] }
+      { onConflict: "date,activity_type" }
     )
     .select()
     .single();

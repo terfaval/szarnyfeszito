@@ -16,6 +16,18 @@ function isActivityType(value: unknown): value is ActivityType {
   return typeof value === "string" && VALID_TYPES.includes(value as ActivityType);
 }
 
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+
+  if (Array.isArray(value)) {
+    return false;
+  }
+
+  return true;
+}
+
 function buildMonthFilters(month?: string) {
   if (!month) {
     return {};
@@ -99,8 +111,9 @@ export async function POST(request: Request) {
   const date = dateRaw;
   const label = labelRaw;
   const safeExerciseId = typeof exerciseId === "string" ? exerciseId : null;
+  const safeMetadata = isPlainObject(metadata) ? (metadata as Record<string, unknown>) : null;
 
-  if (!VALID_CATEGORIES[activityType].includes(category as string)) {
+  if (!VALID_CATEGORIES[activityType].includes(category)) {
     return NextResponse.json(
       { error: `Invalid category for ${activityType}.` },
       { status: 400 }
@@ -119,7 +132,7 @@ export async function POST(request: Request) {
       typeof distanceKm === "number" ? distanceKm : null,
     intensity: typeof intensity === "number" ? intensity : null,
     notes: typeof notes === "string" ? notes : null,
-    metadata: metadata ?? null,
+    metadata: safeMetadata,
   });
 
   return NextResponse.json({ data: log }, { status: 201 });
