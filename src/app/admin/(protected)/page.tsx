@@ -39,13 +39,11 @@ export default async function AdminPage() {
         <div className="admin-stat-grid">
           {BIRD_STATUS_VALUES.map((status) => (
             <article key={status} className="admin-stat-card">
-              <p className="text-xs uppercase tracking-[0.35em] text-zinc-500">
-                {status}
-              </p>
-              <p className="text-3xl font-semibold text-white">
+              <p className="admin-stat-label">{status}</p>
+              <p className="admin-stat-count">
                 {statusCounts[status] ?? 0}
               </p>
-              <p className="text-xs text-zinc-500">
+              <p className="admin-stat-note">
                 {status === "draft"
                   ? "New birds awaiting text"
                   : status === "text_generated"
@@ -64,22 +62,22 @@ export default async function AdminPage() {
 
         <div className="grid gap-4 md:grid-cols-3">
           <Link className="admin-link-card stack" href="/admin/birds">
-            Manage Birds
-            <span className="mt-2 block text-xs text-zinc-300">
+            <p className="admin-link-card__title">Manage Birds</p>
+            <p className="admin-link-card__description">
               Explore list, editors, and pipeline states.
-            </span>
+            </p>
           </Link>
 
           <article className="admin-stat-card">
-            <p className="admin-heading__label">Places</p>
-            <p className="text-3xl font-semibold text-white">0</p>
-            <p className="admin-note-small">CRUD coming soon (see T101).</p>
+            <p className="admin-stat-label">Places</p>
+            <p className="admin-stat-count">0</p>
+            <p className="admin-stat-note">CRUD coming soon (see T101).</p>
           </article>
 
           <article className="admin-stat-card">
-            <p className="admin-heading__label">Phenomena</p>
-            <p className="text-3xl font-semibold text-white">0</p>
-            <p className="admin-note-small">Pending T102/T105 work.</p>
+            <p className="admin-stat-label">Phenomena</p>
+            <p className="admin-stat-count">0</p>
+            <p className="admin-stat-note">Pending T102/T105 work.</p>
           </article>
         </div>
       </Card>
@@ -99,7 +97,7 @@ export default async function AdminPage() {
 
         <div className="space-y-3">
           {recentBirds.length === 0 && (
-            <p className="text-sm text-zinc-400">
+            <p className="admin-stat-note">
               No birds have been created yet. Use the Birds page to add the
               first entry.
             </p>
@@ -112,7 +110,7 @@ export default async function AdminPage() {
               className="admin-list-link"
             >
               <div className="admin-list-details">
-                <p className="text-lg font-semibold text-white">{bird.name_hu}</p>
+                <p className="admin-list-title">{bird.name_hu}</p>
                 <p className="admin-list-meta">{bird.slug}</p>
                 <p className="admin-list-date">
                   Updated{" "}

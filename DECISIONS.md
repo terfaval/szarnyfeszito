@@ -132,3 +132,12 @@ Indok: ez teszi lehetővé a szigorú validálást, a generációk verifikálás
 
 - Every F3 (Build) engagement that touches implementation code — especially any high-impact or “really big” change — must simultaneously plan, trigger, and document the corresponding F4 (Check) work before the change is closed, so the audit workflow always shows the validation evidence alongside the build.
 - Indok: This guarantees that important implementations stay traceable in the repo and that the agent never leaves automation or manual validation undocumented, matching the request to keep F3 and F4 coupled.
+
+---
+
+## D16 â€“ Admin-only Activity journaling surface
+
+- The Yoga surface is exposed at `/admin/yoga`, added to the admin nav, and guarded by `getAdminUserFromCookies` so Explorer never sees it, and it now documents four activity types (yoga, strength, acl, running).
+- A generalized `activity_logs` table persists daily entries with `(date, activity_type)` uniqueness; columns include `category`, `label`, `exercise_id`, `duration_minutes`, `distance_km`, `intensity`, `notes`, and optional `metadata`. Logs are upserted via the authenticated `/api/activity-logs` GET/POST endpoints.
+- The frontend consumes static metadata lists (yoga library, ACL routines, strength workouts, running defaults) plus live logs to build dropdowns and card selectors; each saved row is treated as the canonical payload for rendering the weekly selector, dropdown states, and monthly grid so semantics stay centralized in Studio.
+- Indok: this keeps the expanded journaling surface within the Studio guardrails, reuses the existing auth/API flow, and keeps Explorer-free until the feature is finalized while producing a structured activity contract for future Explorer consumers.

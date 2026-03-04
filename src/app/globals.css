@@ -3,8 +3,8 @@
 
 :root {
   --bg: #f6efe1;
-  --panel: #FAE7C6;
-  --panel-2: #fffdf8;
+  --panel: #FCEFD8;
+  --panel-2: #FAE7C6;
   --input-bg: rgba(5, 118, 141, 0.08);
   --text: #000000;
   --text-alt: #05768d;
@@ -327,7 +327,7 @@ svg {
 }
 
 .admin-nav-link {
-  color: var(--brand-warm);
+  color: var(--brand-ink);
   font-size: 0.75rem;
   letter-spacing: 0.25em;
   text-transform: uppercase;
@@ -340,7 +340,7 @@ svg {
 
 .admin-nav-link:hover,
 .admin-nav-link:focus-visible {
-  color: var(--brand-ink);
+  color: var(--brand-warm);
   border-color: var(--line);
 }
 
@@ -396,7 +396,7 @@ svg {
 .admin-heading__title {
   font-size: 1.75rem;
   font-weight: 600;
-  color: var(--foreground);
+  color: var(--brand-warm);
 }
 
 .admin-heading__title--large {
@@ -405,7 +405,7 @@ svg {
 
 .admin-heading__description {
   font-size: 0.95rem;
-  color: rgba(255, 255, 255, 0.65);
+  color: var(--brand-ink);
 }
 
 .admin-stat-grid {
@@ -416,29 +416,65 @@ svg {
 
 .admin-stat-card {
   border-radius: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--line);
+  background: var(--panel);
   padding: 1rem;
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
+  color: var(--text);
+}
+
+.admin-stat-label {
+  margin: 0;
+  font-size: 0.65rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--brand-ink);
+}
+
+.admin-stat-count {
+  margin: 0.35rem 0;
+  font-size: 2rem;
+  font-weight: 600;
+  color: var(--brand-warm);
+}
+
+.admin-stat-note {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--brand-ink);
 }
 
 .admin-link-card {
   border-radius: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--line);
+  background: var(--panel);
   padding: 1rem;
   display: flex;
   flex-direction: column;
   cursor: pointer;
   text-decoration: none;
-  color: var(--foreground);
+  color: var(--text);
+  gap: 0.25rem;
 }
 
 .admin-link-card:hover,
 .admin-link-card:focus-visible {
-  border-color: rgba(255, 255, 255, 0.5);
+  border-color: var(--brand-ink);
+}
+
+.admin-link-card__title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--brand-warm);
+}
+
+.admin-link-card__description {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--brand-ink);
 }
 
 .admin-subheading {
@@ -450,7 +486,7 @@ svg {
 
 .admin-note-small {
   font-size: 0.75rem;
-  color: var(--muted);
+  color: var(--brand-ink);
 }
 
 .admin-inline-actions {
@@ -504,8 +540,8 @@ svg {
   gap: 1rem;
   padding: 1rem;
   border-radius: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--line);
+  background: var(--panel);
   text-decoration: none;
   color: inherit;
   transition: border-color 0.2s ease;
@@ -513,7 +549,14 @@ svg {
 
 .admin-list-link:hover,
 .admin-list-link:focus-visible {
-  border-color: rgba(255, 255, 255, 0.4);
+  border-color: var(--brand-ink);
+}
+
+.admin-list-title {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--brand-warm);
 }
 
 .admin-list-details {
@@ -524,14 +567,14 @@ svg {
 
 .admin-list-meta {
   font-size: 0.85rem;
-  color: var(--muted);
+  color: var(--brand-ink);
   letter-spacing: 0.3em;
   text-transform: uppercase;
 }
 
 .admin-list-date {
   font-size: 0.85rem;
-  color: var(--muted);
+  color: var(--brand-ink);
 }
 
 .admin-list-action {
@@ -539,39 +582,19 @@ svg {
   align-items: center;
   justify-content: center;
   border-radius: 9999px;
-  border: 1px solid rgba(255, 255, 255, 0.25);
+  border: 1px solid var(--line);
   padding: 0.3rem 0.85rem;
   letter-spacing: 0.2em;
   font-size: 0.7rem;
   text-transform: uppercase;
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--brand-paper);
+  color: var(--brand-warm);
 }
 
 @media (min-width: 1024px) {
   .admin-filter-row {
     flex-direction: row;
   }
-}
-
-.admin-nav-link {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.35rem 0.9rem;
-  border-radius: 9999px;
-  font-size: 0.7rem;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  font-weight: 600;
-  color: #fff;
-  text-decoration: none;
-  transition: color 0.2s ease, background 0.2s ease;
-}
-
-.admin-nav-link:hover,
-.admin-nav-link:focus-visible {
-  color: #fff;
-  background: rgba(255, 255, 255, 0.12);
 }
 
 .admin-badge {
@@ -718,4 +741,342 @@ svg {
 .status-pill--published {
   border-color: rgba(52, 211, 153, 0.6);
   color: #5eead4;
+}
+
+/* Utility */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}
+
+/* Yoga page */
+.yoga-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.yoga-week-card {
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 1.5rem;
+  box-shadow: 0 20px 40px rgba(5, 118, 141, 0.15);
+}
+
+.yoga-week-days {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+  gap: 0.75rem;
+}
+
+.yoga-week-day {
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.02);
+  padding: 0.75rem;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.2s ease, transform 0.2s ease;
+}
+
+.yoga-week-day--active {
+  border-color: var(--brand-warm);
+  transform: translateY(-2px);
+}
+
+.yoga-week-day__weekday {
+  display: block;
+  font-size: 0.6rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.yoga-week-day__number {
+  font-size: 1.2rem;
+  font-weight: 600;
+  display: block;
+  color: var(--brand-warm);
+}
+
+.yoga-week-day__dots {
+  display: flex;
+  justify-content: center;
+  gap: 0.25rem;
+  margin-top: 0.35rem;
+}
+
+.yoga-week-day__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-flex;
+}
+
+.yoga-week-day__today {
+  display: block;
+  font-size: 0.65rem;
+  color: var(--brand-ink);
+  margin-top: 0.35rem;
+}
+
+.yoga-activity-grid {
+  margin-top: 1.5rem;
+  display: grid;
+  gap: 1rem;
+}
+
+.yoga-activity-card {
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.03);
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.yoga-activity-card--split {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.yoga-activity-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.yoga-activity-label {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.yoga-activity-sub {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--muted);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.yoga-activity-info {
+  font-size: 0.85rem;
+  color: var(--brand-ink);
+}
+
+.yoga-add-button {
+  align-self: flex-start;
+  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--brand-ink);
+}
+
+.yoga-new-form {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.02);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.yoga-new-form__row {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.yoga-intensity {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.yoga-intensity__star {
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: transparent;
+  padding: 0.25rem;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.yoga-intensity__star--active {
+  border-color: var(--brand-accent);
+  color: var(--brand-accent);
+}
+
+.yoga-category-switch {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.yoga-category-switch .btn {
+  padding-inline: 1rem;
+}
+
+.yoga-activity-grid--cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1rem;
+}
+
+.yoga-subgrid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.yoga-subgrid__label {
+  font-size: 0.75rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0;
+}
+
+.yoga-subcard {
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  padding: 0.75rem;
+  background: rgba(0, 0, 0, 0);
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.yoga-subcard--active {
+  border-color: var(--brand-accent);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.yoga-subcard__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.yoga-subcard ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.8rem;
+}
+
+.yoga-subcard li {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.yoga-run-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1rem;
+}
+
+.yoga-activity-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.yoga-status {
+  font-size: 0.85rem;
+  color: #22c55e;
+}
+
+.yoga-error {
+  font-size: 0.85rem;
+  letter-spacing: 0;
+  color: #fb7185;
+}
+
+.yoga-month-card {
+  border-radius: 18px;
+  padding: 1.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 20px 40px rgba(5, 118, 141, 0.15);
+}
+
+.yoga-month-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.yoga-month-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.yoga-month-weekday {
+  font-size: 0.65rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  text-align: center;
+  color: var(--muted);
+}
+
+.yoga-month-day {
+  border-radius: 14px;
+  border: 1px dashed rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.02);
+  padding: 0.75rem;
+  min-height: 100px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.75rem;
+  text-align: center;
+}
+
+.yoga-month-day--empty {
+  border: none;
+  background: transparent;
+}
+
+.yoga-month-day--logged {
+  border-style: solid;
+}
+
+.yoga-month-day--today {
+  border-color: var(--brand-warm);
+}
+
+.yoga-month-day__number {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--brand-warm);
+}
+
+.yoga-month-day__badges {
+  display: flex;
+  justify-content: center;
+  gap: 0.35rem;
+}
+
+.yoga-month-day__badge {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
 }
