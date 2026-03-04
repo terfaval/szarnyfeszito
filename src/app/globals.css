@@ -18,6 +18,10 @@
   --brand-paper: #FAE7C6;
   --brand-accent: #db9221;
   --brand-warm: #be2d12;
+  --brand-ink-rgb: 5, 118, 141;
+  --brand-accent-rgb: 219, 146, 33;
+  --brand-warm-rgb: 190, 45, 18;
+  --text-rgb: 190, 45, 18;
   --background: var(--bg);
   --foreground: var(--text);
   --shell-main-max: 1120px;
@@ -273,10 +277,11 @@ svg {
 
 .admin-topbar {
   border-radius: 18px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(255, 255, 255, 0.05);
-  box-shadow: var(--shadow);
+  border: 1px solid var(--line);
+  background: transparent;
   padding: 0.9rem 1rem;
+  box-shadow: 0 30px 40px rgba(5, 118, 141, 0.12);
+  color: var(--brand-warm);
 }
 
 .admin-topbar__inner {
@@ -295,8 +300,23 @@ svg {
   flex: 1 1 auto;
 }
 
+.admin-topbar__logo {
+  border-radius: 50%;
+  border: 1px solid transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.35rem;
+  transition: border-color 0.2s ease;
+}
+
+.admin-topbar__logo:hover,
+.admin-topbar__logo:focus-visible {
+  border-color: var(--brand-ink);
+}
+
 .admin-topbar__logo-img {
-  filter: brightness(0) saturate(100%) invert(1);
+  filter: none;
 }
 
 .admin-topbar__nav {
@@ -304,6 +324,49 @@ svg {
   flex-wrap: wrap;
   gap: 0.75rem;
   align-items: center;
+}
+
+.admin-nav-link {
+  color: var(--brand-warm);
+  font-size: 0.75rem;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  font-weight: 600;
+  padding: 0.35rem 0.85rem;
+  border-radius: 9999px;
+  border: 1px solid transparent;
+  transition: border-color 0.2s ease, color 0.2s ease;
+}
+
+.admin-nav-link:hover,
+.admin-nav-link:focus-visible {
+  color: var(--brand-ink);
+  border-color: var(--line);
+}
+
+.admin-topbar__logout-button {
+  border-radius: 9999px;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--brand-warm);
+  font-size: 0.65rem;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  padding: 0.35rem 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.2s ease, color 0.2s ease;
+}
+
+.admin-topbar__logout-button:hover,
+.admin-topbar__logout-button:focus-visible {
+  border-color: var(--brand-ink);
+  color: var(--brand-ink);
+}
+
+.admin-topbar__logout-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .admin-shell__grid {

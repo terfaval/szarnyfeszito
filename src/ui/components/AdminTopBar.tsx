@@ -23,14 +23,15 @@ export function AdminTopBar({ action }: AdminTopBarProps) {
         <div className="admin-topbar__brand">
           <Link
             href="/admin"
-            className="flex h-14 w-14 items-center justify-center rounded-full border border-transparent bg-zinc-900/70 transition hover:border-white/30"
+            className="admin-topbar__logo"
+            aria-label="Return to admin home"
           >
             <Image
               src="/logo.svg"
               alt="Szárnyfeszítő"
               width={48}
               height={48}
-              className="h-12 w-12 admin-topbar__logo-img"
+              className="admin-topbar__logo-img"
             />
           </Link>
           <nav className="admin-topbar__nav" aria-label="Admin sections">

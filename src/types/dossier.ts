@@ -38,6 +38,7 @@ export type BirdDossierTaxonomy = {
 export type BirdDossierDistribution = {
   taxonomy: BirdDossierTaxonomy;
   iucn_status: string | null;
+  iucn_note?: string | null;
   distribution_regions: string[];
   distribution_note: string;
 };

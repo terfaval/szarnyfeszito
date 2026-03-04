@@ -317,6 +317,11 @@ export default function BirdTextReview({
     styles[
       `vulnerability${capitalizeFirstLetter(vulnerabilityVariant)}`
     ] ?? styles.vulnerabilityUnknown;
+  const vulnerabilityNote =
+    dossier?.distribution.iucn_note?.trim() ||
+    dossier?.distribution.distribution_note ||
+    dossier?.distribution.iucn_status ||
+    "IUCN note pending";
   const hungarianSites = useMemo(
     () => parseHungarianSites(dossier?.typical_places ?? []),
     [dossier?.typical_places]
@@ -577,32 +582,34 @@ export default function BirdTextReview({
           <>
             <header className={styles.header}>
               <div className={styles.headerText}>
-                <p className={styles.tag}>Text dossier</p>
                 <h1 className={styles.birdTitle}>{dossier.header.name_hu}</h1>
                 <p className={styles.subtitle}>{dossier.header.subtitle}</p>
                 <div className={`${styles.summaryWrapper} ${styles.reviewable}`}>
+                  <div className={styles.summaryHeader}>
+                    <p className={styles.summaryLabel}>Short summary</p>
+                    <div className={styles.reviewButtons}>
+                      <button
+                        type="button"
+                        className={styles.iconButton}
+                        onClick={() => beginEditing("short", editableContent.short)}
+                        aria-label="Manually edit short summary"
+                      >
+                        <Icon name="edit" size={16} />
+                      </button>
+                      <button
+                        type="button"
+                        className={styles.iconButton}
+                        onClick={() => openOverlay("short_summary")}
+                        aria-label="Request review note for short summary"
+                      >
+                        <Icon name="generate" size={16} />
+                      </button>
+                    </div>
+                  </div>
                   <p className={styles.summaryText}>
                     {dossier.header.short_summary ||
                       "The summary will populate once the dossier is generated."}
                   </p>
-                  <div className={styles.reviewButtons}>
-                    <button
-                      type="button"
-                      className={styles.iconButton}
-                      onClick={() => beginEditing("short", editableContent.short)}
-                      aria-label="Manually edit short summary"
-                    >
-                      <Icon name="edit" size={16} />
-                    </button>
-                    <button
-                      type="button"
-                      className={styles.iconButton}
-                      onClick={() => openOverlay("short_summary")}
-                      aria-label="Request review note for short summary"
-                    >
-                      <Icon name="generate" size={16} />
-                    </button>
-                  </div>
                 </div>
                 {renderEditor(
                   "short",
@@ -611,10 +618,10 @@ export default function BirdTextReview({
                 )}
               </div>
 
-              <div className={styles.headerExtras}>
-                {habitatIcon && (
-                  <div className={styles.habitat}>
-                    <img
+                <div className={styles.headerExtras}>
+                  {habitatIcon && (
+                    <div className={styles.habitat}>
+                      <img
                       src={habitatIcon.icon}
                       alt={`${habitatIcon.label} habitat icon`}
                       className={styles.habitatIcon}
@@ -624,8 +631,10 @@ export default function BirdTextReview({
                     </span>
                   </div>
                 )}
-                <span className={`${styles.vulnerabilityPill} ${vulnerabilityClass}`}>
-                  {vulnerabilityLabel}
+                <span
+                  className={`${styles.vulnerabilityPill} ${vulnerabilityClass}`}
+                >
+                  {vulnerabilityNote}
                 </span>
                 <span className={`text-[11px] text-zinc-500 ${styles.statusBadge}`}>
                   {contentBlock?.review_status}
@@ -635,23 +644,18 @@ export default function BirdTextReview({
 
             <div className={styles.regionRow}>
               <div className={styles.mapColumn}>
-                <p className={styles.mapLabel}>Global range</p>
+                <p className={styles.mapLabel}>Elterjedés</p>
                 <div className={styles.mapPlaceholder}>
                   <span>Leaflet placeholder</span>
                 </div>
               </div>
               <div className={styles.mapColumn}>
-                <p className={styles.mapLabel}>Magyarországi elterjedés</p>
+                <p className={styles.mapLabel}>Megfigyelhető</p>
                 <div className={styles.mapPlaceholder}>
                   <span>Leaflet placeholder</span>
                 </div>
               </div>
               <div className={styles.statsColumn}>
-                <p className={styles.mapLabel}>Region</p>
-                <p className={styles.regionTeaser}>
-                  {dossier.pill_meta.region_teaser ||
-                    "Region teaser is pending generation."}
-                </p>
                 <div className={styles.statPills}>
                   {physicalPills.length > 0 && (
                     <div className={styles.statRow}>
@@ -685,26 +689,33 @@ export default function BirdTextReview({
               </div>
               <div className={styles.overlayLayer}>
                 {dossier.identification.key_features.map((feature, index) => (
-                  <article key={`${feature.title}-${index}`} className={styles.overlayItem}>
-                    <div className={styles.overlayButtons}>
-                      <button
-                        type="button"
-                        className={styles.iconButton}
-                        onClick={() => beginEditing("long", editableContent.long)}
-                        aria-label="Manual edit identification text"
+                  <article
+                    key={`${feature.title}-${index}`}
+                    className={`${styles.overlayItem} ${styles.reviewable}`}
+                  >
+                    <div className={styles.overlayHeading}>
+                      <h3 className={styles.overlayTitle}>{feature.title}</h3>
+                      <div
+                        className={`${styles.reviewButtons} ${styles.overlayButtons}`}
                       >
-                        <Icon name="edit" size={16} />
-                      </button>
-                      <button
-                        type="button"
-                        className={styles.iconButton}
-                        onClick={() => openOverlay("identification")}
-                        aria-label="Request review note for identification"
-                      >
-                        <Icon name="generate" size={16} />
-                      </button>
+                        <button
+                          type="button"
+                          className={styles.iconButton}
+                          onClick={() => beginEditing("long", editableContent.long)}
+                          aria-label="Manual edit identification text"
+                        >
+                          <Icon name="edit" size={16} />
+                        </button>
+                        <button
+                          type="button"
+                          className={styles.iconButton}
+                          onClick={() => openOverlay("identification")}
+                          aria-label="Request review note for identification"
+                        >
+                          <Icon name="generate" size={16} />
+                        </button>
+                      </div>
                     </div>
-                    <h3 className={styles.overlayTitle}>{feature.title}</h3>
                     <p className={styles.overlayDescription}>
                       {feature.description}
                     </p>
@@ -729,26 +740,13 @@ export default function BirdTextReview({
                     </div>
                   ))}
                 </div>
-                <div className={styles.regionTags}>
-                  {dossier.distribution.distribution_regions.map((region, index) => (
-                    <span key={`${region}-${index}`} className={styles.regionTag}>
-                      {region}
-                    </span>
-                  ))}
-                </div>
                 <p className={styles.distributionNote}>
                   {dossier.distribution.distribution_note}
-                </p>
-                <p className={styles.iucnNote}>
-                  IUCN status:{" "}
-                  <span className={styles.iucnValue}>
-                    {renderNullableValue(dossier.distribution.iucn_status)}
-                  </span>
                 </p>
               </article>
 
               <article className={styles.paragraphColumn}>
-                <div className={`${styles.reviewable} ${styles.paragraphReviewable}`}>
+                <div className={styles.reviewable}>
                   <div className={styles.cardHeader}>
                     <p className={styles.sectionLabel}>Long paragraphs</p>
                     <div className={styles.reviewButtons}>
@@ -801,7 +799,7 @@ export default function BirdTextReview({
             </div>
 
             <div className={styles.funFactGrid}>
-              <article className={styles.funFactCard}>
+              <article className={`${styles.funFactCard} ${styles.reviewable}`}>
                 <div className={styles.cardHeader}>
                   <p className={styles.sectionLabel}>Fun fact</p>
                   <div className={styles.reviewButtons}>
@@ -831,7 +829,7 @@ export default function BirdTextReview({
                 </ul>
               </article>
 
-              <article className={styles.funFactCard}>
+              <article className={`${styles.funFactCard} ${styles.reviewable}`}>
                 <div className={styles.cardHeader}>
                   <p className={styles.sectionLabel}>Ethics tip</p>
                   <div className={styles.reviewButtons}>

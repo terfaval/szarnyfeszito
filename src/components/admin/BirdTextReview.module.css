@@ -6,9 +6,11 @@
 
 .dossierCard {
   padding: 2rem;
-  background: rgba(5, 5, 15, 0.7);
+  background: var(--panel-2);
   border-radius: 24px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+  color: var(--text);
 }
 
 .header {
@@ -17,74 +19,89 @@
   justify-content: space-between;
   align-items: flex-start;
   gap: 2rem;
+  color: var(--text);
 }
 
 .headerText {
   flex: 1;
   min-width: 240px;
-}
-
-.tag {
-  font-size: 0.65rem;
-  letter-spacing: 0.4em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.6);
-  margin-bottom: 0.5rem;
+  color: inherit;
 }
 
 .birdTitle {
   font-family: var(--font-display);
   font-size: clamp(2.5rem, 4vw, 3.25rem);
   margin: 0;
-  color: #fff;
+  color: var(--brand-warm);
 }
 
 .subtitle {
   font-family: var(--font-body);
   font-size: 1rem;
-  color: rgba(255, 255, 255, 0.75);
+  color: var(--brand-ink);
   margin: 0.25rem 0 1rem;
 }
 
 .summaryWrapper {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--panel);
+  border: 1px solid var(--line);
   border-radius: 18px;
   padding: 1rem;
-  position: relative;
+}
+
+.summaryHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.summaryLabel {
+  font-size: 0.65rem;
+  letter-spacing: 0.4em;
+  text-transform: uppercase;
+  margin: 0;
+  color: var(--brand-ink);
 }
 
 .summaryText {
-  margin: 0;
+  margin: 0.65rem 0 0;
   font-family: var(--font-body);
   line-height: 1.6;
-  color: #f8fbff;
-}
-
-.reviewable:hover .reviewButtons {
-  opacity: 1;
+  color: var(--text);
 }
 
 .reviewButtons {
-  position: absolute;
-  top: 0.75rem;
-  right: 0.75rem;
   display: flex;
   gap: 0.5rem;
-  opacity: 0;
+  align-items: center;
+  opacity: 1;
   transition: opacity 0.2s ease;
+}
+
+@media (hover: hover) and (min-width: 768px) {
+  .reviewButtons {
+    opacity: 0;
+  }
+
+  .reviewable:hover .reviewButtons,
+  .cardHeader:hover .reviewButtons,
+  .overlayItem.reviewable:hover .reviewButtons {
+    opacity: 1;
+  }
 }
 
 .iconButton {
   width: 34px;
   height: 34px;
   border-radius: 50%;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  background: rgba(5, 118, 141, 0.4);
-  color: #fff;
+  border: 1px solid var(--line);
+  background: rgba(var(--brand-ink-rgb), 0.2);
+  color: var(--brand-paper);
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  transition: border-color 0.2s ease, background 0.2s ease;
 }
 
 .headerExtras {
@@ -109,7 +126,7 @@
   font-size: 0.85rem;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--brand-ink);
 }
 
 .vulnerabilityPill {
@@ -119,6 +136,9 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.3em;
+  border: 1px solid rgba(var(--brand-ink-rgb), 0.25);
+  background: rgba(var(--brand-ink-rgb), 0.12);
+  color: var(--brand-warm);
 }
 
 .statusBadge {
@@ -126,33 +146,33 @@
 }
 
 .vulnerabilityLow {
-  background: rgba(16, 185, 129, 0.15);
-  border: 1px solid rgba(16, 185, 129, 0.3);
-  color: #22c55e;
+  background: rgba(var(--brand-ink-rgb), 0.12);
+  border-color: rgba(var(--brand-ink-rgb), 0.4);
+  color: var(--brand-warm);
 }
 
 .vulnerabilityMedium {
-  background: rgba(249, 115, 22, 0.12);
-  border: 1px solid rgba(249, 115, 22, 0.4);
-  color: #f97316;
+  background: rgba(var(--brand-ink-rgb), 0.12);
+  border-color: rgba(var(--brand-ink-rgb), 0.4);
+  color: var(--brand-warm);
 }
 
 .vulnerabilityHigh {
-  background: rgba(239, 68, 68, 0.15);
-  border: 1px solid rgba(239, 68, 68, 0.4);
-  color: #f87171;
+  background: rgba(var(--brand-ink-rgb), 0.12);
+  border-color: rgba(var(--brand-ink-rgb), 0.4);
+  color: var(--brand-warm);
 }
 
 .vulnerabilityCritical {
-  background: rgba(236, 72, 153, 0.18);
-  border: 1px solid rgba(236, 72, 153, 0.4);
-  color: #f472b6;
+  background: rgba(var(--brand-ink-rgb), 0.12);
+  border-color: rgba(var(--brand-ink-rgb), 0.4);
+  color: var(--brand-warm);
 }
 
 .vulnerabilityUnknown {
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: rgba(255, 255, 255, 0.8);
+  background: rgba(var(--brand-ink-rgb), 0.12);
+  border-color: rgba(var(--brand-ink-rgb), 0.4);
+  color: var(--brand-warm);
 }
 
 .regionRow {
@@ -174,19 +194,19 @@
   font-size: 0.75rem;
   letter-spacing: 0.4em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.55);
+  color: var(--brand-ink);
   margin: 0;
 }
 
 .mapPlaceholder {
   height: 140px;
   border-radius: 20px;
-  border: 1px dashed rgba(255, 255, 255, 0.2);
-  background: rgba(255, 255, 255, 0.03);
+  border: 1px dashed var(--line);
+  background: var(--panel);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--text);
 }
 
 .statsColumn {
@@ -198,7 +218,7 @@
 .regionTeaser {
   margin: 0;
   font-size: 0.95rem;
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--text);
 }
 
 .statPills {
@@ -223,8 +243,8 @@
 .statPill {
   border-radius: 999px;
   padding: 0.35rem 0.9rem;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--line);
+  background: var(--panel);
   display: flex;
   flex-direction: column;
   gap: 0.1rem;
@@ -236,12 +256,12 @@
   font-size: 0.6rem;
   letter-spacing: 0.3em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--brand-ink);
 }
 
 .statValue {
   font-size: 0.85rem;
-  color: #fff;
+  color: var(--text);
 }
 
 .layerStack {
@@ -255,7 +275,11 @@
 .backgroundLayer {
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0) 20%, rgba(5, 118, 141, 0.5) 100%);
+  background: linear-gradient(
+    180deg,
+    rgba(var(--brand-ink-rgb), 0) 20%,
+    rgba(var(--brand-ink-rgb), 0.5) 100%
+  );
   display: flex;
   align-items: center;
   justify-content: center;
@@ -265,11 +289,11 @@
   width: 100%;
   height: 100%;
   border-radius: 24px;
-  border: 1px dashed rgba(255, 255, 255, 0.3);
+  border: 1px dashed var(--line);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: rgba(255, 255, 255, 0.65);
+  color: var(--text);
 }
 
 .overlayLayer {
@@ -285,16 +309,24 @@
 
 .overlayItem {
   width: min(320px, 70vw);
-  background: rgba(0, 0, 0, 0.45);
+  background: var(--panel);
   border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  border: 1px solid var(--line);
   padding: 1rem;
   display: flex;
   flex-direction: column;
   gap: 0.3rem;
 }
 
+.overlayHeading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
 .overlayButtons {
+  margin-left: auto;
   display: flex;
   gap: 0.5rem;
   justify-content: flex-end;
@@ -304,13 +336,13 @@
 .overlayTitle {
   margin: 0;
   font-size: 1rem;
-  color: #fff;
+  color: var(--brand-warm);
 }
 
 .overlayDescription {
   margin: 0;
   font-size: 0.9rem;
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--text);
   text-align: left;
 }
 
@@ -322,17 +354,18 @@
 }
 
 .taxonomyColumn {
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--panel);
   border-radius: 20px;
   padding: 1rem 1.25rem;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--line);
+  color: var(--text);
 }
 
 .sectionLabel {
   font-size: 0.75rem;
   letter-spacing: 0.4em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.55);
+  color: var(--brand-ink);
   margin: 0 0 0.5rem;
 }
 
@@ -346,50 +379,24 @@
   display: flex;
   justify-content: space-between;
   font-size: 0.85rem;
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--text);
 }
 
-.regionTags {
-  margin: 0.75rem 0;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem;
-}
-
-.regionTag {
-  font-size: 0.7rem;
-  letter-spacing: 0.3em;
-  text-transform: uppercase;
-  padding: 0.2rem 0.6rem;
-  border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-.distributionNote,
-.iucnNote {
+.distributionNote {
   margin: 0.35rem 0;
   font-size: 0.85rem;
-  color: rgba(255, 255, 255, 0.7);
-}
-
-.iucnValue {
-  color: #fff;
-  font-weight: 600;
+  color: var(--text);
 }
 
 .paragraphColumn {
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--panel);
   border-radius: 20px;
   padding: 1rem;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--line);
 }
 
 .reviewable {
-  position: relative;
-}
-
-.paragraphReviewable:hover .reviewButtons {
-  opacity: 1;
+  position: static;
 }
 
 .cardHeader {
@@ -407,29 +414,29 @@
 
 .paragraphTab {
   border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid var(--line);
   background: transparent;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--brand-ink);
   padding: 0.25rem 0.75rem;
   font-size: 0.75rem;
 }
 
 .paragraphTabActive {
-  background: rgba(255, 255, 255, 0.2);
-  border-color: rgba(255, 255, 255, 0.5);
-  color: #fff;
+  background: rgba(var(--brand-ink-rgb), 0.18);
+  border-color: rgba(var(--brand-ink-rgb), 0.5);
+  color: var(--brand-warm);
 }
 
 .paragraphText {
   margin-top: 0.9rem;
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--text);
   font-size: 0.95rem;
   line-height: 1.6;
 }
 
 .paragraphPlaceholder {
   margin-top: 1rem;
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--panel);
   border-radius: 12px;
   padding: 0.9rem;
 }
@@ -439,20 +446,20 @@
   font-size: 0.75rem;
   letter-spacing: 0.3em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--brand-ink);
 }
 
 .placeholderText {
   margin: 0.35rem 0 0;
-  color: rgba(255, 255, 255, 0.65);
+  color: var(--text);
   font-size: 0.85rem;
 }
 
 .editorPanel {
   margin-top: 0.75rem;
   border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(9, 15, 33, 0.8);
+  border: 1px solid var(--line);
+  background: var(--panel);
   padding: 0.75rem;
   display: flex;
   flex-direction: column;
@@ -463,16 +470,16 @@
   font-size: 0.75rem;
   letter-spacing: 0.3em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--brand-ink);
 }
 
 .editorTextarea {
   width: 100%;
   min-height: 96px;
   border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  background: rgba(255, 255, 255, 0.03);
-  color: #fff;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  color: var(--text);
   padding: 0.7rem;
   font-family: var(--font-body);
   font-size: 0.95rem;
@@ -493,10 +500,10 @@
 
 .funFactCard {
   border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--line);
   padding: 1rem;
-  background: rgba(255, 255, 255, 0.03);
-  color: rgba(255, 255, 255, 0.85);
+  background: var(--panel);
+  color: var(--text);
   min-height: 160px;
 }
 
@@ -508,7 +515,7 @@
 .typicalPlacesList {
   margin: 0.5rem 0 0;
   padding-left: 1rem;
-  color: rgba(255, 255, 255, 0.75);
+  color: var(--text);
   list-style: disc;
   display: flex;
   flex-direction: column;
@@ -528,20 +535,21 @@
 
 .imagePlaceholderLarge {
   border-radius: 18px;
-  border: 1px dashed rgba(255, 255, 255, 0.25);
-  background: rgba(255, 255, 255, 0.02);
+  border: 1px dashed var(--line);
+  background: var(--panel);
   height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--text);
 }
 
 .migrationColumn {
   border-radius: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--line);
   padding: 1.25rem;
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--panel);
+  color: var(--text);
 }
 
 .migrationList {
@@ -559,7 +567,7 @@
 
 .migrationNote {
   margin-top: 0.75rem;
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--text);
   font-size: 0.9rem;
 }
 
@@ -572,21 +580,21 @@
 .siteCard {
   padding: 1rem;
   border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--line);
+  background: var(--panel);
 }
 
 .siteName {
   margin: 0;
   font-size: 1rem;
   font-weight: 600;
-  color: #fff;
+  color: var(--brand-warm);
 }
 
 .siteDescription {
   margin: 0.35rem 0 0;
   font-size: 0.85rem;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--text);
 }
 
 .nestingBlock {
@@ -615,12 +623,12 @@
   display: flex;
   justify-content: space-between;
   font-size: 0.9rem;
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--text);
 }
 
 .nestingNote {
   margin: 0;
-  color: rgba(255, 255, 255, 0.75);
+  color: var(--text);
 }
 
 .nestingImage {
@@ -631,14 +639,14 @@
 
 .imagePlaceholder {
   border-radius: 18px;
-  border: 1px dashed rgba(255, 255, 255, 0.2);
-  background: rgba(255, 255, 255, 0.03);
+  border: 1px dashed var(--line);
+  background: var(--panel);
   width: 100%;
   height: 220px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--text);
 }
 
 @media (max-width: 768px) {
