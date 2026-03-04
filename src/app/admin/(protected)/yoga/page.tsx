@@ -151,6 +151,7 @@ export default function YogaPage() {
             typeof yogaLog.metadata?.description === "string"
               ? yogaLog.metadata.description
               : "Korábban rögzített jóga";
+          const icon = typeof yogaLog.metadata?.icon === "string" ? yogaLog.metadata.icon : "sun";
 
           buffer.set(computedId, {
             id: computedId,
@@ -159,7 +160,7 @@ export default function YogaPage() {
             durationMinutes: yogaLog.duration_minutes ?? 10,
             intensity: (Math.min(3, Math.max(1, yogaLog.intensity ?? 1)) as YogaLibraryEntry["intensity"]),
             category: ["strong", "relax"].includes(yogaLog.category) ? (yogaLog.category as YogaCategory) : "relax",
-            icon: yogaLog.metadata?.icon ?? "sun",
+            icon,
           });
         }
       }
