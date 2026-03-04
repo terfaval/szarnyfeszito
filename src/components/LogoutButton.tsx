@@ -1,4 +1,4 @@
-"use client";
+ï»¿"use client";
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -20,8 +20,7 @@ export default function LogoutButton() {
       disabled={loading}
       className="admin-topbar__logout-button"
     >
-      {loading ? "Signing out…" : "Sign out"}
+      {loading ? "Signing out..." : "Sign out"}
     </button>
   );
 }
-
