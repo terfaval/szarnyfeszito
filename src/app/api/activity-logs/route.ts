@@ -70,7 +70,7 @@ export async function POST(request: Request) {
 
   const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;
   const {
-    date,
+    date: dateRaw,
     activityType: activityTypeRaw,
     category: categoryRaw,
     label,
@@ -83,10 +83,11 @@ export async function POST(request: Request) {
   } = body;
 
   if (
-    !date ||
+    !dateRaw ||
     !label ||
     !isActivityType(activityTypeRaw) ||
-    typeof categoryRaw !== "string"
+    typeof categoryRaw !== "string" ||
+    typeof dateRaw !== "string"
   ) {
     return NextResponse.json(
       { error: "date, activityType, category and label are required." },
@@ -96,6 +97,7 @@ export async function POST(request: Request) {
 
   const activityType = activityTypeRaw;
   const category = categoryRaw;
+  const date = dateRaw;
 
   if (!VALID_CATEGORIES[activityType].includes(category as string)) {
     return NextResponse.json(
