@@ -204,7 +204,7 @@ const capitalizeFirstLetter = (value: string) =>
   value ? `${value.charAt(0).toUpperCase()}${value.slice(1)}` : value;
 
 const applyDossierEdit = (
-  dossier: BirdDossier | null,
+  dossier: BirdDossier | null | undefined,
   slot: EditSlot,
   value: string
 ): BirdDossier | null => {
