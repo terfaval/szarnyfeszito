@@ -125,7 +125,7 @@ export default function YogaPage() {
   const monthDays = useMemo(() => {
     const days = getMonthDays(currentMonth);
     const offset = (currentMonth.getDay() + 6) % 7;
-    const leadingEmpty = Array.from({ length: offset });
+    const leadingEmpty = Array.from({ length: offset }, () => null as Date | null);
     return [...leadingEmpty, ...days];
   }, [currentMonth]);
 
