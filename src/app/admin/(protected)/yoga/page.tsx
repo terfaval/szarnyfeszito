@@ -147,10 +147,15 @@ export default function YogaPage() {
           ? yogaLog.exercise_id
           : `log-${yogaLog.label}-${yogaLog.duration_minutes ?? 0}`;
         if (!buffer.has(computedId)) {
+          const description =
+            typeof yogaLog.metadata?.description === "string"
+              ? yogaLog.metadata.description
+              : "Korábban rögzített jóga";
+
           buffer.set(computedId, {
             id: computedId,
             label: yogaLog.label,
-            description: yogaLog.metadata?.description ?? "Korábban rögzített jóga",
+            description,
             durationMinutes: yogaLog.duration_minutes ?? 10,
             intensity: (Math.min(3, Math.max(1, yogaLog.intensity ?? 1)) as YogaLibraryEntry["intensity"]),
             category: ["strong", "relax"].includes(yogaLog.category) ? (yogaLog.category as YogaCategory) : "relax",
