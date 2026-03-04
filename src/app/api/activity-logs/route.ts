@@ -73,7 +73,7 @@ export async function POST(request: Request) {
     date: dateRaw,
     activityType: activityTypeRaw,
     category: categoryRaw,
-    label,
+    label: labelRaw,
     exerciseId,
     durationMinutes,
     distanceKm,
@@ -83,11 +83,10 @@ export async function POST(request: Request) {
   } = body;
 
   if (
-    !dateRaw ||
-    !label ||
+    typeof dateRaw !== "string" ||
+    typeof labelRaw !== "string" ||
     !isActivityType(activityTypeRaw) ||
-    typeof categoryRaw !== "string" ||
-    typeof dateRaw !== "string"
+    typeof categoryRaw !== "string"
   ) {
     return NextResponse.json(
       { error: "date, activityType, category and label are required." },
@@ -98,6 +97,8 @@ export async function POST(request: Request) {
   const activityType = activityTypeRaw;
   const category = categoryRaw;
   const date = dateRaw;
+  const label = labelRaw;
+  const safeExerciseId = typeof exerciseId === "string" ? exerciseId : null;
 
   if (!VALID_CATEGORIES[activityType].includes(category as string)) {
     return NextResponse.json(
@@ -110,7 +111,7 @@ export async function POST(request: Request) {
     date,
     activityType,
     category,
-    exerciseId: exerciseId ?? null,
+    exerciseId: safeExerciseId,
     label,
     durationMinutes:
       typeof durationMinutes === "number" ? durationMinutes : null,
