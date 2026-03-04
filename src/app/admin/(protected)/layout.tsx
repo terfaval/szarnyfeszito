@@ -19,14 +19,7 @@ export default async function ProtectedAdminLayout({
   }
 
   return (
-    <AdminShell
-      breadcrumb={
-        <p className="text-xs text-zinc-400">
-          Signed in as {user.email}. Only the allow-listed admin email can access
-          these pages.
-        </p>
-      }
-    >
+    <AdminShell>
       {children}
     </AdminShell>
   );

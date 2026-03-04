@@ -5,12 +5,18 @@ import Link from "next/link";
 import { ReactNode } from "react";
 import LogoutButton from "@/components/LogoutButton";
 
+const NAV_LINKS = [
+  { label: "Dashboard", href: "/admin" },
+  { label: "Birds", href: "/admin/birds" },
+  { label: "Places", href: "/admin/places" },
+  { label: "Phenomena", href: "/admin/phenomena" },
+];
+
 export type AdminTopBarProps = {
-  breadcrumb?: ReactNode;
   action?: ReactNode;
 };
 
-export function AdminTopBar({ breadcrumb, action }: AdminTopBarProps) {
+export function AdminTopBar({ action }: AdminTopBarProps) {
   return (
     <div className="admin-topbar">
       <div className="admin-topbar__inner">
@@ -24,10 +30,16 @@ export function AdminTopBar({ breadcrumb, action }: AdminTopBarProps) {
               alt="Szárnyfeszítő"
               width={48}
               height={48}
-              className="h-12 w-12"
+              className="h-12 w-12 admin-topbar__logo-img"
             />
           </Link>
-          {breadcrumb}
+          <nav className="admin-topbar__nav" aria-label="Admin sections">
+            {NAV_LINKS.map((link) => (
+              <Link key={link.href} href={link.href} className="admin-nav-link">
+                {link.label}
+              </Link>
+            ))}
+          </nav>
         </div>
         <div className="flex items-center gap-3">
           {action}

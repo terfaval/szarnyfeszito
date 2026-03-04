@@ -269,11 +269,11 @@ svg {
 }
 
 .admin-topbar {
-  border-radius: 16px;
-  border: 1px solid var(--line);
-  background: var(--panel-2);
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.05);
   box-shadow: var(--shadow);
-  padding: 1rem;
+  padding: 0.9rem 1rem;
 }
 
 .admin-topbar__inner {
@@ -288,6 +288,19 @@ svg {
   display: flex;
   align-items: center;
   gap: 1rem;
+  flex-wrap: wrap;
+  flex: 1 1 auto;
+}
+
+.admin-topbar__logo-img {
+  filter: brightness(0) saturate(100%) invert(1);
+}
+
+.admin-topbar__nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
 }
 
 .admin-shell__grid {
@@ -472,16 +485,6 @@ svg {
   .admin-filter-row {
     flex-direction: row;
   }
-}
-
-.admin-nav {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-  padding: 0.5rem 0.75rem;
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .admin-nav-link {

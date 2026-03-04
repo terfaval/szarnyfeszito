@@ -232,3 +232,8 @@ Az MVP kész, ha:
 - Jóváhagyhatók
 - Publish állapot elérhető
 - Mindez stabil build mellett működik
+
+## 11. Line endings policy
+- The repo standard for Studio and Explorer sources is LF (line feed) endings only; .gitattributes now insists that .ts/.tsx/.css/.md/.json files are normalized to LF regardless of developer OS.
+- Do not commit CRLF files; if Git keeps warning about CRLF, rerun git checkout -- <file> after updating core.autocrlf or syncing with the .gitattributes policy.
+
