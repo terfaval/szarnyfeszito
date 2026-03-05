@@ -2,6 +2,69 @@
 
 ---
 
+## D17 — Image Accuracy Pipeline v1 (Science Dossier + Visual Brief gating)
+
+**Status:** Accepted  
+**Date:** 2026-03-05  
+**Scope:** Content Studio (Bird text+image review + publish gating). Explorer out of scope.
+
+### Context
+The app is an amateur bird guide; images must be species-accurate and identification-friendly (scientific family especially, but also iconic).
+Existing user-facing text dossiers are not sufficiently deterministic to drive reliable image generation.
+
+### Decision
+Introduce a dedicated, reviewable accuracy layer between TEXT_APPROVED and image generation:
+
+1) **Science Dossier** (structured, identification-oriented, accuracy-first)
+2) **Visual Brief / Shot List** (image-generation oriented composition + constraints)
+
+**Image generation is gated** on both being approved.
+
+### Required outputs
+- scientific.main_habitat — REQUIRED (full-body bird + very mild habitat hint)
+- iconic.fixed_pose_icon_v1 — REQUIRED (bird-only; habitat background comes from stock assets)
+
+### Optional outputs (non-blocking)
+- scientific.flight_clean — OPTIONAL
+- scientific.nesting_clean — OPTIONAL (preferred: nest + chicks, but not blocking)
+
+### Publish gate
+Publish is allowed only if:
+- scientific.main_habitat is approved
+- iconic.fixed_pose_icon_v1 is approved
+
+Optional variants must not block publish.
+
+### State machine additions
+Add two sub-status fields to birds:
+- science_dossier_status: none → generated → approved
+- visual_brief_status: none → generated → approved
+
+Image generation is allowed only if:
+- bird.status == text_approved
+- science_dossier_status == approved
+- visual_brief_status == approved
+
+### Data model
+Add a new table:
+- bird_science_dossiers (jsonb payload + review_status)
+
+Add / reuse a table for visual briefs:
+- bird_visual_briefs (jsonb payload + review_status)
+
+### Rationale
+- Separates user-facing narrative text from generator-driving accuracy inputs.
+- Reduces hallucination risk via structured “field marks”, “must_not”, and “confusion set”.
+- Enables deterministic prompt templating and consistent style output at scale.
+
+### Consequences
+- Studio UI adds one additional review step (Science Dossier + Visual Brief).
+- Image pipeline becomes more reliable; regenerate operations become auditable.
+
+### Out of scope
+- Integrating external bird databases/APIs.
+- Explorer UX changes.
+
 ## D11 â€“ Publish CTA szerinti állapotvédelem
 
 - A Publish CTA csak akkor jelenik meg, ha a madár státusza legalább az `images_approved`, és az összes GateChecklist-kritérium (text_approved státusz, legalább egy `main_habitat` és a `fixed_pose_icon_v1` jóváhagyott) teljesült.

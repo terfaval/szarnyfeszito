@@ -17,7 +17,9 @@ export async function listBirds(options: ListBirdsOptions = {}): Promise<Bird[]>
   const { search, status } = options;
   let query = supabaseServerClient
     .from("birds")
-    .select("id,slug,name_hu,name_latin,status,created_at,updated_at")
+    .select(
+      "id,slug,name_hu,name_latin,status,science_dossier_status,visual_brief_status,created_at,updated_at"
+    )
     .order("updated_at", { ascending: false })
     .limit(100);
 
@@ -42,7 +44,9 @@ export async function listBirds(options: ListBirdsOptions = {}): Promise<Bird[]>
 export async function getBirdById(id: string): Promise<Bird | null> {
   const { data, error } = await supabaseServerClient
     .from("birds")
-    .select("id,slug,name_hu,name_latin,status,created_at,updated_at")
+    .select(
+      "id,slug,name_hu,name_latin,status,science_dossier_status,visual_brief_status,created_at,updated_at"
+    )
     .eq("id", id)
     .maybeSingle();
 
@@ -56,7 +60,9 @@ export async function getBirdById(id: string): Promise<Bird | null> {
 export async function getBirdBySlug(slug: string): Promise<Bird | null> {
   const { data, error } = await supabaseServerClient
     .from("birds")
-    .select("id,slug,name_hu,name_latin,status,created_at,updated_at")
+    .select(
+      "id,slug,name_hu,name_latin,status,science_dossier_status,visual_brief_status,created_at,updated_at"
+    )
     .eq("slug", slug)
     .maybeSingle();
 

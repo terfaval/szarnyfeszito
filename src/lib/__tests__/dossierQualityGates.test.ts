@@ -13,6 +13,8 @@ const baseBird: Bird = {
   name_hu: "Példamadár",
   name_latin: "Exemplaris exemplaris",
   status: "draft",
+  science_dossier_status: "none",
+  visual_brief_status: "none",
   created_at: "2026-01-01T00:00:00.000Z",
   updated_at: "2026-01-01T00:00:00.000Z",
 };

@@ -247,3 +247,195 @@ Az MVP kész, ha:
 ## 11. Line endings policy
 - The repo standard for Studio and Explorer sources is LF (line feed) endings only; .gitattributes now insists that .ts/.tsx/.css/.md/.json files are normalized to LF regardless of developer OS.
 - Do not commit CRLF files; if Git keeps warning about CRLF, rerun git checkout -- <file> after updating core.autocrlf or syncing with the .gitattributes policy.
+
+---
+
+## Image Accuracy Pipeline v1 (Science Dossier → Visual Brief → Images)
+
+### Goals
+- Species-accurate images for an amateur bird guide:
+  - scientific illustrations must support identification
+  - iconic illustrations must still reflect real morphology and key markers
+- Controlled, review-gated pipeline (no runtime AI dependency)
+
+### Non-goals
+- No external ornithology API integration in v1
+- No Explorer flow changes
+
+---
+
+## Pipeline overview
+
+### Preconditions
+Image generation can only be triggered when:
+- bird.status == text_approved
+- bird.science_dossier_status == approved
+- bird.visual_brief_status == approved
+
+### Required image outputs
+- scientific.main_habitat (REQUIRED)
+  - full-body bird; dominant side view
+  - very mild habitat hint (2–4 minimal elements)
+  - vintage natural history / field-guide style; pale paper background
+- iconic.fixed_pose_icon_v1 (REQUIRED)
+  - bird-only (no habitat background)
+  - habitat background is provided via stock assets (separate system)
+
+### Optional image outputs (non-blocking)
+- scientific.flight_clean (OPTIONAL)
+  - clean background; wing structure visible
+- scientific.nesting_clean (OPTIONAL)
+  - preferred: nest + chicks visible
+  - not blocking for publish
+
+### Publish gate
+Publish allowed only if:
+- scientific.main_habitat review_status == approved
+- iconic.fixed_pose_icon_v1 review_status == approved
+
+---
+
+## State machine (Bird + sub-statuses)
+
+### Bird status (existing)
+draft → … → text_approved → images_generated → images_reviewed → images_approved → published
+
+### New sub-status fields
+- science_dossier_status: none | generated | approved
+- visual_brief_status: none | generated | approved
+
+---
+
+## Data model
+
+### Table: bird_science_dossiers
+- id uuid pk
+- bird_id uuid fk → birds.id (indexed)
+- schema_version text (e.g. "v1")
+- payload jsonb (see schema below)
+- review_status text enum: draft | approved | rejected
+- created_at timestamptz
+- updated_at timestamptz
+- created_by text (ai|human)
+- approved_by uuid nullable
+- approved_at timestamptz nullable
+
+### Table: bird_visual_briefs
+- id uuid pk
+- bird_id uuid fk → birds.id (indexed)
+- schema_version text (e.g. "v1")
+- payload jsonb (see schema below)
+- review_status text enum: draft | approved | rejected
+- created_at timestamptz
+- updated_at timestamptz
+- created_by text (ai|human)
+- approved_by uuid nullable
+- approved_at timestamptz nullable
+
+### Images table (canonical)
+images is canonical for generated assets with:
+- style_family (scientific|iconic)
+- variant (main_habitat|flight_clean|nesting_clean|fixed_pose_icon_v1)
+- storage_path
+- review_status (draft|approved|rejected)
+- seed, style_config_id, spec_hash (recommended)
+
+---
+
+## Schemas (v1)
+
+### bird_science_dossiers.payload (schema v1)
+- species_identity:
+  - name_hu
+  - name_latin
+- confusion_set: array of
+  - species_name
+  - quick_diff
+- key_field_marks: array (max 8)
+  - mark (e.g. "red crown patch", "black neck stripe")
+- proportions:
+  - neck (short|medium|long)
+  - legs (short|medium|long)
+  - body (slim|average|stocky)
+  - beak (short|medium|long; straight|curved)
+- plumage_variants:
+  - adult (text)
+  - juvenile (text|not_applicable)
+  - breeding (text|not_applicable)
+  - non_breeding (text|not_applicable)
+- must_not_include: array (3–8)
+- confidence:
+  - per_section: high|medium|low
+  - notes
+
+### bird_visual_briefs.payload (schema v1)
+- scientific:
+  - main_habitat:
+    - pose
+    - composition_rules (e.g. "bird fills 70–80%")
+    - habitat_hint_elements (2–4)
+    - background_rules ("pale paper", "no scene perspective")
+    - must_not (list)
+  - flight_clean (optional):
+    - flight_pose
+    - wing_structure_notes
+  - nesting_clean (optional):
+    - nest_type
+    - nest_material
+    - chicks_visible (bool)
+    - confidence (high|med|low)
+- iconic:
+  - silhouette_focus (2–3 key traits)
+  - simplify_features (list)
+  - color_guidance (optional)
+  - must_not (list)
+  - background: "none" (habitat provided externally)
+
+---
+
+## API (draft)
+
+### POST /api/generate-science-dossier
+- Preconditions: bird.status == text_approved
+- Output:
+  - upsert bird_science_dossiers (review_status=draft)
+  - set birds.science_dossier_status = generated
+
+### POST /api/approve-science-dossier
+- Preconditions: admin/editor role
+- Output:
+  - set dossier.review_status = approved
+  - set birds.science_dossier_status = approved
+
+### POST /api/generate-visual-brief
+- Preconditions: birds.science_dossier_status == approved AND bird.status == text_approved
+- Output:
+  - upsert bird_visual_briefs (review_status=draft)
+  - set birds.visual_brief_status = generated
+
+### POST /api/approve-visual-brief
+- Preconditions: admin/editor role
+- Output:
+  - set brief.review_status = approved
+  - set birds.visual_brief_status = approved
+
+### POST /api/generate-images  (controlled; T007)
+- Preconditions:
+  - bird.status == text_approved
+  - birds.science_dossier_status == approved
+  - birds.visual_brief_status == approved
+- Steps:
+  - buildImageSpec(bird, visualBrief, scienceDossier)
+  - generate required variants first (main_habitat + fixed_pose_icon_v1)
+  - generate optional variants best-effort (flight_clean, nesting_clean)
+  - upload to storage
+  - upsert images rows with review_status=draft
+  - set bird.status = images_generated ONLY IF required variants succeeded
+
+---
+
+## Error handling (v1)
+- If required variant fails:
+  - do not advance bird.status to images_generated
+  - store per-variant failure in logs
+- Optional variant failures never block required completion or publish gate.
