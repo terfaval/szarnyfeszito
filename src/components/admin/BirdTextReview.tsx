@@ -419,8 +419,8 @@ export default function BirdTextReview({
       }
 
       setContentBlock(payload.data.content_block);
-      setStatusMessage("Text approved. The bird can move on to image work.");
-      router.refresh();
+      setStatusMessage("Text approved. Redirecting to image accuracy handoff…");
+      router.push(`/admin/birds/${birdId}/image-accuracy`);
     } catch (err) {
       setError(
         err instanceof Error

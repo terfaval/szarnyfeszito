@@ -439,3 +439,21 @@ images is canonical for generated assets with:
   - do not advance bird.status to images_generated
   - store per-variant failure in logs
 - Optional variant failures never block required completion or publish gate.
+
+---
+
+## Studio UX (v1)
+
+### Post text approval handoff
+After approving Bird text (transition to `text_approved`), Studio navigates to an intermediate review screen to prepare image generation inputs:
+
+- Science Dossier: review/edit structured, accuracy-first JSON, then approve.
+- Visual Brief: review/edit structured, generation-oriented JSON, then approve.
+
+These artifacts are the canonical “prompt inputs” for images. Studio does not expose raw prompt strings; prompt templating remains server-side.
+
+### API (artifact editing)
+In addition to the generator/approve endpoints above, Studio may persist manual edits to draft artifacts:
+
+- `POST /api/birds/:id/science-dossier` (upsert draft payload; sets `birds.science_dossier_status=generated`)
+- `POST /api/birds/:id/visual-brief` (upsert draft payload; sets `birds.visual_brief_status=generated`)
