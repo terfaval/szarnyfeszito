@@ -10,7 +10,8 @@ export async function listActivityLogs(filters: ActivityLogFilters = {}) {
   const query = supabaseServerClient
     .from("activity_logs")
     .select("*")
-    .order("date", { ascending: false });
+    .order("date", { ascending: false })
+    .order("created_at", { ascending: false });
 
   if (filters.startDate) {
     query.gte("date", filters.startDate);
@@ -65,6 +66,40 @@ export async function createActivityLog(payload: ActivityLogPayload) {
   }
 
   return data as ActivityLogRow;
+}
+
+export async function updateActivityLog(id: string, payload: ActivityLogPayload) {
+  const { data, error } = await supabaseServerClient
+    .from("activity_logs")
+    .update({
+      date: payload.date,
+      activity_type: payload.activityType,
+      category: payload.category,
+      label: payload.label,
+      exercise_id: payload.exerciseId ?? null,
+      duration_minutes: payload.durationMinutes ?? null,
+      distance_km: payload.distanceKm ?? null,
+      intensity: payload.intensity ?? null,
+      notes: payload.notes ?? null,
+      metadata: payload.metadata ?? null,
+    })
+    .eq("id", id)
+    .select()
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  return data as ActivityLogRow;
+}
+
+export async function deleteActivityLog(id: string) {
+  const { error } = await supabaseServerClient.from("activity_logs").delete().eq("id", id);
+
+  if (error) {
+    throw error;
+  }
 }
 
 export type YogaTemplate = {

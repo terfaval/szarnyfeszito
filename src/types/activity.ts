@@ -47,6 +47,8 @@ export type ActivityLogRow = {
   intensity: number | null;
   notes: string | null;
   metadata: Record<string, unknown> | null;
+  created_at?: string;
+  updated_at?: string;
 };
 
 export const YOGA_LIBRARY: YogaLibraryEntry[] = [

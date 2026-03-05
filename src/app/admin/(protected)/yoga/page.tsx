@@ -12,9 +12,11 @@ import {
   Info,
   Link2,
   Plus,
+  Pencil,
   Repeat,
   ShieldCheck,
   Star,
+  Trash2,
   X,
 } from "lucide-react";
 import {
@@ -31,7 +33,15 @@ function formatMonthKey(date: Date) {
 }
 
 function formatDateKey(date: Date) {
-  return date.toISOString().split("T")[0];
+  // Use local time instead of UTC to avoid off-by-one issues around midnight/timezones.
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
+
+function parseDateKey(key: string) {
+  const [y, m, d] = key.split("-").map((value) => Number(value));
+  const date = new Date(y, (m ?? 1) - 1, d ?? 1);
+  date.setHours(0, 0, 0, 0);
+  return date;
 }
 
 function getWeekDates(reference: Date) {
@@ -188,6 +198,7 @@ export default function YogaPage() {
   const [overlayActivity, setOverlayActivity] = useState<ActivityType | null>(null);
   const [overlaySubcategory, setOverlaySubcategory] = useState<string | null>(null);
   const [overlayItemId, setOverlayItemId] = useState<string | null>(null);
+  const [editingLog, setEditingLog] = useState<ActivityLogRow | null>(null);
   const [overlayExerciseDetail, setOverlayExerciseDetail] = useState<{
     key: string;
     title: string;
@@ -359,6 +370,7 @@ export default function YogaPage() {
     setOverlaySubcategory(null);
     setOverlayItemId(null);
     setOverlayExerciseDetail(null);
+    setEditingLog(null);
 
     setYogaTitle("");
     setYogaDuration("10");
@@ -377,18 +389,24 @@ export default function YogaPage() {
   };
 
   const saveActivity = useCallback(
-    async (activityType: ActivityType, payload: ActivityPayload, successMessage: string) => {
+    async (
+      activityType: ActivityType,
+      payload: ActivityPayload,
+      successMessage: string,
+      options?: { method?: "POST" | "PATCH"; id?: string }
+    ) => {
       setSavingState((prev) => ({ ...prev, [activityType]: true }));
       setStatusMessages((prev) => ({ ...prev, [activityType]: null }));
       setErrorMessages((prev) => ({ ...prev, [activityType]: null }));
 
       try {
+        const method = options?.method ?? "POST";
         const response = await fetch("/api/activity-logs", {
-          method: "POST",
+          method,
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ ...payload, activityType }),
+          body: JSON.stringify({ ...payload, activityType, id: options?.id }),
         });
 
         const body = await response.json();
@@ -403,6 +421,18 @@ export default function YogaPage() {
           const key = payload.date;
           const day = prev[key] ?? {};
           const existing = day[activityType] ?? [];
+          if (method === "PATCH") {
+            const next = existing.some((row) => row.id === log.id)
+              ? existing.map((row) => (row.id === log.id ? log : row))
+              : [...existing, log];
+            return {
+              ...prev,
+              [key]: {
+                ...day,
+                [activityType]: next,
+              },
+            };
+          }
           return {
             ...prev,
             [key]: {
@@ -440,6 +470,7 @@ export default function YogaPage() {
     setOverlaySubcategory(null);
     setOverlayItemId(null);
     setOverlayExerciseDetail(null);
+    setEditingLog(null);
   };
 
   const handleCloseOverlay = () => {
@@ -461,6 +492,44 @@ export default function YogaPage() {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [overlayOpen]);
+
+  const deleteLog = useCallback(
+    async (row: ActivityLogRow) => {
+      const ok = window.confirm("Biztos törlöd ezt a bejegyzést?");
+      if (!ok) {
+        return;
+      }
+
+      try {
+        await fetch("/api/activity-logs", {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id: row.id }),
+        });
+
+        setLogsMap((prev) => {
+          const day = prev[row.date] ?? {};
+          const activity = row.activity_type;
+          const existing = day[activity] ?? [];
+          const next = existing.filter((entry) => entry.id !== row.id);
+          return {
+            ...prev,
+            [row.date]: {
+              ...day,
+              [activity]: next,
+            },
+          };
+        });
+
+        if (editingLog?.id === row.id) {
+          setEditingLog(null);
+        }
+      } catch (error) {
+        console.error(error);
+      }
+    },
+    [editingLog]
+  );
 
   const handleSaveYogaTemplate = async () => {
     const template = yogaTemplates.find((item) => item.id === selectedYogaTemplateId);
@@ -508,7 +577,7 @@ export default function YogaPage() {
     const ok = await saveActivity(
       "yoga",
       {
-        date: formatDateKey(selectedDate),
+        date: editingLog?.activity_type === "yoga" ? editingLog.date : formatDateKey(selectedDate),
         category: yogaCategory,
         label: yogaTitle.trim(),
         durationMinutes: Math.round(duration),
@@ -520,7 +589,8 @@ export default function YogaPage() {
             }
           : null,
       },
-      "Jóga rögzítve."
+      editingLog?.activity_type === "yoga" ? "Jóga frissítve." : "Jóga rögzítve.",
+      editingLog?.activity_type === "yoga" ? { method: "PATCH", id: editingLog.id } : undefined
     );
 
     if (ok) {
@@ -530,6 +600,7 @@ export default function YogaPage() {
       setYogaLink("");
       setYogaNewNotes("");
       setShowNewYogaForm(false);
+      setEditingLog(null);
       loadYogaTemplates();
     }
   };
@@ -567,7 +638,7 @@ export default function YogaPage() {
     const ok = await saveActivity(
       "acl",
       {
-        date: formatDateKey(selectedDate),
+        date: editingLog?.activity_type === "acl" ? editingLog.date : formatDateKey(selectedDate),
         category: routine.category,
         label: routine.label,
         exerciseId: routine.id,
@@ -576,11 +647,15 @@ export default function YogaPage() {
           exercises: routine.exercises,
         },
       },
-      "ACL blokk rögzítve."
+      editingLog?.activity_type === "acl" ? "ACL blokk frissítve." : "ACL blokk rögzítve.",
+      editingLog?.activity_type === "acl" ? { method: "PATCH", id: editingLog.id } : undefined
     );
 
     if (ok) {
       // Keep the overlay open to allow logging multiple entries for the same day.
+      if (editingLog?.activity_type === "acl") {
+        setEditingLog(null);
+      }
     }
   };
 
@@ -616,7 +691,7 @@ export default function YogaPage() {
     const ok = await saveActivity(
       "strength",
       {
-        date: formatDateKey(selectedDate),
+        date: editingLog?.activity_type === "strength" ? editingLog.date : formatDateKey(selectedDate),
         category: workout.category,
         label: workout.label,
         exerciseId: workout.id,
@@ -624,11 +699,15 @@ export default function YogaPage() {
           exercises: workout.exercises,
         },
       },
-      "Erősítés rögzítve."
+      editingLog?.activity_type === "strength" ? "Erősítés frissítve." : "Erősítés rögzítve.",
+      editingLog?.activity_type === "strength" ? { method: "PATCH", id: editingLog.id } : undefined
     );
 
     if (ok) {
       // Keep the overlay open to allow logging multiple entries for the same day.
+      if (editingLog?.activity_type === "strength") {
+        setEditingLog(null);
+      }
     }
   };
 
@@ -636,20 +715,22 @@ export default function YogaPage() {
     const ok = await saveActivity(
       "running",
       {
-        date: formatDateKey(selectedDate),
+        date: editingLog?.activity_type === "running" ? editingLog.date : formatDateKey(selectedDate),
         category: "run",
         label: "Futás",
         durationMinutes: runDuration ? Number(runDuration) : null,
         distanceKm: runDistance ? Number(runDistance) : null,
         notes: runNotes.trim() || null,
       },
-      "Futás rögzítve."
+      editingLog?.activity_type === "running" ? "Futás frissítve." : "Futás rögzítve.",
+      editingLog?.activity_type === "running" ? { method: "PATCH", id: editingLog.id } : undefined
     );
 
     if (ok) {
       setRunDistance("");
       setRunDuration("");
       setRunNotes("");
+      setEditingLog(null);
     }
   };
 
@@ -675,8 +756,62 @@ export default function YogaPage() {
       const rows = selectedDayLogs[activity] ?? [];
       rows.forEach((row, index) => entries.push({ activity, row, index }));
     });
-    return entries;
+    return entries.sort((a, b) => (b.row.created_at ?? "").localeCompare(a.row.created_at ?? ""));
   }, [selectedDayLogs]);
+  const selectedDayLabel = useMemo(() => {
+    const weekday = new Intl.DateTimeFormat("hu-HU", { weekday: "long" }).format(selectedDate);
+    return `${selectedDayKey} (${weekday})`;
+  }, [selectedDayKey, selectedDate]);
+
+  const beginEditLog = (row: ActivityLogRow) => {
+    setOverlayOpen(true);
+    setEditingLog(row);
+
+    const parsed = parseDateKey(row.date);
+    setSelectedDate(parsed);
+
+    setOverlayActivity(row.activity_type);
+    setOverlayItemId(null);
+    setOverlayExerciseDetail(null);
+
+    if (row.activity_type === "running") {
+      setOverlaySubcategory("run");
+      setRunDistance(row.distance_km != null ? String(row.distance_km) : "");
+      setRunDuration(row.duration_minutes != null ? String(row.duration_minutes) : "");
+      setRunNotes(row.notes ?? "");
+      return;
+    }
+
+    if (row.activity_type === "yoga") {
+      const category = row.category === "strong" ? "strong" : "relax";
+      setOverlaySubcategory(category);
+      setYogaCategory(category);
+      setSelectedYogaTemplateId("");
+      setYogaSavedNotes("");
+      setShowNewYogaForm(true);
+      setYogaTitle(row.label ?? "");
+      setYogaDuration(row.duration_minutes != null ? String(row.duration_minutes) : "10");
+      setYogaIntensity((typeof row.intensity === "number" ? Math.min(3, Math.max(1, row.intensity)) : 2) as 1 | 2 | 3);
+      const link = typeof row.metadata?.link === "string" ? row.metadata.link : "";
+      setYogaLink(link);
+      setYogaNewNotes(row.notes ?? "");
+      return;
+    }
+
+    if (row.activity_type === "strength") {
+      setOverlaySubcategory(row.category);
+      if (row.exercise_id) {
+        setSelectedStrengthId(row.exercise_id);
+      }
+      return;
+    }
+
+    // ACL
+    setOverlaySubcategory(null);
+    if (row.exercise_id) {
+      setSelectedACLId(row.exercise_id);
+    }
+  };
 
   const handleOpenOverlay = () => {
     setOverlayOpen(true);
@@ -697,6 +832,10 @@ export default function YogaPage() {
   };
 
   const handleOverlayBack = () => {
+    if (editingLog) {
+      setEditingLog(null);
+    }
+
     if (overlayExerciseDetail) {
       setOverlayExerciseDetail(null);
       return;
@@ -721,6 +860,7 @@ export default function YogaPage() {
   };
 
   const handleSelectOverlayActivity = (activity: ActivityType) => {
+    setEditingLog(null);
     setOverlayActivity(activity);
     setOverlaySubcategory(activity === "running" ? "run" : null);
     setOverlayItemId(null);
@@ -769,7 +909,7 @@ export default function YogaPage() {
               </button>
               <div className="yoga-overlay__title">
                 <p className="yoga-overlay__label">Kiválasztott nap</p>
-                <strong>{selectedDayKey}</strong>
+                <strong>{selectedDayLabel}</strong>
               </div>
               <button type="button" className="btn btn--ghost" onClick={handleCloseOverlay} aria-label="Bezárás">
                 <X size={16} />
@@ -813,6 +953,25 @@ export default function YogaPage() {
                         >
                           <span className="yoga-deck-card__cornerIcon" aria-hidden="true" />
                         </span>
+
+                        <div className="yoga-archive-card__actions">
+                          <button
+                            type="button"
+                            className="btn btn--ghost"
+                            onClick={() => beginEditLog(row)}
+                            aria-label="Szerkesztés"
+                          >
+                            <Pencil size={16} />
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn--ghost"
+                            onClick={() => deleteLog(row)}
+                            aria-label="Törlés"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
 
                         <p className="yoga-archive-card__meta">{ACTIVITY_LABELS[activity]}</p>
                         <h3 className="yoga-archive-card__title">{row.label || ACTIVITY_LABELS[activity]}</h3>
@@ -1423,9 +1582,11 @@ export default function YogaPage() {
             const isActive = key === formatDateKey(selectedDate);
             const dayLog = logsMap[key] ?? {};
             const loggedActivities = ACTIVITY_ORDER.filter((activity) => (dayLog[activity]?.length ?? 0) > 0);
-            const ringColor = loggedActivities.length
-              ? resolveLogColor(loggedActivities[0], dayLog[loggedActivities[0]]?.[0])
-              : null;
+            const dayEntries = ACTIVITY_ORDER.flatMap((activity) =>
+              (dayLog[activity] ?? []).map((row) => ({ activity, row }))
+            ).sort((a, b) => (b.row.created_at ?? "").localeCompare(a.row.created_at ?? ""));
+            const cornerEntries = dayEntries.slice(0, 4);
+            const ringColor = cornerEntries.length ? resolveLogColor(cornerEntries[0].activity, cornerEntries[0].row) : null;
             return (
               <button
                 key={key}
@@ -1438,12 +1599,12 @@ export default function YogaPage() {
               >
                 <span className="yoga-week-day__weekday">{WEEKDAY_LABELS[(day.getDay() + 6) % 7]}</span>
                 <strong className="yoga-week-day__number">{day.getDate()}</strong>
-                {loggedActivities.map((activity, index) => {
+                {cornerEntries.map(({ activity, row }, index) => {
                   const position = index === 0 ? "tr" : index === 1 ? "br" : index === 2 ? "bl" : "tl";
-                  const color = resolveLogColor(activity, dayLog[activity]?.[0]);
+                  const color = resolveLogColor(activity, row);
                   return (
                     <span
-                      key={`${key}-${activity}`}
+                      key={`${key}-${activity}-${row.id}`}
                       className={`yoga-week-day__corner yoga-week-day__corner--${position}`}
                       style={{ backgroundColor: color }}
                       aria-hidden="true"
@@ -1846,25 +2007,42 @@ export default function YogaPage() {
             const key = formatDateKey(date);
             const dayLog = logsMap[key] ?? {};
             const loggedActivities = ACTIVITY_ORDER.filter((activity) => (dayLog[activity]?.length ?? 0) > 0);
+            const dayEntries = ACTIVITY_ORDER.flatMap((activity) =>
+              (dayLog[activity] ?? []).map((row) => ({ activity, row }))
+            ).sort((a, b) => (b.row.created_at ?? "").localeCompare(a.row.created_at ?? ""));
+            const cornerEntries = dayEntries.slice(0, 4);
+            const ringColor = cornerEntries.length ? resolveLogColor(cornerEntries[0].activity, cornerEntries[0].row) : null;
 
             const isToday = key === formatDateKey(today);
+
+            if (loggedActivities.length === 0) {
+              return (
+                <div
+                  key={key}
+                  className={`yoga-month-day ${isToday ? "yoga-month-day--today" : ""}`}
+                >
+                  <span className="yoga-month-day__number">{date.getDate()}</span>
+                </div>
+              );
+            }
 
             return (
               <button
                 key={key}
                 type="button"
-                className={`yoga-month-day ${
+                className={`yoga-month-day yoga-month-day--selectable ${
                   loggedActivities.length ? "yoga-month-day--logged" : ""
                 } ${isToday ? "yoga-month-day--today" : ""}`}
                 onClick={() => handleSelectDay(date)}
+                style={ringColor ? ({ ["--yoga-ring" as never]: ringColor } as any) : undefined}
               >
                 <span className="yoga-month-day__number">{date.getDate()}</span>
-                {loggedActivities.map((activity, index) => {
+                {cornerEntries.map(({ activity, row }, index) => {
                   const position = index === 0 ? "tr" : index === 1 ? "br" : index === 2 ? "bl" : "tl";
-                  const color = resolveLogColor(activity, dayLog[activity]?.[0]);
+                  const color = resolveLogColor(activity, row);
                   return (
                     <span
-                      key={`${key}-${activity}-corner`}
+                      key={`${key}-${activity}-${row.id}-corner`}
                       className={`yoga-month-day__corner yoga-month-day__corner--${position}`}
                       style={{ backgroundColor: color }}
                       aria-hidden="true"
@@ -1875,17 +2053,13 @@ export default function YogaPage() {
                   {loggedActivities.map((activity) => {
                     const row = dayLog[activity]?.[0];
                     const accent = resolveLogColor(activity, row);
-                    const Icon =
-                      activity === "yoga"
-                        ? Flower2
-                        : activity === "strength"
-                          ? Dumbbell
-                          : activity === "acl"
-                            ? ShieldCheck
-                            : Footprints;
                     return (
                       <span key={`${key}-${activity}-pill`} className="yoga-month-pill" style={{ backgroundColor: accent }}>
-                        <Icon size={12} />
+                        <span
+                          className="yoga-month-pill__icon"
+                          style={{ ["--icon-url" as never]: `url('${getActivityIcon(activity)}')` } as any}
+                          aria-hidden="true"
+                        />
                       </span>
                     );
                   })}

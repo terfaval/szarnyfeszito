@@ -344,6 +344,11 @@ svg {
   border-color: var(--line);
 }
 
+.admin-nav-link--active {
+  color: var(--brand-warm);
+  border-color: var(--line);
+}
+
 .admin-topbar__logout-button {
   border-radius: 9999px;
   border: 1px solid var(--line);
@@ -998,6 +1003,7 @@ svg {
   min-height: min(520px, calc(100vh - 2rem));
   max-height: min(720px, calc(100vh - 2rem));
   overflow: auto;
+  scrollbar-color: rgba(255, 255, 255, 0.28) transparent;
   border-radius: 18px;
   padding: 1.25rem;
   background: var(--panel-2);
@@ -1006,6 +1012,21 @@ svg {
   color: var(--foreground);
   display: flex;
   flex-direction: column;
+}
+
+.yoga-overlay__panel::-webkit-scrollbar {
+  width: 10px;
+}
+
+.yoga-overlay__panel::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.yoga-overlay__panel::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.22);
+  border-radius: 999px;
+  border: 3px solid transparent;
+  background-clip: padding-box;
 }
 
 .yoga-overlay__panel::after {
@@ -1475,9 +1496,13 @@ svg {
   text-align: center;
   position: relative;
   width: 100%;
-  cursor: pointer;
+  cursor: default;
   appearance: none;
   color: inherit;
+}
+
+.yoga-month-day--selectable {
+  cursor: pointer;
 }
 
 .yoga-month-day--empty {
@@ -1487,6 +1512,7 @@ svg {
 
 .yoga-month-day--logged {
   border-style: solid;
+  box-shadow: 0 0 0 3px var(--yoga-ring, rgba(255, 255, 255, 0.22));
 }
 
 .yoga-month-day--today {
@@ -1504,6 +1530,7 @@ svg {
   width: 34px;
   height: 34px;
   opacity: 0.95;
+  z-index: 2;
 }
 
 .yoga-month-day__corner--tr {
@@ -1535,7 +1562,7 @@ svg {
   display: flex;
   justify-content: center;
   gap: 0.35rem;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
 }
 
 .yoga-month-pill {
@@ -1546,6 +1573,20 @@ svg {
   place-items: center;
   color: rgba(255, 255, 255, 0.92);
   box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.2);
+}
+
+.yoga-month-pill__icon {
+  width: 12px;
+  height: 12px;
+  background: rgba(255, 255, 255, 0.98);
+  -webkit-mask-image: var(--icon-url);
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  -webkit-mask-size: contain;
+  mask-image: var(--icon-url);
+  mask-repeat: no-repeat;
+  mask-position: center;
+  mask-size: contain;
 }
 
 .yoga-overlay__archive {
@@ -1576,6 +1617,15 @@ svg {
   flex-direction: column;
   gap: 0.5rem;
   height: 100%;
+}
+
+.yoga-archive-card__actions {
+  position: absolute;
+  top: 0.5rem;
+  left: 0.5rem;
+  display: flex;
+  gap: 0.25rem;
+  z-index: 3;
 }
 
 .yoga-archive-card__title {

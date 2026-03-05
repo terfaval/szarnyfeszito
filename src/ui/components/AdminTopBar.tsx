@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ReactNode } from "react";
+import { usePathname } from "next/navigation";
 import LogoutButton from "@/components/LogoutButton";
 
 const NAV_LINKS = [
@@ -18,6 +19,17 @@ export type AdminTopBarProps = {
 };
 
 export function AdminTopBar({ action }: AdminTopBarProps) {
+  const pathname = usePathname() ?? "";
+  const logoSrc = pathname.startsWith("/admin/yoga") ? "/yoga/icons/logo.svg" : "/logo.svg";
+
+  const isActive = (href: string) => {
+    if (href === "/admin") {
+      return pathname === "/admin";
+    }
+
+    return pathname === href || pathname.startsWith(`${href}/`);
+  };
+
   return (
     <div className="admin-topbar">
       <div className="admin-topbar__inner">
@@ -28,7 +40,7 @@ export function AdminTopBar({ action }: AdminTopBarProps) {
             aria-label="Return to admin home"
           >
             <Image
-              src="/logo.svg"
+              src={logoSrc}
               alt="Szárnyfeszítő"
               width={48}
               height={48}
@@ -37,7 +49,12 @@ export function AdminTopBar({ action }: AdminTopBarProps) {
           </Link>
           <nav className="admin-topbar__nav" aria-label="Admin sections">
             {NAV_LINKS.map((link) => (
-              <Link key={link.href} href={link.href} className="admin-nav-link">
+              <Link
+                key={link.href}
+                href={link.href}
+                className={`admin-nav-link ${isActive(link.href) ? "admin-nav-link--active" : ""}`}
+                aria-current={isActive(link.href) ? "page" : undefined}
+              >
                 {link.label}
               </Link>
             ))}
