@@ -20,7 +20,7 @@ export type AdminTopBarProps = {
 
 export function AdminTopBar({ action }: AdminTopBarProps) {
   const pathname = usePathname() ?? "";
-  const logoSrc = pathname.startsWith("/admin/yoga") ? "/yoga/icons/logo.svg" : "/logo.svg";
+  const logoSrc = pathname.startsWith("/admin/yoga") ? "/YOGA/ICONS/logo.svg" : "/logo.svg";
 
   const isActive = (href: string) => {
     if (href === "/admin") {

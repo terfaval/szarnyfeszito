@@ -12,7 +12,6 @@ import {
   Info,
   Link2,
   Plus,
-  Pencil,
   Repeat,
   ShieldCheck,
   Star,
@@ -108,7 +107,7 @@ const CATEGORY_COLORS: Record<ActivityType, string> = {
 };
 
 function getIconUrl(key: string) {
-  return `/yoga/icons/${key}`;
+  return `/YOGA/ICONS/${key}`;
 }
 
 function getActivityIcon(activity: ActivityType) {
@@ -282,18 +281,21 @@ export default function YogaPage() {
         throw new Error(payload.error ?? "Nem sikerült betölteni.");
       }
 
-      setLogsMap((prev) => {
-        const next = { ...prev };
-        payload.data.forEach((entry: ActivityLogRow) => {
-          const day = next[entry.date] ?? {};
-          const existing = day[entry.activity_type] ?? [];
-          next[entry.date] = {
-            ...day,
-            [entry.activity_type]: [...existing, entry],
-          };
+        setLogsMap((prev) => {
+          const next = { ...prev };
+          payload.data.forEach((entry: ActivityLogRow) => {
+            const day = next[entry.date] ?? {};
+            const existing = day[entry.activity_type] ?? [];
+            if (existing.some((row) => row.id === entry.id)) {
+              return;
+            }
+            next[entry.date] = {
+              ...day,
+              [entry.activity_type]: [...existing, entry],
+            };
+          });
+          return next;
         });
-        return next;
-      });
       setLoadedMonths((prev) => [...prev, monthKey]);
       setErrorMessages({ ...DEFAULT_STATUS });
     } catch (error) {
@@ -418,7 +420,7 @@ export default function YogaPage() {
         const log: ActivityLogRow = body.data;
 
         setLogsMap((prev) => {
-          const key = payload.date;
+          const key = log.date ?? payload.date;
           const day = prev[key] ?? {};
           const existing = day[activityType] ?? [];
           if (method === "PATCH") {
@@ -432,6 +434,9 @@ export default function YogaPage() {
                 [activityType]: next,
               },
             };
+          }
+          if (existing.some((row) => row.id === log.id)) {
+            return prev;
           }
           return {
             ...prev,
@@ -530,6 +535,21 @@ export default function YogaPage() {
     },
     [editingLog]
   );
+
+  const handleDeleteEditing = useCallback(async () => {
+    if (!editingLog) {
+      return;
+    }
+
+    await deleteLog(editingLog);
+
+    // Return to the "pick category" view after deleting the entry.
+    setOverlayActivity(null);
+    setOverlaySubcategory(null);
+    setOverlayItemId(null);
+    setOverlayExerciseDetail(null);
+    setEditingLog(null);
+  }, [deleteLog, editingLog]);
 
   const handleSaveYogaTemplate = async () => {
     const template = yogaTemplates.find((item) => item.id === selectedYogaTemplateId);
@@ -911,9 +931,21 @@ export default function YogaPage() {
                 <p className="yoga-overlay__label">Kiválasztott nap</p>
                 <strong>{selectedDayLabel}</strong>
               </div>
-              <button type="button" className="btn btn--ghost" onClick={handleCloseOverlay} aria-label="Bezárás">
-                <X size={16} />
-              </button>
+              <div className="yoga-overlay__actions">
+                {editingLog && (
+                  <button type="button" className="btn btn--ghost" onClick={handleDeleteEditing} aria-label="Törlés">
+                    <Trash2 size={16} />
+                  </button>
+                )}
+                <button
+                  type="button"
+                  className="btn btn--ghost yoga-overlay__close"
+                  onClick={handleCloseOverlay}
+                  aria-label="Bezárás"
+                >
+                  <X size={16} />
+                </button>
+              </div>
             </div>
 
             {selectedDayEntries.length > 0 && (
@@ -941,10 +973,12 @@ export default function YogaPage() {
                     const exercises = Array.isArray(exercisesRaw) ? (exercisesRaw as any[]) : [];
 
                     return (
-                      <article
+                      <button
                         key={`${row.id ?? "entry"}-${idx}`}
-                        className="yoga-archive-card"
+                        type="button"
+                        className="yoga-archive-card yoga-archive-card--compact"
                         style={{ ["--card-accent" as never]: accent } as any}
+                        onClick={() => beginEditLog(row)}
                       >
                         <span
                           className="yoga-deck-card__corner"
@@ -953,81 +987,8 @@ export default function YogaPage() {
                         >
                           <span className="yoga-deck-card__cornerIcon" aria-hidden="true" />
                         </span>
-
-                        <div className="yoga-archive-card__actions">
-                          <button
-                            type="button"
-                            className="btn btn--ghost"
-                            onClick={() => beginEditLog(row)}
-                            aria-label="Szerkesztés"
-                          >
-                            <Pencil size={16} />
-                          </button>
-                          <button
-                            type="button"
-                            className="btn btn--ghost"
-                            onClick={() => deleteLog(row)}
-                            aria-label="Törlés"
-                          >
-                            <Trash2 size={16} />
-                          </button>
-                        </div>
-
-                        <p className="yoga-archive-card__meta">{ACTIVITY_LABELS[activity]}</p>
-                        <h3 className="yoga-archive-card__title">{row.label || ACTIVITY_LABELS[activity]}</h3>
-
-                        {activity === "yoga" && (
-                          <p className="yoga-archive-card__meta">
-                            {row.category === "strong" ? "STRONG" : "RELAX"}
-                            {typeof row.duration_minutes === "number" ? ` • ${row.duration_minutes} perc` : ""}
-                            {typeof row.intensity === "number" ? (
-                              <span className="yoga-intensity" aria-label="Intenzitás">
-                                {([1, 2, 3] as const).map((value) => (
-                                  <span
-                                    key={value}
-                                    className={`yoga-intensity__star ${
-                                      (row.intensity ?? 0) >= value ? "yoga-intensity__star--active" : ""
-                                    }`}
-                                    aria-hidden="true"
-                                  >
-                                    <Star size={18} strokeWidth={0} />
-                                  </span>
-                                ))}
-                              </span>
-                            ) : null}
-                          </p>
-                        )}
-
-                        {activity === "running" && (
-                          <p className="yoga-archive-card__meta">
-                            {typeof row.distance_km === "number" ? `${row.distance_km} km` : "—"}
-                            {typeof row.duration_minutes === "number" ? ` • ${row.duration_minutes} perc` : ""}
-                          </p>
-                        )}
-
-                        {(activity === "acl" || activity === "strength") && exercises.length > 0 && (
-                          <div className="yoga-exercise-list">
-                            {exercises.map((exercise) => {
-                              const name = typeof exercise?.name === "string" ? exercise.name : "Gyakorlat";
-                              const reps = typeof exercise?.reps === "string" ? exercise.reps : "";
-                              return (
-                                <div key={`${name}-${reps}`} className="yoga-exercise-row">
-                                  <span className="yoga-exercise-name">{name}</span>
-                                  <span className="yoga-exercise-reps">{reps}</span>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        )}
-
-                        {link && (
-                          <a className="yoga-archive-card__link" href={link} target="_blank" rel="noreferrer">
-                            {link}
-                          </a>
-                        )}
-
-                        {row.notes && <p className="yoga-archive-card__notes">{row.notes}</p>}
-                      </article>
+                        <strong className="yoga-archive-card__title">{row.label || ACTIVITY_LABELS[activity]}</strong>
+                      </button>
                     );
                   })}
                 </div>

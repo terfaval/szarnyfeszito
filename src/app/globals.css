@@ -818,33 +818,34 @@ svg {
 
 .yoga-week-day__corner {
   position: absolute;
-  width: 44px;
-  height: 44px;
+  width: 36px;
+  height: 36px;
   opacity: 0.95;
+  z-index: 2;
 }
 
 .yoga-week-day__corner--tr {
-  top: 0;
-  right: 0;
-  border-radius: 0 16px 0 14px;
+  top: -1px;
+  right: -1px;
+  border-radius: 0 16px 0 12px;
 }
 
 .yoga-week-day__corner--br {
-  bottom: 0;
-  right: 0;
-  border-radius: 14px 0 16px 0;
+  bottom: -1px;
+  right: -1px;
+  border-radius: 12px 0 16px 0;
 }
 
 .yoga-week-day__corner--bl {
-  bottom: 0;
-  left: 0;
-  border-radius: 0 14px 0 16px;
+  bottom: -1px;
+  left: -1px;
+  border-radius: 0 12px 0 16px;
 }
 
 .yoga-week-day__corner--tl {
-  top: 0;
-  left: 0;
-  border-radius: 16px 0 14px 0;
+  top: -1px;
+  left: -1px;
+  border-radius: 16px 0 12px 0;
 }
 
 .yoga-week-day__today {
@@ -1057,6 +1058,18 @@ svg {
   text-align: center;
 }
 
+.yoga-overlay__actions {
+  justify-self: end;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.yoga-overlay__close {
+  justify-self: end;
+  width: max-content;
+}
+
 .yoga-overlay__label {
   margin: 0;
   font-size: 0.65rem;
@@ -1143,15 +1156,11 @@ svg {
 .yoga-deck-card__cornerIcon {
   width: 22px;
   height: 22px;
-  background: rgba(255, 255, 255, 0.98);
-  -webkit-mask-image: var(--icon-url);
-  -webkit-mask-repeat: no-repeat;
-  -webkit-mask-position: center;
-  -webkit-mask-size: contain;
-  mask-image: var(--icon-url);
-  mask-repeat: no-repeat;
-  mask-position: center;
-  mask-size: contain;
+  background-image: var(--icon-url);
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  filter: brightness(0) invert(1);
 }
 
 .yoga-deck-card__plus {
@@ -1231,15 +1240,11 @@ svg {
 .yoga-form-card__badgeIcon {
   width: 24px;
   height: 24px;
-  background: rgba(255, 255, 255, 0.98);
-  -webkit-mask-image: var(--icon-url);
-  -webkit-mask-repeat: no-repeat;
-  -webkit-mask-position: center;
-  -webkit-mask-size: contain;
-  mask-image: var(--icon-url);
-  mask-repeat: no-repeat;
-  mask-position: center;
-  mask-size: contain;
+  background-image: var(--icon-url);
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  filter: brightness(0) invert(1);
 }
 
 .yoga-form-card__meta {
@@ -1578,15 +1583,11 @@ svg {
 .yoga-month-pill__icon {
   width: 12px;
   height: 12px;
-  background: rgba(255, 255, 255, 0.98);
-  -webkit-mask-image: var(--icon-url);
-  -webkit-mask-repeat: no-repeat;
-  -webkit-mask-position: center;
-  -webkit-mask-size: contain;
-  mask-image: var(--icon-url);
-  mask-repeat: no-repeat;
-  mask-position: center;
-  mask-size: contain;
+  background-image: var(--icon-url);
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  filter: brightness(0) invert(1);
 }
 
 .yoga-overlay__archive {
@@ -1617,6 +1618,16 @@ svg {
   flex-direction: column;
   gap: 0.5rem;
   height: 100%;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  appearance: none;
+  color: inherit;
+}
+
+.yoga-archive-card--compact {
+  min-height: 92px;
+  justify-content: flex-end;
 }
 
 .yoga-archive-card__actions {
