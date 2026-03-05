@@ -98,7 +98,8 @@ create table if not exists activity_logs (
   updated_at timestamptz not null default now()
 );
 
-create unique index if not exists activity_logs_date_type_idx on activity_logs (date, activity_type);
+-- Allow multiple logs per day+type (e.g. multiple yoga entries on the same day).
+create index if not exists activity_logs_date_type_idx on activity_logs (date, activity_type);
 
 create table if not exists yoga_logs (
   id uuid primary key default gen_random_uuid(),

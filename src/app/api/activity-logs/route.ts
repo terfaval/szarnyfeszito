@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAdminUserFromCookies } from "@/lib/auth";
-import { listActivityLogs, upsertActivityLog } from "@/lib/activityService";
+import { createActivityLog, listActivityLogs } from "@/lib/activityService";
 import type { ActivityType } from "@/types/activity";
 
 const VALID_TYPES: ActivityType[] = ["yoga", "strength", "acl", "running"];
@@ -120,7 +120,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const log = await upsertActivityLog({
+  const log = await createActivityLog({
     date,
     activityType,
     category,

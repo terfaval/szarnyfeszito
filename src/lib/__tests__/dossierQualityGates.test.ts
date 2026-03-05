@@ -74,6 +74,7 @@ const baseDossier: BirdDossier = {
     migration_note: "Általában a környékén marad, csak extrém hidegben mozdul.",
   },
   fun_fact: "Szívesen lebeg a víz fölött, mintha tükörlabda lenne.",
+  did_you_know: "Ha közelebb merészkedik, gyakran a víztükör peremén fut végig, mintha lépésekkel mérné fel a nádas ritmusát.",
   ethics_tip: "Tisztítsuk meg a partokat, ne zavarjuk a fészkét.",
   typical_places: ["Tisza-tavi nádasa", "Duna menti szigetek"],
 };

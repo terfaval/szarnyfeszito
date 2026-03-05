@@ -232,14 +232,68 @@ const JSON_TEMPLATE = `{
   "typical_places": ["Ă˘â‚¬Â¦"]
 }`;
 
+// Prefer an ASCII placeholder template to avoid mojibake confusing the model output.
+// Keep enum-like literals (e.g. key_features.title) aligned with the Zod schema until encoding cleanup lands.
+const JSON_TEMPLATE_V2_2 = `{
+  "schema_version": "v2.2",
+  "signature_trait": "...",
+  "header": {
+    "name_hu": "...",
+    "name_latin": "...",
+    "subtitle": "...",
+    "short_summary": "..."
+  },
+  "pill_meta": {
+    "region_teaser": "...",
+    "size_cm": { "min": null, "max": null },
+    "wingspan_cm": { "min": null, "max": null },
+    "diet_short": "...",
+    "lifespan_years": { "min": null, "max": null }
+  },
+  "short_options": ["...", "...", "..."],
+  "long_paragraphs": ["...", "..."],
+  "identification": {
+    "key_features": [
+      { "title": "CsĹ‘r", "description": "..." },
+      { "title": "Tollazat", "description": "..." },
+      { "title": "Hang", "description": "..." },
+      { "title": "MozgĂˇs", "description": "..." }
+    ],
+    "identification_paragraph": "..."
+  },
+  "distribution": {
+    "taxonomy": { "order": null, "family": null, "genus": null, "species": null },
+    "iucn_status": null,
+    "distribution_regions": ["..."],
+    "distribution_note": "..."
+  },
+  "nesting": {
+    "nesting_type": null,
+    "nest_site": null,
+    "breeding_season": null,
+    "clutch_or_chicks_count": null,
+    "nesting_note": "..."
+  },
+  "migration": {
+    "is_migratory": null,
+    "timing": null,
+    "route": null,
+    "migration_note": "..."
+  },
+  "fun_fact": "...",
+  "did_you_know": "...",
+  "ethics_tip": "...",
+  "typical_places": ["..."]
+}`;
+
 const SYSTEM_PROMPT = `
 Return ONLY a single JSON object. No markdown, no commentary, no code fences.
 
 You MUST output EXACTLY the following object shape (fill values, keep keys/types):
-${JSON_TEMPLATE}
+${JSON_TEMPLATE_V2_2}
 
 HARD RULES:
-- Top-level keys must be present: header, pill_meta, short_options, long_paragraphs, identification, distribution, nesting, migration, fun_fact, ethics_tip, typical_places.
+  - Top-level keys must be present: header, pill_meta, short_options, long_paragraphs, identification, distribution, nesting, migration, fun_fact, did_you_know, ethics_tip, typical_places.
 - distribution/nesting/migration MUST be objects (never strings).
 - Use null for nullable fields when unknown; when you do provide numbers keep ranges conservative and avoid false precision (no spans < ~2 units unless null).
 - Identity lock: header.name_hu must equal the normalized Hungarian name provided as input, and header.name_latin must match the provided Latin name exactly.
@@ -282,6 +336,7 @@ function validateMinimumShape(payload: unknown, rawJson: string) {
   mustHave(payload, "nesting");
   mustHave(payload, "migration");
   mustHave(payload, "fun_fact");
+  mustHave(payload, "did_you_know");
   mustHave(payload, "ethics_tip");
   mustHave(payload, "typical_places");
 
@@ -435,9 +490,14 @@ Avoid overly narrow ranges (false precision).
           ? `${baseUserPrompt}\n\nREPAIR: keep sentences shorter everywhere; obey template; output JSON only.`
           : `${baseUserPrompt}\n\nREPAIR: focus on missing keys/types + short_options 60Ă˘â‚¬â€ś80 chars; output JSON only.`;
 
-    lastPrompt = prompt;
+    const effectivePrompt =
+      attempt === 3
+        ? `${baseUserPrompt}\n\nREPAIR: focus on missing keys/types + include did_you_know + ensure short_options are 90-170 chars and end with punctuation; output JSON only.`
+        : prompt;
 
-    const response = await runCompletion(prompt);
+    lastPrompt = effectivePrompt;
+
+    const response = await runCompletion(effectivePrompt);
     lastModel = response.modelName;
 
     const extracted = extractJsonPayload(response.message);
