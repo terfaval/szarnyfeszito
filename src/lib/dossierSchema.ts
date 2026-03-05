@@ -96,20 +96,23 @@ const iucnSchema = z.preprocess(
   z.enum(IUCN_STATUS_VALUES).nullable()
 );
 
-const headerSchema = z.object({
-  name_hu: trimmedString(),
-  name_latin: trimmedString(),
-  subtitle: trimmedString(),
-  short_summary: trimmedString(),
-});
+  const headerSchema = z.object({
+    name_hu: trimmedString(),
+    name_latin: trimmedString(),
+    subtitle: trimmedString(),
+    short_summary: trimmedString(),
+  });
 
-const pillMetaSchema = z.object({
-  region_teaser: trimmedString(),
-  size_cm: measurementSchema,
-  wingspan_cm: measurementSchema,
-  diet_short: trimmedString(),
-  lifespan_years: measurementSchema,
-});
+  const habitatClassSchema = z.enum(["erdő", "vízpart", "puszta", "hegy", "város"]);
+
+  const pillMetaSchema = z.object({
+    habitat_class: habitatClassSchema,
+    region_teaser: trimmedString(),
+    size_cm: measurementSchema,
+    wingspan_cm: measurementSchema,
+    diet_short: trimmedString(),
+    lifespan_years: measurementSchema,
+  });
 
 // Force the four recognition axes for illustration support.
 const keyFeatureSchema = z.object({

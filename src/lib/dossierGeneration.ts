@@ -160,7 +160,7 @@ const validateSignatureSpecificity = (signature: string): string[] => {
 
 const MAX_GENERATION_ATTEMPTS = 3;
 const SHORT_OPTION_RETRY_HINT =
-  "short_options must be exactly 3 strings, 90â€“170 chars, full sentences ending in punctuation, each tied to a separate axis (morphology/plumage/beak/sound/movement/habitat/behavior) without suffix dominance.";
+  "short_options must be exactly 3 strings, each a complete sentence ending in punctuation, 90-170 chars; across the 3 sentences cover at least two different axes (morphology/plumage/beak/sound/movement/habitat/behavior); avoid shared openings, trailing conjunctions, and sensory suffix templates.";
 
 const isPlainObject = (v: unknown): v is Record<string, unknown> =>
   typeof v === "object" && v !== null && !Array.isArray(v);
@@ -244,6 +244,7 @@ const JSON_TEMPLATE_V2_2 = `{
     "short_summary": "..."
   },
   "pill_meta": {
+    "habitat_class": "erdő",
     "region_teaser": "...",
     "size_cm": { "min": null, "max": null },
     "wingspan_cm": { "min": null, "max": null },
@@ -294,13 +295,14 @@ ${JSON_TEMPLATE_V2_2}
 
 HARD RULES:
   - Top-level keys must be present: header, pill_meta, short_options, long_paragraphs, identification, distribution, nesting, migration, fun_fact, did_you_know, ethics_tip, typical_places.
+- pill_meta.habitat_class must be exactly one of: erdő, vízpart, puszta, hegy, város (pick the strongest).
 - distribution/nesting/migration MUST be objects (never strings).
 - Use null for nullable fields when unknown; when you do provide numbers keep ranges conservative and avoid false precision (no spans < ~2 units unless null).
 - Identity lock: header.name_hu must equal the normalized Hungarian name provided as input, and header.name_latin must match the provided Latin name exactly.
-- short_options: exactly 3 strings, 90â€“170 chars, complete sentences ending in punctuation, each tied to a distinct axis (morphology/plumage/beak/sound/movement/habitat/behavior), no trailing conjunctions, no shared openings, no reliance on sensory suffix templates.
-- short_summary: 1â€“2 sentences can lean Durrell/Adams but must include at least one concrete axis anchor; avoid being reduced to “különleges madár” or “lenyűgöző faj” without detail.
-- long_paragraphs: two paragraphs; the tone can carry one witty sentence per paragraph but otherwise stay concrete, avoid hearsay/record phrases (“a helyiek szerint”, “gyakran nevezik”, “rekord”, etc.), and do not invent digits or citations.
-- identification.key_features: four entries with distinct titles; each description must mention the axis-specific keywords so the cue is field-usable.
+- short_options: exactly 3 strings, 90-170 chars, each a complete sentence ending in punctuation; across the 3 sentences cover at least two different axes (morphology/plumage/beak/sound/movement/habitat/behavior); no trailing conjunctions, no shared openings, no reliance on sensory suffix templates.
+- short_summary: 1-2 sentences can lean Durrell/Adams but must include at least one concrete observable detail; avoid being reduced to “különleges madár” or “lenyűgöző faj” without detail.
+- long_paragraphs: exactly two paragraphs; Paragraph 1 is a concrete field encounter scene, Paragraph 2 is context (habitat/migration/behavior) without repeating Paragraph 1; at most one witty sentence per paragraph; otherwise stay concrete, avoid hearsay/record phrases (“a helyiek szerint”, “gyakran nevezik”, “rekord”, etc.), and do not invent digits or citations.
+- identification.key_features: four entries with distinct titles; each description must be field-usable (concrete, non-generic).
 - Output JSON only.
 `.trim();
 
@@ -393,10 +395,11 @@ export async function generateBirdDossier(
   
   Content expectations (Hungarian):
   - Identity lock: use the provided names exactly; do not substitute another species.
-  - short_options: three axis taglines (morphology/plumage/beak/sound/movement/habitat/behavior), 90â€“170 chars, full sentences ending in punctuation, each anchored to a different axis.
-  - short_summary: 1â€“2 sentences can lean Durrell/Adams but must include at least one concrete axis anchor and avoid generic phrases.
-  - long_paragraphs: two paragraphs that stay concrete, avoid hearsay/records, and do not invent digits or citations.
-  - identification: deliver four field-usable cues (Csőr, Tollazat, Hang, Mozgás) with axis-specific keywords in their descriptions.
+  - pill_meta.habitat_class: pick 1 from (erdő/vízpart/puszta/hegy/város) as the strongest fit for this bird.
+  - short_options: exactly 3 sentences, 90-170 chars, end punctuation; across the 3 sentences cover at least two different axes (morphology/plumage/beak/sound/movement/habitat/behavior) but do not force axis keywords.
+  - short_summary: 1-2 sentences can lean Durrell/Adams but must include at least one concrete observable detail and avoid generic phrases.
+  - long_paragraphs: exactly two paragraphs; Paragraph 1 is a concrete field encounter scene, Paragraph 2 is context (habitat/migration/behavior) without repeating Paragraph 1; at most one witty sentence per paragraph; avoid hearsay/records; do not invent digits or citations.
+  - identification: deliver four field-usable cues (Csőr, Tollazat, Hang, Mozgás) with concrete, non-generic descriptions.
   - Structured facts: use null when unknown or offer conservative ranges (≥2 units wide) within plausible caps.
   - distribution/nesting/migration each needs short categorical fields + 2â€“3 sentence note.
   - Do not invent impossible claims.
@@ -415,12 +418,22 @@ Write header.short_summary and both long_paragraphs
 so that they consistently center around this signature_trait.
 Do not switch dominant focus mid-text.
 
+pill_meta.habitat_class:
+- Pick from the fixed set (erdő/vízpart/puszta/hegy/város) as the strongest fit.
+
 short_options:
 - exactly 3 standalone sentences
-- 90–170 characters
-- each must use a different identification axis
-(silhouette / plumage / sound / behavior / habitat)
-- must end with a period.
+- 90-170 characters
+- must end with punctuation
+- across the 3 sentences cover at least two different axes
+  (silhouette / plumage / beak / sound / movement / behavior / habitat)
+- do not force axis keywords
+
+long_paragraphs:
+- exactly 2 paragraphs
+- Paragraph 1: field encounter scene (concrete, specific)
+- Paragraph 2: context (habitat/migration/behavior) with a different focus; do not repeat Paragraph 1
+- at most one light witty sentence per paragraph
 
 identification.key_features:
 - exactly 4 items
@@ -483,21 +496,12 @@ Avoid overly narrow ranges (false precision).
   let lastPrompt = baseUserPrompt;
 
   for (let attempt = 1; attempt <= MAX_GENERATION_ATTEMPTS; attempt++) {
-    const prompt =
-      attempt === 1
-        ? baseUserPrompt
-        : attempt === 2
-          ? `${baseUserPrompt}\n\nREPAIR: keep sentences shorter everywhere; obey template; output JSON only.`
-          : `${baseUserPrompt}\n\nREPAIR: focus on missing keys/types + short_options 60Ă˘â‚¬â€ś80 chars; output JSON only.`;
+    const repairDirective = `REPAIR: fix schema/key/type mismatches; rewrite short_options to comply (${SHORT_OPTION_RETRY_HINT}); keep the voice vivid; output JSON only.`;
+    const prompt = attempt === 1 ? baseUserPrompt : `${baseUserPrompt}\n\n${repairDirective}`;
 
-    const effectivePrompt =
-      attempt === 3
-        ? `${baseUserPrompt}\n\nREPAIR: focus on missing keys/types + include did_you_know + ensure short_options are 90-170 chars and end with punctuation; output JSON only.`
-        : prompt;
+    lastPrompt = prompt;
 
-    lastPrompt = effectivePrompt;
-
-    const response = await runCompletion(effectivePrompt);
+    const response = await runCompletion(prompt);
     lastModel = response.modelName;
 
     const extracted = extractJsonPayload(response.message);

@@ -134,6 +134,22 @@ function getAclCategoryIcon(category: "routine" | "block") {
   return category === "block" ? getIconUrl("icon_acl-train.svg") : getIconUrl("icon_acl-routine.svg");
 }
 
+function getLogIcon(activity: ActivityType, row: ActivityLogRow) {
+  if (activity === "yoga") {
+    return getYogaCategoryIcon(row.category === "strong" ? "strong" : "relax");
+  }
+
+  if (activity === "strength") {
+    return getStrengthCategoryIcon(row.category === "intense" ? "intense" : "easy");
+  }
+
+  if (activity === "acl") {
+    return getAclCategoryIcon(row.category === "block" ? "block" : "routine");
+  }
+
+  return getActivityIcon("running");
+}
+
 const SUBCATEGORY_COLORS: Record<ActivityType, Record<string, string>> = {
   yoga: {
     relax: "#db9221",
@@ -281,21 +297,25 @@ export default function YogaPage() {
         throw new Error(payload.error ?? "Nem sikerült betölteni.");
       }
 
-        setLogsMap((prev) => {
-          const next = { ...prev };
-          payload.data.forEach((entry: ActivityLogRow) => {
-            const day = next[entry.date] ?? {};
-            const existing = day[entry.activity_type] ?? [];
-            if (existing.some((row) => row.id === entry.id)) {
-              return;
-            }
-            next[entry.date] = {
-              ...day,
-              [entry.activity_type]: [...existing, entry],
-            };
-          });
-          return next;
+      setLogsMap((prev) => {
+        const next = { ...prev };
+        payload.data.forEach((entry: ActivityLogRow) => {
+          const day = next[entry.date] ?? {};
+          const existing = day[entry.activity_type] ?? [];
+          if (existing.some((row) => row.id === entry.id)) {
+            return;
+          }
+
+          const merged = [...existing, entry].sort((a, b) =>
+            (a.created_at ?? "").localeCompare(b.created_at ?? "")
+          );
+          next[entry.date] = {
+            ...day,
+            [entry.activity_type]: merged,
+          };
         });
+        return next;
+      });
       setLoadedMonths((prev) => [...prev, monthKey]);
       setErrorMessages({ ...DEFAULT_STATUS });
     } catch (error) {
@@ -431,7 +451,9 @@ export default function YogaPage() {
               ...prev,
               [key]: {
                 ...day,
-                [activityType]: next,
+                [activityType]: [...next].sort((a, b) =>
+                  (a.created_at ?? "").localeCompare(b.created_at ?? "")
+                ),
               },
             };
           }
@@ -442,7 +464,9 @@ export default function YogaPage() {
             ...prev,
             [key]: {
               ...day,
-              [activityType]: [...existing, log],
+              [activityType]: [...existing, log].sort((a, b) =>
+                (a.created_at ?? "").localeCompare(b.created_at ?? "")
+              ),
             },
           };
         });
@@ -1973,6 +1997,9 @@ export default function YogaPage() {
             ).sort((a, b) => (b.row.created_at ?? "").localeCompare(a.row.created_at ?? ""));
             const cornerEntries = dayEntries.slice(0, 4);
             const ringColor = cornerEntries.length ? resolveLogColor(cornerEntries[0].activity, cornerEntries[0].row) : null;
+            const pillEntries = [...dayEntries].sort((a, b) =>
+              (a.row.created_at ?? "").localeCompare(b.row.created_at ?? "")
+            );
 
             const isToday = key === formatDateKey(today);
 
@@ -2011,14 +2038,18 @@ export default function YogaPage() {
                   );
                 })}
                 <div className="yoga-month-day__pills" aria-label="Aktivitások">
-                  {loggedActivities.map((activity) => {
-                    const row = dayLog[activity]?.[0];
+                  {pillEntries.map(({ activity, row }, index) => {
                     const accent = resolveLogColor(activity, row);
+                    const icon = getLogIcon(activity, row);
                     return (
-                      <span key={`${key}-${activity}-pill`} className="yoga-month-pill" style={{ backgroundColor: accent }}>
+                      <span
+                        key={`${key}-${activity}-${row.id}-pill-${index}`}
+                        className="yoga-month-pill"
+                        style={{ backgroundColor: accent }}
+                      >
                         <span
                           className="yoga-month-pill__icon"
-                          style={{ ["--icon-url" as never]: `url('${getActivityIcon(activity)}')` } as any}
+                          style={{ ["--icon-url" as never]: `url('${icon}')` } as any}
                           aria-hidden="true"
                         />
                       </span>

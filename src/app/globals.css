@@ -1525,9 +1525,15 @@ svg {
 }
 
 .yoga-month-day__number {
+  position: absolute;
+  top: 0.55rem;
+  left: 0;
+  right: 0;
+  z-index: 3;
   font-size: 1rem;
   font-weight: 600;
   color: var(--brand-warm);
+  pointer-events: none;
 }
 
 .yoga-month-day__corner {
@@ -1563,11 +1569,17 @@ svg {
 }
 
 .yoga-month-day__pills {
-  margin-top: auto;
+  position: absolute;
+  top: 50%;
+  left: 0.5rem;
+  right: 0.5rem;
+  transform: translateY(-50%);
   display: flex;
+  align-items: center;
   justify-content: center;
   gap: 0.35rem;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
+  z-index: 1;
 }
 
 .yoga-month-pill {

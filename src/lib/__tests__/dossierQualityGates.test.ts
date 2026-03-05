@@ -29,6 +29,7 @@ const baseDossier: BirdDossier = {
       "Tollazata a hajnali fénynél csillog, így a nádasban könnyen megjegyezhető.",
   },
   pill_meta: {
+    habitat_class: "vízpart",
     region_teaser: "A Balaton partján él",
     size_cm: { min: 36, max: 42 },
     wingspan_cm: { min: 70, max: 90 },

@@ -10,7 +10,10 @@ export type BirdDossierSizeRange = {
   max: number | null;
 };
 
+export type HabitatClass = "erdő" | "vízpart" | "puszta" | "hegy" | "város";
+
 export type BirdDossierPillMeta = {
+  habitat_class: HabitatClass;
   region_teaser: string;
   size_cm: BirdDossierSizeRange;
   wingspan_cm: BirdDossierSizeRange;
