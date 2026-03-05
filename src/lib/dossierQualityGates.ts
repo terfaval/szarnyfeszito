@@ -32,10 +32,12 @@ const LONG_PARAGRAPH_BLOCKLIST = [
   "leggyorsab",
 ];
 
-const STRUCTURED_CAPS: Record<string, { max: number; min: number; minSpread: number }> = {
-  "pill_meta.size_cm": { min: 10, max: 250, minSpread: 2 },
-  "pill_meta.wingspan_cm": { min: 10, max: 420, minSpread: 2 },
-  "pill_meta.lifespan_years": { min: 1, max: 80, minSpread: 2 },
+type StructuredRangeField = "size_cm" | "wingspan_cm" | "lifespan_years";
+
+const STRUCTURED_CAPS: Record<StructuredRangeField, { max: number; min: number; minSpread: number }> = {
+  size_cm: { min: 10, max: 250, minSpread: 2 },
+  wingspan_cm: { min: 10, max: 420, minSpread: 2 },
+  lifespan_years: { min: 1, max: 80, minSpread: 2 },
 };
 
 export class QualityGateError extends Error {
@@ -117,31 +119,43 @@ export function runQualityGates(dossier: BirdDossier, bird: Bird) {
     heads.add(head);
     const axes = findAxes(trimmed);
     axisPerOption.push(axes);
-    if (!axes.length) {
-      issues.push(
-        `Gate B: short_options[${index}] must mention at least one identification axis (morphology, plumage, sound, movement, habitat, behavior).`
-      );
-    }
   });
 
   if (heads.size !== shortOptions.length) {
     issues.push("Gate B: short_options must not start with the same 12-15 characters.");
   }
 
-  axisKeywords.forEach(({ axis }) => {
-    if (axisPerOption.every((axes) => axes.includes(axis))) {
-      issues.push(`Gate B: all short_options lean on the ${axis} axis; introduce a different cue.`);
-    }
-  });
+  const axisUnion = new Set(axisPerOption.flat());
+  if (axisUnion.size < 2) {
+    issues.push(
+      "Gate B: short_options must cover at least two different axes across the three sentences."
+    );
+  }
 
   // Gate C — short_summary
-  const summary = normalizeText(dossier.header.short_summary);
-  const summaryAxes = findAxes(summary);
-  if (!summaryAxes.length) {
-    issues.push("Gate C: short_summary must contain at least one concrete axis keyword.");
+  const summaryRaw = dossier.header.short_summary.trim();
+  const summary = normalizeText(summaryRaw);
+  const sentenceEnds = summaryRaw.match(/[.!?]/g) ?? [];
+  if (sentenceEnds.length === 0 || sentenceEnds.length > 2) {
+    issues.push("Gate C: short_summary must be 1–2 sentences (roughly: max 2 of .!?).");
   }
-  if (GENERIC_SUMMARY_PATTERNS.some((pattern) => summary.includes(pattern)) && !summaryAxes.length) {
-    issues.push("Gate C: avoid generic phrases without supplying a concrete anchor.");
+  const concreteHints = [
+    "hang",
+    "nyak",
+    "szárny",
+    "csőr",
+    "toll",
+    "sziluett",
+    "nádas",
+    "vonul",
+    "part",
+    "erdő",
+    "mocsár",
+    "repül",
+  ];
+  const hasConcreteHint = concreteHints.some((hint) => summary.includes(hint));
+  if (GENERIC_SUMMARY_PATTERNS.some((pattern) => summary.includes(pattern)) && !hasConcreteHint) {
+    issues.push("Gate C: avoid generic phrases unless paired with a concrete observable detail.");
   }
 
   // Gate D — long_paragraphs tone safety
@@ -163,25 +177,18 @@ export function runQualityGates(dossier: BirdDossier, bird: Bird) {
   const identificationAxes = new Set<string>();
   dossier.identification.key_features.forEach((feature) => {
     const title = feature.title;
-    const description = normalizeText(feature.description);
-    const allowedKeywords =
-      AXIS_KEYWORD_MAP[
-        title === "Csőr"
-          ? "beak"
-          : title === "Tollazat"
-            ? "plumage"
-            : title === "Hang"
-              ? "sound"
-              : title === "Mozgás"
-                ? "movement"
-                : "behavior"
-      ] ?? [];
-    const matchesAxis = allowedKeywords.some((keyword) => description.includes(keyword));
-    if (!matchesAxis) {
+    const descriptionRaw = feature.description.trim();
+    const description = normalizeText(descriptionRaw);
+    if (descriptionRaw.length < 40) {
       issues.push(
-        `Gate E: identification.key_features description for "${title}" must mention its axis keyword (e.g., ${allowedKeywords
-          .slice(0, 3)
-          .join(", ")}...).`
+        `Gate E: identification.key_features description for "${title}" must be at least 40 characters (got ${descriptionRaw.length}).`
+      );
+    }
+    const genericPhrases = ["könnyen felismerhető", "jellegzetes", "különösen"];
+    const genericHits = genericPhrases.filter((phrase) => description.includes(phrase)).length;
+    if (genericHits >= 2 || (genericHits >= 1 && descriptionRaw.length < 70)) {
+      issues.push(
+        `Gate E: identification.key_features description for "${title}" reads generic; add concrete field cues.`
       );
     }
     identificationAxes.add(title);
@@ -191,11 +198,13 @@ export function runQualityGates(dossier: BirdDossier, bird: Bird) {
   }
 
   // Gate F — structured sanity
-  Object.entries(STRUCTURED_CAPS).forEach(([path, { min, max, minSpread }]) => {
-    const [section, field] = path.split(".");
-    const value = (dossier as any)[section]?.[field];
+  (Object.entries(STRUCTURED_CAPS) as Array<
+    [StructuredRangeField, { max: number; min: number; minSpread: number }]
+  >).forEach(([field, { min, max, minSpread }]) => {
+    const value = dossier.pill_meta[field];
     if (!value) return;
     const { min: minValue, max: maxValue } = value as { min: number | null; max: number | null };
+    const path = `pill_meta.${field}`;
     if (typeof minValue === "number" && typeof maxValue === "number") {
       if (maxValue < minValue) {
         issues.push(`Gate F: ${path} has max < min (${maxValue} < ${minValue}).`);

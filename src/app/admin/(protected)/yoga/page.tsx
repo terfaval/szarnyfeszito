@@ -1567,10 +1567,10 @@ export default function YogaPage() {
             const isActive = key === formatDateKey(selectedDate);
             const dayLog = logsMap[key] ?? {};
             const loggedActivities = ACTIVITY_ORDER.filter((activity) => (dayLog[activity]?.length ?? 0) > 0);
-            const dayEntries = ACTIVITY_ORDER.flatMap((activity) =>
+            const dayEntriesAsc = ACTIVITY_ORDER.flatMap((activity) =>
               (dayLog[activity] ?? []).map((row) => ({ activity, row }))
-            ).sort((a, b) => (b.row.created_at ?? "").localeCompare(a.row.created_at ?? ""));
-            const cornerEntries = dayEntries.slice(0, 4);
+            ).sort((a, b) => (a.row.created_at ?? "").localeCompare(b.row.created_at ?? ""));
+            const cornerEntries = dayEntriesAsc.slice(0, 4);
             const ringColor = cornerEntries.length ? resolveLogColor(cornerEntries[0].activity, cornerEntries[0].row) : null;
             return (
               <button
@@ -1992,14 +1992,12 @@ export default function YogaPage() {
             const key = formatDateKey(date);
             const dayLog = logsMap[key] ?? {};
             const loggedActivities = ACTIVITY_ORDER.filter((activity) => (dayLog[activity]?.length ?? 0) > 0);
-            const dayEntries = ACTIVITY_ORDER.flatMap((activity) =>
+            const dayEntriesAsc = ACTIVITY_ORDER.flatMap((activity) =>
               (dayLog[activity] ?? []).map((row) => ({ activity, row }))
-            ).sort((a, b) => (b.row.created_at ?? "").localeCompare(a.row.created_at ?? ""));
-            const cornerEntries = dayEntries.slice(0, 4);
+            ).sort((a, b) => (a.row.created_at ?? "").localeCompare(b.row.created_at ?? ""));
+            const cornerEntries = dayEntriesAsc.slice(0, 4);
             const ringColor = cornerEntries.length ? resolveLogColor(cornerEntries[0].activity, cornerEntries[0].row) : null;
-            const pillEntries = [...dayEntries].sort((a, b) =>
-              (a.row.created_at ?? "").localeCompare(b.row.created_at ?? "")
-            );
+            const pillEntries = dayEntriesAsc;
 
             const isToday = key === formatDateKey(today);
 

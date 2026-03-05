@@ -493,13 +493,10 @@ Avoid overly narrow ranges (false precision).
 
   let lastRawJson = "";
   let lastModel = AI_MODEL_TEXT;
-  let lastPrompt = baseUserPrompt;
 
   for (let attempt = 1; attempt <= MAX_GENERATION_ATTEMPTS; attempt++) {
     const repairDirective = `REPAIR: fix schema/key/type mismatches; rewrite short_options to comply (${SHORT_OPTION_RETRY_HINT}); keep the voice vivid; output JSON only.`;
     const prompt = attempt === 1 ? baseUserPrompt : `${baseUserPrompt}\n\n${repairDirective}`;
-
-    lastPrompt = prompt;
 
     const response = await runCompletion(prompt);
     lastModel = response.modelName;
