@@ -10,7 +10,14 @@ export type BirdSubStatus = "none" | "generated" | "approved";
 
 export type BirdSizeCategory = "very_small" | "small" | "medium" | "large";
 
-export type BirdVisibilityCategory = "frequent" | "seasonal" | "rare";
+export type BirdVisibilityCategory =
+  | "common_hu"
+  | "localized_hu"
+  | "seasonal_hu"
+  | "rare_hu"
+  | "not_in_hu";
+
+export type BirdVisibilityCategoryLegacy = "frequent" | "seasonal" | "rare";
 
 export type Bird = {
   id: string;

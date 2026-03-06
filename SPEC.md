@@ -68,6 +68,12 @@ Kiegészítő meta (D18):
 - A Studio `/admin/birds` oldalon a madarak szűrhetők/rendezhetők `size_category` (méret) és `visibility_category` (észlelhetőség) alapján.
 - A kategóriák nem publish-gate feltételek (nem blokkolják a publish-t), kizárólag admin taxonómia / registry célokra szolgálnak.
 - Ha bármelyik hiányzik, a madár bekerül a “Classification queue” listába, ahol AI-javaslat generálható és/vagy kézzel jóváhagyható.
+- `visibility_category` jelentése Magyarországra értendő (D20). Kategóriák:
+  - `common_hu`: általában gyakori Magyarországon (releváns évszakban/élőhelyen)
+  - `localized_hu`: előfordul Magyarországon, de inkább helyi / foltszerű
+  - `seasonal_hu`: főként egy adott szezonban látható Magyarországon (vonulás/költés/telelés)
+  - `rare_hu`: ritkán látható Magyarországon
+  - `not_in_hu`: nem látható Magyarországon (ide tartozik a nagyon-nagyon ritka/kóborló is)
 
 ---
 

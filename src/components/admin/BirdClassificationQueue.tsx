@@ -4,11 +4,7 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Card } from "@/ui/components/Card";
 import { Button } from "@/ui/components/Button";
-import type {
-  Bird,
-  BirdSizeCategory,
-  BirdVisibilityCategory,
-} from "@/types/bird";
+import type { Bird, BirdSizeCategory, BirdVisibilityCategory } from "@/types/bird";
 import type { BirdClassificationRecord } from "@/lib/birdClassificationService";
 
 const SIZE_OPTIONS: Array<{ label: string; value: BirdSizeCategory }> = [
@@ -20,9 +16,11 @@ const SIZE_OPTIONS: Array<{ label: string; value: BirdSizeCategory }> = [
 
 const VISIBILITY_OPTIONS: Array<{ label: string; value: BirdVisibilityCategory }> =
   [
-    { label: "Gyakran látható", value: "frequent" },
-    { label: "Időszakosan látható", value: "seasonal" },
-    { label: "Ritkán látható", value: "rare" },
+    { label: "Gyakori (Magyarországon)", value: "common_hu" },
+    { label: "Helyi / foltszerű (Magyarországon)", value: "localized_hu" },
+    { label: "Szezonális (Magyarországon)", value: "seasonal_hu" },
+    { label: "Ritka (Magyarországon)", value: "rare_hu" },
+    { label: "Nem látható Magyarországon", value: "not_in_hu" },
   ];
 
 type BirdClassificationQueueProps = {
@@ -35,14 +33,35 @@ type DraftState = {
   visibility_category: BirdVisibilityCategory | null;
 };
 
+function normalizeVisibilityCategory(value: unknown): BirdVisibilityCategory | null {
+  if (value === null || value === undefined) return null;
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+
+  switch (trimmed) {
+    case "frequent":
+      return "common_hu";
+    case "seasonal":
+      return "seasonal_hu";
+    case "rare":
+      return "rare_hu";
+    case "common_hu":
+    case "localized_hu":
+    case "seasonal_hu":
+    case "rare_hu":
+    case "not_in_hu":
+      return trimmed;
+    default:
+      return null;
+  }
+}
+
 function toMap(classifications: BirdClassificationRecord[]) {
-  return classifications.reduce<Record<string, BirdClassificationRecord>>(
-    (acc, entry) => {
-      acc[entry.bird_id] = entry;
-      return acc;
-    },
-    {}
-  );
+  return classifications.reduce<Record<string, BirdClassificationRecord>>((acc, entry) => {
+    acc[entry.bird_id] = entry;
+    return acc;
+  }, {});
 }
 
 function normalizeNullable<T extends string>(value: string): T | null {
@@ -51,18 +70,20 @@ function normalizeNullable<T extends string>(value: string): T | null {
   return trimmed as T;
 }
 
-export default function BirdClassificationQueue({
-  birds,
-  classifications,
-}: BirdClassificationQueueProps) {
+export default function BirdClassificationQueue({ birds, classifications }: BirdClassificationQueueProps) {
   const router = useRouter();
   const byBirdId = useMemo(() => toMap(classifications), [classifications]);
 
   const initialDrafts = useMemo(() => {
     return birds.reduce<Record<string, DraftState>>((acc, bird) => {
-      const existing = byBirdId[bird.id]?.payload;
-      const suggestedSize = existing?.suggested?.size_category ?? null;
-      const suggestedVisibility = existing?.suggested?.visibility_category ?? null;
+      const existing = byBirdId[bird.id]?.payload as unknown;
+      const suggestedSize =
+        (existing as { suggested?: { size_category?: BirdSizeCategory | null } } | null)?.suggested
+          ?.size_category ?? null;
+      const suggestedVisibility = normalizeVisibilityCategory(
+        (existing as { suggested?: { visibility_category?: unknown } } | null)?.suggested
+          ?.visibility_category
+      );
 
       acc[bird.id] = {
         size_category: bird.size_category ?? suggestedSize,
@@ -170,9 +191,7 @@ export default function BirdClassificationQueue({
             <div className="flex flex-col gap-1">
               <p className="admin-list-title">{bird.name_hu}</p>
               <p className="admin-list-meta">{bird.slug}</p>
-              <p className="text-xs admin-text-muted">
-                {bird.name_latin ?? "No Latin name yet"}
-              </p>
+              <p className="text-xs admin-text-muted">{bird.name_latin ?? "No Latin name yet"}</p>
             </div>
 
             {suggestion && (
@@ -186,50 +205,48 @@ export default function BirdClassificationQueue({
               <label className="form-field">
                 <span className="form-field__label">Méret kategória</span>
                 <div className="form-field__row">
-                <select
-                  className="input"
-                  value={draft?.size_category ?? ""}
-                  onChange={(event) =>
-                    updateDraft(bird.id, {
-                      size_category: normalizeNullable<BirdSizeCategory>(
-                        event.target.value
-                      ),
-                    })
-                  }
-                  disabled={busy}
-                >
-                  <option value="">(nincs beállítva)</option>
-                  {SIZE_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
+                  <select
+                    className="input"
+                    value={draft?.size_category ?? ""}
+                    onChange={(event) =>
+                      updateDraft(bird.id, {
+                        size_category: normalizeNullable<BirdSizeCategory>(event.target.value),
+                      })
+                    }
+                    disabled={busy}
+                  >
+                    <option value="">(nincs beállítva)</option>
+                    {SIZE_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </label>
 
               <label className="form-field">
                 <span className="form-field__label">Láthatóság kategória</span>
                 <div className="form-field__row">
-                <select
-                  className="input"
-                  value={draft?.visibility_category ?? ""}
-                  onChange={(event) =>
-                    updateDraft(bird.id, {
-                      visibility_category: normalizeNullable<BirdVisibilityCategory>(
-                        event.target.value
-                      ),
-                    })
-                  }
-                  disabled={busy}
-                >
-                  <option value="">(nincs beállítva)</option>
-                  {VISIBILITY_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
+                  <select
+                    className="input"
+                    value={draft?.visibility_category ?? ""}
+                    onChange={(event) =>
+                      updateDraft(bird.id, {
+                        visibility_category: normalizeNullable<BirdVisibilityCategory>(
+                          event.target.value
+                        ),
+                      })
+                    }
+                    disabled={busy}
+                  >
+                    <option value="">(nincs beállítva)</option>
+                    {VISIBILITY_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </label>
             </div>
@@ -269,3 +286,4 @@ export default function BirdClassificationQueue({
     </section>
   );
 }
+

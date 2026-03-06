@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { scienceDossierSchemaV1 } from "../imageAccuracySchemas";
+import { scienceDossierSchemaV1, visualBriefSchemaV1 } from "../imageAccuracySchemas";
 
 describe("scienceDossierSchemaV1", () => {
   it('normalizes proportions.body "medium" -> "average"', () => {
@@ -44,5 +44,66 @@ describe("scienceDossierSchemaV1", () => {
         confidence: { per_section: "high" },
       })
     ).toThrow();
+  });
+});
+
+describe("visualBriefSchemaV1", () => {
+  it("normalizes nesting_clean.confidence medium -> med", () => {
+    const payload = visualBriefSchemaV1.parse({
+      scientific: {
+        main_habitat: {
+          pose: "Full-body side view, standing on a neutral perch",
+          composition_rules: ["Bird fills ~75% of frame"],
+          habitat_hint_elements: ["reeds", "shallow water"],
+          background_rules: ["pale paper tone", "no scene perspective"],
+          must_not: ["fantasy colors"],
+        },
+        nesting_clean: {
+          nest_type: "ground scrape",
+          nest_material: "dry grass",
+          chicks_visible: false,
+          confidence: "medium",
+        },
+      },
+      iconic: {
+        silhouette_focus: ["long legs", "long neck"],
+        simplify_features: [],
+        must_not: [],
+        background: "none",
+      },
+    });
+
+    expect(payload.scientific.nesting_clean?.confidence).toBe("med");
+  });
+
+  it("drops invalid optional variants instead of failing the whole payload", () => {
+    const payload = visualBriefSchemaV1.parse({
+      scientific: {
+        main_habitat: {
+          pose: "Full-body side view, standing",
+          habitat_hint_elements: ["forest edge", "leaf litter"],
+        },
+        flight_clean: {
+          pose: "In flight, wings open",
+          composition_rules: ["centered"],
+          background_rules: ["white"],
+          must_not: ["watermark"],
+        },
+        nesting_clean: {
+          pose: "On nest",
+          confidence: "medium",
+          must_not: ["eggs visible"],
+        },
+      },
+      iconic: {
+        silhouette_focus: ["long tail", "distinct crest"],
+        simplify_features: ["reduce feather detail"],
+        must_not: ["background scene"],
+        background: "none",
+      },
+    });
+
+    expect(payload.scientific.flight_clean).toBeUndefined();
+    expect(payload.scientific.nesting_clean).toBeUndefined();
   });
 });

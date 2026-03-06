@@ -9,7 +9,16 @@ const approveSchema = z.object({
     .enum(["very_small", "small", "medium", "large"])
     .nullable()
     .optional(),
-  visibility_category: z.enum(["frequent", "seasonal", "rare"]).nullable().optional(),
+  visibility_category: z
+    .enum([
+      "common_hu",
+      "localized_hu",
+      "seasonal_hu",
+      "rare_hu",
+      "not_in_hu",
+    ])
+    .nullable()
+    .optional(),
   approved_source: z.enum(["manual", "ai_suggestion"]).optional(),
 });
 
@@ -19,6 +28,15 @@ const normalizeNullableEnum = (value: unknown) => {
   const trimmed = value.trim();
   if (!trimmed) return null;
   return trimmed;
+};
+
+const normalizeVisibilityCategory = (value: unknown) => {
+  const normalized = normalizeNullableEnum(value);
+  if (normalized === null || normalized === undefined) return null;
+  if (normalized === "frequent") return "common_hu";
+  if (normalized === "seasonal") return "seasonal_hu";
+  if (normalized === "rare") return "rare_hu";
+  return normalized;
 };
 
 export async function POST(
@@ -44,7 +62,7 @@ export async function POST(
 
   const parsed = approveSchema.safeParse({
     size_category: normalizeNullableEnum(body?.size_category),
-    visibility_category: normalizeNullableEnum(body?.visibility_category),
+    visibility_category: normalizeVisibilityCategory(body?.visibility_category),
     approved_source: normalizeNullableEnum(body?.approved_source) ?? undefined,
   });
 
@@ -72,4 +90,3 @@ export async function POST(
     );
   }
 }
-

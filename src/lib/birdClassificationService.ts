@@ -1,9 +1,13 @@
 import { supabaseServerClient } from "@/lib/supabaseServerClient";
-import type { Bird, BirdSizeCategory, BirdVisibilityCategory } from "@/types/bird";
+import type { Bird, BirdSizeCategory } from "@/types/bird";
 import { updateBird } from "@/lib/birdService";
 import { getLatestContentBlockForBird } from "@/lib/contentService";
 import { generateBirdClassificationSuggestion } from "@/lib/birdClassificationGeneration";
-import type { BirdClassificationPayloadV1 } from "@/types/birdClassification";
+import type {
+  BirdClassificationPayload,
+  BirdClassificationPayloadV2,
+} from "@/types/birdClassification";
+import type { BirdVisibilityCategory, BirdVisibilityCategoryLegacy } from "@/types/bird";
 
 export type BirdClassificationReviewStatus = "draft" | "approved" | "rejected";
 
@@ -11,7 +15,7 @@ export type BirdClassificationRecord = {
   id: string;
   bird_id: string;
   schema_version: string;
-  payload: BirdClassificationPayloadV1;
+  payload: BirdClassificationPayload;
   review_status: BirdClassificationReviewStatus;
   created_by: string;
   approved_by: string | null;
@@ -19,6 +23,43 @@ export type BirdClassificationRecord = {
   created_at: string;
   updated_at: string;
 };
+
+function normalizeLegacyVisibilityCategory(
+  value: BirdVisibilityCategoryLegacy | BirdVisibilityCategory | null | undefined
+): BirdVisibilityCategory | null {
+  if (!value) return null;
+  switch (value) {
+    case "frequent":
+      return "common_hu";
+    case "seasonal":
+      return "seasonal_hu";
+    case "rare":
+      return "rare_hu";
+    default:
+      return value;
+  }
+}
+
+function upgradeClassificationPayloadToV2(payload: BirdClassificationPayload): BirdClassificationPayloadV2 {
+  if (payload.schema_version === "v2") {
+    return payload;
+  }
+
+  return {
+    schema_version: "v2",
+    inputs: payload.inputs,
+    suggested: {
+      ...payload.suggested,
+      visibility_category: normalizeLegacyVisibilityCategory(payload.suggested.visibility_category),
+    },
+    approved: payload.approved
+      ? {
+          ...payload.approved,
+          visibility_category: normalizeLegacyVisibilityCategory(payload.approved.visibility_category),
+        }
+      : undefined,
+  };
+}
 
 export async function getBirdClassificationForBird(
   birdId: string
@@ -57,7 +98,7 @@ export async function listBirdClassificationsForBirdIds(
 
 export async function upsertBirdClassification(args: {
   birdId: string;
-  payload: BirdClassificationPayloadV1;
+  payload: BirdClassificationPayload;
   reviewStatus: BirdClassificationReviewStatus;
   createdBy: string;
   approvedBy?: string | null;
@@ -113,7 +154,7 @@ export async function generateAndPersistBirdClassificationSuggestion(args: {
   const suggestion = await generateBirdClassificationSuggestion({ bird, dossier });
   const saved = await upsertBirdClassification({
     birdId: bird.id,
-    payload: suggestion.payload as BirdClassificationPayloadV1,
+    payload: suggestion.payload as BirdClassificationPayload,
     reviewStatus: "draft",
     createdBy,
   });
@@ -142,24 +183,25 @@ export async function approveBirdClassification(args: {
 
   const now = new Date().toISOString();
   const existing = await getBirdClassificationForBird(bird.id);
-  const basePayload: BirdClassificationPayloadV1 =
-    existing?.payload ?? {
-      schema_version: "v1",
-      inputs: {
-        size_cm: { min: null, max: null },
-        distribution_regions: [],
-        is_migratory: null,
-        migration_timing: null,
-      },
-      suggested: {
-        size_category: null,
-        visibility_category: null,
-        confidence: "low",
-        rationale: "Manual classification (no prior AI suggestion).",
-      },
-    };
+  const basePayload: BirdClassificationPayloadV2 = existing?.payload
+    ? upgradeClassificationPayloadToV2(existing.payload)
+    : {
+        schema_version: "v2",
+        inputs: {
+          size_cm: { min: null, max: null },
+          distribution_regions: [],
+          is_migratory: null,
+          migration_timing: null,
+        },
+        suggested: {
+          size_category: null,
+          visibility_category: null,
+          confidence: "low",
+          rationale: "Manual classification (no prior AI suggestion).",
+        },
+      };
 
-  const approvedPayload: BirdClassificationPayloadV1 = {
+  const approvedPayload: BirdClassificationPayloadV2 = {
     ...basePayload,
     approved: {
       size_category: sizeCategory,
@@ -187,4 +229,3 @@ export async function approveBirdClassification(args: {
 
   return { bird: updatedBird, classification: saved };
 }
-

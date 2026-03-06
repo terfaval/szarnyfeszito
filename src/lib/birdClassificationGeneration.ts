@@ -4,8 +4,8 @@ import { callOpenAIChatCompletion, type OpenAIChatMessage } from "@/lib/openaiCl
 import { AI_MODEL_TEXT } from "@/lib/config";
 import { extractJsonPayload, AIJsonParseError, AISchemaMismatchError } from "@/lib/aiUtils";
 import {
-  parseBirdClassificationPayloadV1,
-  type BirdClassificationPayloadSchemaV1,
+  parseBirdClassificationPayloadV2,
+  type BirdClassificationPayloadSchemaV2,
 } from "@/lib/birdClassificationSchema";
 import type { Bird } from "@/types/bird";
 import type { BirdDossier } from "@/types/dossier";
@@ -17,7 +17,7 @@ Output shape:
 {
   "suggested": {
     "size_category": "very_small" | "small" | "medium" | "large" | null,
-    "visibility_category": "frequent" | "seasonal" | "rare" | null,
+    "visibility_category": "common_hu" | "localized_hu" | "seasonal_hu" | "rare_hu" | "not_in_hu" | null,
     "confidence": "low" | "medium" | "high",
     "rationale": string
   }
@@ -31,15 +31,17 @@ SIZE BUCKET THRESHOLDS (cm):
 - medium: 20 <= x <= 40
 - large: > 40
 
-VISIBILITY BUCKETS (Hungarian meanings):
-- frequent: often encountered by a casual observer during the relevant season/habitat (common)
-- seasonal: mainly visible during a limited season (migration/breeding/wintering)
-- rare: rarely encountered (scarce or accidental)
+VISIBILITY BUCKETS (Hungary-scoped):
+- common_hu: generally common in Hungary in the relevant season/habitat
+- localized_hu: present in Hungary but mainly local/patchy (region or habitat bound)
+- seasonal_hu: mainly visible in Hungary during a limited season (migration/breeding/wintering)
+- rare_hu: rarely observable in Hungary
+- not_in_hu: not observable in Hungary (includes extremely rare/accidental/vagrant occurrences)
 
 If input data is insufficient, return null for the uncertain category and set confidence=low.`;
 
 export type BirdClassificationGenerationResult = {
-  payload: BirdClassificationPayloadSchemaV1;
+  payload: BirdClassificationPayloadSchemaV2;
   model: string;
   request_id: string;
   finish_reason: string;
@@ -65,29 +67,28 @@ function normalizeSuggestedShape(raw: Record<string, unknown>) {
     return raw;
   }
 
-  const {
-    size_category,
-    visibility_category,
-    confidence,
-    rationale,
-    ...rest
-  } = raw;
+  const { size_category, visibility_category, confidence, rationale, ...rest } = raw;
 
-  const normalizeString = (value: unknown) =>
-    typeof value === "string" ? value.trim() : value;
+  const normalizeString = (value: unknown) => (typeof value === "string" ? value.trim() : value);
 
   const normalizedConfidence =
     typeof confidence === "string" ? confidence.trim().toLowerCase() : confidence;
+
+  const normalizeVisibility = (value: unknown) => {
+    const normalized = normalizeString(value);
+    if (normalized === "frequent") return "common_hu";
+    if (normalized === "seasonal") return "seasonal_hu";
+    if (normalized === "rare") return "rare_hu";
+    return normalized;
+  };
 
   return {
     ...rest,
     suggested: {
       size_category: normalizeString(size_category) ?? null,
-      visibility_category: normalizeString(visibility_category) ?? null,
+      visibility_category: normalizeVisibility(visibility_category) ?? null,
       confidence: normalizedConfidence ?? "low",
-      rationale:
-        (typeof rationale === "string" ? rationale.trim() : null) ??
-        "Nincs indoklás.",
+      rationale: (typeof rationale === "string" ? rationale.trim() : null) ?? "Nincs indoklás.",
     },
   };
 }
@@ -164,9 +165,9 @@ export async function generateBirdClassificationSuggestion(args: {
 
   try {
     const normalized = normalizeSuggestedShape(extracted.payload);
-    const payload = parseBirdClassificationPayloadV1({
+    const payload = parseBirdClassificationPayloadV2({
       ...normalized,
-      schema_version: "v1",
+      schema_version: "v2",
       inputs,
     });
 
@@ -187,3 +188,4 @@ export async function generateBirdClassificationSuggestion(args: {
     throw error;
   }
 }
+

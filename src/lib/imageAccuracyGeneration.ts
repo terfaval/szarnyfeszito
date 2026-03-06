@@ -33,12 +33,14 @@ Return JSON only (no commentary).
 
 Your output MUST match this schema:
 - scientific.main_habitat { pose, composition_rules[], habitat_hint_elements[2-4], background_rules[], must_not[] }
-- scientific.flight_clean (optional)
-- scientific.nesting_clean (optional)
+- scientific.flight_clean (optional) { flight_pose, wing_structure_notes }
+- scientific.nesting_clean (optional) { nest_type, nest_material, chicks_visible (boolean), confidence (high|med|low) }
 - iconic { silhouette_focus[2-3], simplify_features[], color_guidance?, must_not[], background: "none" }
 
 Constraints:
 - scientific.main_habitat must be full-body, dominant side view, with only a very mild habitat hint.
+- If you are not confident about flight/nesting details, OMIT scientific.flight_clean / scientific.nesting_clean entirely (do not guess).
+- Do NOT include main_habitat-only keys (pose/composition_rules/background_rules/must_not/habitat_hint_elements) inside flight_clean or nesting_clean.
 - iconic must be bird-only (background: none). Habitat backgrounds are provided externally (stock assets).
 - Avoid invented anatomy, fantasy colors, or mixing with confusion species.`;
 

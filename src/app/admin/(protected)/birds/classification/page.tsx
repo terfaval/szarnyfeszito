@@ -18,7 +18,7 @@ export default async function BirdClassificationQueuePage() {
     <section className="space-y-6">
       <header className="admin-heading">
         <p className="admin-heading__label">Birds registry</p>
-        <h1 className="admin-heading__title">Sorting / csoportosítás</h1>
+        <h1 className="admin-heading__title">Bird classification</h1>
         <p className="admin-heading__description">
           Birds missing size and/or visibility categories. Generate an AI suggestion,
           then approve final buckets for stable filtering and sorting.

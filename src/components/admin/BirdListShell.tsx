@@ -26,9 +26,11 @@ const SIZE_ORDER: Record<BirdSizeCategory, number> = {
 };
 
 const VISIBILITY_ORDER: Record<BirdVisibilityCategory, number> = {
-  frequent: 0,
-  seasonal: 1,
-  rare: 2,
+  common_hu: 0,
+  localized_hu: 1,
+  seasonal_hu: 2,
+  rare_hu: 3,
+  not_in_hu: 4,
 };
 
 type SortKey =
@@ -143,7 +145,7 @@ export default function BirdListShell({ birds }: BirdListShellProps) {
         </p>
         <div className="flex flex-wrap gap-3">
           <Link className="admin-nav-link" href="/admin/birds/sorting">
-            Sorting / csoportosítás
+            Bird classification
           </Link>
         </div>
       </header>
@@ -215,9 +217,11 @@ export default function BirdListShell({ birds }: BirdListShellProps) {
                 >
                   <option value="all">All visibility</option>
                   <option value="missing">Missing visibility</option>
-                  <option value="frequent">Frequent</option>
-                  <option value="seasonal">Seasonal</option>
-                  <option value="rare">Rare</option>
+                  <option value="common_hu">Common (HU)</option>
+                  <option value="localized_hu">Localized (HU)</option>
+                  <option value="seasonal_hu">Seasonal (HU)</option>
+                  <option value="rare_hu">Rare (HU)</option>
+                  <option value="not_in_hu">Not in HU</option>
                 </select>
               </div>
             </label>
@@ -233,7 +237,7 @@ export default function BirdListShell({ birds }: BirdListShellProps) {
                   <option value="updated_desc">Recently updated</option>
                   <option value="name_asc">Name (A→Z)</option>
                   <option value="size_asc">Size (small→large)</option>
-                  <option value="visibility_asc">Visibility (frequent→rare)</option>
+                  <option value="visibility_asc">Visibility (common→not_in_hu)</option>
                   <option value="missing_first">Missing first</option>
                 </select>
               </div>
@@ -307,4 +311,3 @@ export default function BirdListShell({ birds }: BirdListShellProps) {
     </section>
   );
 }
-

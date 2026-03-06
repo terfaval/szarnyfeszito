@@ -73,6 +73,39 @@ For dossiers that provide ranges, derive using the midpoint when possible; other
 ### Rationale
 - Keeps list filters deterministic and queryable without reinterpreting dossier text in the UI.
 - Preserves auditability: suggestions are stored, reviewed, and only approved values are used as canonical `birds` fields.
+
+---
+
+## D20 — Visibility categories are Hungary-scoped (add `not_in_hu`)
+
+**Status:** Accepted  
+**Date:** 2026-03-06  
+**Scope:** Content Studio (Admin Birds registry UX). Explorer out of scope.
+
+### Context
+The original D18 `visibility_category` buckets (`frequent | seasonal | rare`) were not explicit about geography.
+For the Studio registry, admins need a stable **Hungary-scoped** notion of how likely a bird is to be seen in
+Hungary. We also need an explicit state for birds that are **not observable in Hungary** (including extremely
+rare/accidental non-resident occurrences).
+
+### Decision
+1) Replace the canonical `birds.visibility_category` taxonomy with Hungary-scoped buckets:
+- `common_hu`: generally common / often encountered in Hungary (in the relevant season/habitat)
+- `localized_hu`: present in Hungary but mainly local / patchy (region- or habitat-bound)
+- `seasonal_hu`: mainly observable in Hungary during a limited season (migration / breeding / wintering)
+- `rare_hu`: rarely observable in Hungary (scarce)
+- `not_in_hu`: not observable in Hungary (includes extremely rare / accidental / vagrant occurrences)
+
+2) Update the classification suggestion payload schema to `v2` so AI + manual approvals use the new values.
+
+3) Backfill mapping for existing canonical values (migration step):
+- `frequent` → `common_hu`
+- `seasonal` → `seasonal_hu`
+- `rare` → `rare_hu`
+
+### Rationale
+- Makes the registry meaning explicit and auditable (“visible in Hungary”) without client-side inference.
+- Adds an explicit, queryable bucket for “not in Hungary”, which is operationally important for curation.
 - Allows incremental enrichment without blocking the publish pipeline.
 
 ### Out of scope
