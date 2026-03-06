@@ -1,5 +1,10 @@
 import { z } from "zod";
 
+const proportionsBodySchemaV1 = z.preprocess((value) => {
+  if (value === "medium") return "average";
+  return value;
+}, z.enum(["slim", "average", "stocky"]));
+
 const confidenceSchema = z
   .object({
     per_section: z.enum(["high", "medium", "low"]),
@@ -39,7 +44,7 @@ export const scienceDossierSchemaV1 = z
       .object({
         neck: z.enum(["short", "medium", "long"]),
         legs: z.enum(["short", "medium", "long"]),
-        body: z.enum(["slim", "average", "stocky"]),
+        body: proportionsBodySchemaV1,
         beak: z
           .object({
             length: z.enum(["short", "medium", "long"]),

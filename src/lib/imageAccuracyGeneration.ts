@@ -19,14 +19,14 @@ Your output MUST match this schema:
 - species_identity { name_hu, name_latin }
 - confusion_set: array of { species_name, quick_diff }
 - key_field_marks: array (max 8) of { mark }
-- proportions: { neck, legs, body, beak { length, shape } }
+- proportions: { neck (short|medium|long), legs (short|medium|long), body (slim|average|stocky), beak { length (short|medium|long), shape (straight|curved) } }
 - plumage_variants: { adult, juvenile|not_applicable, breeding|not_applicable, non_breeding|not_applicable }
 - must_not_include: array (3-8 strings)
 - confidence: { per_section: high|medium|low, notes }
 
 Constraints:
 - Focus on identification-friendly, species-accurate markers.
-- If inputs are insufficient, keep proportions conservative (medium/average) and confidence low.`;
+- If inputs are insufficient, keep proportions conservative (neck/legs/beak: medium; body: average) and confidence low.`;
 
 const VISUAL_SYSTEM_PROMPT = `You are producing a visual brief / shot list for image generation of a Hungarian bird guide.
 Return JSON only (no commentary).
@@ -199,4 +199,3 @@ export async function generateVisualBriefV1(args: {
     throw error;
   }
 }
-
