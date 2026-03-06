@@ -51,6 +51,14 @@ export default function BirdListShell({ birds }: BirdListShellProps) {
 
   const normalizedSearch = search.trim().toLowerCase();
 
+  const missingClassificationCount = useMemo(() => {
+    return birds.reduce((count, bird) => {
+      return bird.size_category === null || bird.visibility_category === null
+        ? count + 1
+        : count;
+    }, 0);
+  }, [birds]);
+
   const filteredBirds = useMemo(() => {
     const filtered = birds.filter((bird) => {
       const matchesSearch =
@@ -142,8 +150,8 @@ export default function BirdListShell({ birds }: BirdListShellProps) {
           search names and slugs to find the one you need.
         </p>
         <div className="flex flex-wrap gap-3">
-          <Link className="admin-nav-link" href="/admin/birds/classification">
-            Open classification queue
+          <Link className="admin-nav-link" href="/admin/birds/sorting">
+            Sorting / csoportosítás
           </Link>
         </div>
       </header>
@@ -251,7 +259,29 @@ export default function BirdListShell({ birds }: BirdListShellProps) {
           </div>
         </Card>
 
-        <BirdCreateForm />
+        <div className="space-y-4">
+          <BirdCreateForm />
+          <Card className="space-y-3 text-sm">
+            <div className="space-y-1">
+              <p className="text-xs uppercase tracking-[0.4em] text-zinc-400">
+                Sorting panel
+              </p>
+              <p className="text-xs text-zinc-500">
+                Group birds by size + visibility. Missing items go to a dedicated
+                queue with AI suggestions and manual approval.
+              </p>
+            </div>
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-sm text-white">
+                Missing classification:{" "}
+                <span className="font-semibold">{missingClassificationCount}</span>
+              </p>
+              <Link className="admin-nav-link" href="/admin/birds/sorting">
+                Open sorting
+              </Link>
+            </div>
+          </Card>
+        </div>
       </div>
 
       <div className="space-y-4">

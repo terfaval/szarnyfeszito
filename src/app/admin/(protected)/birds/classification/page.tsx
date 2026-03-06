@@ -5,7 +5,7 @@ import { listBirdClassificationsForBirdIds } from "@/lib/birdClassificationServi
 import BirdClassificationQueue from "@/components/admin/BirdClassificationQueue";
 
 export const metadata = {
-  title: "Bird classification queue — Szarnyfeszito Admin",
+  title: "Bird sorting queue — Szarnyfeszito Admin",
 };
 
 export const dynamic = "force-dynamic";
@@ -18,7 +18,7 @@ export default async function BirdClassificationQueuePage() {
     <section className="space-y-6">
       <header className="admin-heading">
         <p className="admin-heading__label">Birds registry</p>
-        <h1 className="admin-heading__title">Classification queue</h1>
+        <h1 className="admin-heading__title">Sorting / csoportosítás</h1>
         <p className="admin-heading__description">
           Birds missing size and/or visibility categories. Generate an AI suggestion,
           then approve final buckets for stable filtering and sorting.
@@ -42,4 +42,3 @@ export default async function BirdClassificationQueuePage() {
     </section>
   );
 }
-

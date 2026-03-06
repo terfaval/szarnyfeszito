@@ -5,16 +5,11 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/ui/components/Button";
 import { Card } from "@/ui/components/Card";
 import { Icon } from "@/ui/icons/Icon";
+import { ReviewStatusPill } from "@/ui/components/ReviewStatusPill";
 import type { BirdDossier } from "@/types/dossier";
 import type { ContentBlock, GeneratedContent } from "@/types/content";
 import ReviewRequestOverlay from "@/components/admin/ReviewRequestOverlay";
 import styles from "./BirdTextReview.module.css";
-
-const REVIEW_STATUS_BADGES: Record<ContentBlock["review_status"], string> = {
-  draft: "border border-amber-200/40 bg-amber-900/30 text-amber-200",
-  reviewed: "border border-[#F1A11E]/40 bg-[#F1A11E]/10 text-[#F1A11E]",
-  approved: "border border-emerald-400/40 bg-emerald-950/50 text-emerald-200",
-};
 
 const formatRange = (
   range?: { min: number | null; max: number | null },
@@ -636,9 +631,11 @@ export default function BirdTextReview({
                 >
                   {vulnerabilityNote}
                 </span>
-                <span className={`text-[11px] text-zinc-500 ${styles.statusBadge}`}>
-                  {contentBlock?.review_status}
-                </span>
+                {contentBlock?.review_status && (
+                  <span className={styles.statusBadge}>
+                    <ReviewStatusPill status={contentBlock.review_status} />
+                  </span>
+                )}
               </div>
             </header>
 

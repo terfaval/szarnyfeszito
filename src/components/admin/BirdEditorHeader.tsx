@@ -40,7 +40,7 @@ export function BirdEditorHeader({ bird, links }: BirdEditorHeaderProps) {
   ];
 
   return (
-    <Card className="sticky top-4 z-10 space-y-4">
+    <Card className="space-y-4">
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="text-xs uppercase tracking-[0.4em] text-slate-400">

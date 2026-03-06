@@ -55,10 +55,12 @@ export default async function ImageAccuracyPage({
     redirect(`/admin/birds/${bird.id}`);
   }
 
-  let [scienceDossier, visualBrief] = await Promise.all([
+  const [initialScienceDossier, visualBrief] = await Promise.all([
     getScienceDossierForBird(bird.id),
     getVisualBriefForBird(bird.id),
   ]);
+
+  let scienceDossier = initialScienceDossier;
 
   if (!scienceDossier) {
     const payload = buildBootstrapScienceDossier(bird);

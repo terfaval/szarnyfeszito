@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/ui/components/Button";
 import { Card } from "@/ui/components/Card";
@@ -59,8 +59,17 @@ export function ImageAccuracyHandoff({
   );
   const [saving, setSaving] = useState<"science" | "brief" | null>(null);
   const [approving, setApproving] = useState<"science" | "brief" | null>(null);
+  const [generating, setGenerating] = useState<"science" | "brief" | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    setScienceJson(safeJsonStringify(scienceDossier?.payload ?? null));
+  }, [scienceDossier?.id, scienceDossier?.updated_at]);
+
+  useEffect(() => {
+    setBriefJson(safeJsonStringify(visualBrief?.payload ?? null));
+  }, [visualBrief?.id, visualBrief?.updated_at]);
 
   const canApproveScience = useMemo(() => {
     return scienceDossier?.review_status === "draft" || scienceDossierStatus !== "approved";
@@ -98,6 +107,21 @@ export function ImageAccuracyHandoff({
     }
   };
 
+  const generateScience = async () => {
+    setError(null);
+    setMessage(null);
+    setGenerating("science");
+    try {
+      await postJson(`/api/birds/${birdId}/science-dossier/generate`, {});
+      setMessage("Science Dossier generated.");
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to generate Science Dossier.");
+    } finally {
+      setGenerating(null);
+    }
+  };
+
   const approveScience = async () => {
     setError(null);
     setMessage(null);
@@ -110,6 +134,25 @@ export function ImageAccuracyHandoff({
       setError(err instanceof Error ? err.message : "Unable to approve Science Dossier.");
     } finally {
       setApproving(null);
+    }
+  };
+
+  const generateBrief = async () => {
+    if (!canEditBrief) {
+      setError("Approve the Science Dossier before generating the Visual Brief.");
+      return;
+    }
+    setError(null);
+    setMessage(null);
+    setGenerating("brief");
+    try {
+      await postJson(`/api/birds/${birdId}/visual-brief/generate`, {});
+      setMessage("Visual Brief generated.");
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to generate Visual Brief.");
+    } finally {
+      setGenerating(null);
     }
   };
 
@@ -183,7 +226,15 @@ export function ImageAccuracyHandoff({
             <Button
               type="button"
               variant="ghost"
-              disabled={saving !== null || approving !== null}
+              disabled={saving !== null || approving !== null || generating !== null}
+              onClick={generateScience}
+            >
+              {generating === "science" ? "Generating…" : "Generate"}
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              disabled={saving !== null || approving !== null || generating !== null}
               onClick={saveScience}
             >
               {saving === "science" ? "Saving…" : "Save draft"}
@@ -191,7 +242,9 @@ export function ImageAccuracyHandoff({
             <Button
               type="button"
               variant="accent"
-              disabled={!canApproveScience || saving !== null || approving !== null}
+              disabled={
+                !canApproveScience || saving !== null || approving !== null || generating !== null
+              }
               onClick={approveScience}
             >
               {approving === "science" ? "Approving…" : "Approve"}
@@ -219,7 +272,19 @@ export function ImageAccuracyHandoff({
             <Button
               type="button"
               variant="ghost"
-              disabled={!canEditBrief || saving !== null || approving !== null}
+              disabled={
+                !canEditBrief || saving !== null || approving !== null || generating !== null
+              }
+              onClick={generateBrief}
+            >
+              {generating === "brief" ? "Generating…" : "Generate"}
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              disabled={
+                !canEditBrief || saving !== null || approving !== null || generating !== null
+              }
               onClick={saveBrief}
             >
               {saving === "brief" ? "Saving…" : "Save draft"}
@@ -227,7 +292,9 @@ export function ImageAccuracyHandoff({
             <Button
               type="button"
               variant="accent"
-              disabled={!canApproveBrief || saving !== null || approving !== null}
+              disabled={
+                !canApproveBrief || saving !== null || approving !== null || generating !== null
+              }
               onClick={approveBrief}
             >
               {approving === "brief" ? "Approving…" : "Approve"}

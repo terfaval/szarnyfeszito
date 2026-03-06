@@ -142,7 +142,7 @@
 }
 
 .statusBadge {
-  letter-spacing: 0.3em;
+  display: inline-flex;
 }
 
 .vulnerabilityLow {

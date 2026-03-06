@@ -452,6 +452,12 @@ images is canonical for generated assets with:
 
 ## Studio UX (v1)
 
+### Status coloring rule (global)
+Whenever Studio needs to colorize or badge Bird pipeline statuses, it must follow the dashboard convention:
+
+- Use `StatusPill` for Bird statuses.
+- Never introduce ad-hoc colors for statuses outside the `status-pill--*` rules in `src/app/globals.css`.
+
 ### Post text approval handoff
 After approving Bird text (transition to `text_approved`), Studio navigates to an intermediate review screen to prepare image generation inputs:
 
