@@ -62,11 +62,11 @@ export function BirdPublishAction({ birdId, status, gateReady }: BirdPublishActi
         disabled={!canPublish || publishing}
         onClick={handlePublish}
       >
-        <Icon name="generate" size={16} className="text-white" />
+        <Icon name="generate" size={16} />
         {publishing ? "Publishing..." : "Publish bird"}
       </Button>
       {error && (
-        <p className="text-xs text-rose-400" aria-live="assertive">
+        <p className="admin-message admin-message--error" aria-live="assertive">
           {error}
         </p>
       )}

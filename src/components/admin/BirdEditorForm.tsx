@@ -91,24 +91,26 @@ export default function BirdEditorForm({ bird }: BirdEditorFormProps) {
         }
       />
 
-      <label className="flex flex-col gap-2 text-xs font-semibold uppercase tracking-[0.3em] text-zinc-400">
-        Status
-        <select
-          className="rounded-[14px] border border-zinc-800 bg-transparent px-4 py-2 text-sm text-white focus:border-white focus:outline-none"
-          value={values.status}
-          onChange={(event) =>
-            setValues((previous) => ({
-              ...previous,
-              status: event.target.value as BirdStatus,
-            }))
-          }
-        >
-          {BIRD_STATUS_VALUES.map((status) => (
-            <option key={status} value={status}>
-              {status}
-            </option>
-          ))}
-        </select>
+      <label className="form-field">
+        <span className="form-field__label">Status</span>
+        <div className="form-field__row">
+          <select
+            className="input"
+            value={values.status}
+            onChange={(event) =>
+              setValues((previous) => ({
+                ...previous,
+                status: event.target.value as BirdStatus,
+              }))
+            }
+          >
+            {BIRD_STATUS_VALUES.map((status) => (
+              <option key={status} value={status}>
+                {status}
+              </option>
+            ))}
+          </select>
+        </div>
       </label>
 
       <Button
@@ -121,12 +123,12 @@ export default function BirdEditorForm({ bird }: BirdEditorFormProps) {
       </Button>
 
       {error && (
-        <p className="text-xs font-medium text-rose-500" aria-live="assertive">
+        <p className="admin-message admin-message--error" aria-live="assertive">
           {error}
         </p>
       )}
       {message && (
-        <p className="text-xs font-medium text-emerald-400" aria-live="polite">
+        <p className="admin-message admin-message--success" aria-live="polite">
           {message}
         </p>
       )}

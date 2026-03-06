@@ -93,71 +93,199 @@ export const YOGA_LIBRARY: YogaLibraryEntry[] = [
 export const ACL_ROUTINES: ACLRoutine[] = [
   {
     id: "activation-routine",
-    label: "Aktiváló rutin (10–12 perc)",
+    label: "Aktiváló rutin",
     category: "routine",
-    focus: "Rövid idegrendszeri bekapcsolás jóga vagy futás előtt.",
+    focus: "10–12 perc · rövid idegrendszeri bekapcsolás jóga vagy futás előtt.",
     exercises: [
       {
         name: "Heel Dig Bridge",
         reps: "2×8",
         detail:
-          "Kiinduló: hanyatt fekvés, térd hajlítva, sarkak a talajon. Mozdulat: sarkak nyom, csípő emel lassan, 2 mp tartás, vissza. Fókusz: combhát aktiválódjon, derék ne dolgozzon.",
+          "Kiinduló: hanyatt fekvés, térd hajlítva, sarkak a talajon.\nMozdulat: sarkak nyom, csípő emel lassan, 2 mp tartás, vissza.\nFókusz: combhát aktiválódjon, derék ne dolgozzon.",
       },
       {
         name: "Hamstring Walkout",
         reps: "2×5",
         detail:
-          "Kiinduló: híd pozíció. Mozdulat: csípő fent marad, sarkakkal 3–4 kis lépés előre, majd vissza. Fókusz: combhát feszül, medence stabil.",
+          "Kiinduló: híd pozíció.\nMozdulat: csípő fent marad, sarkakkal 3–4 kis lépés előre, majd vissza.\nFókusz: combhát feszül, medence stabil.",
       },
       {
         name: "Kickstand Hinge",
         reps: "2×6/oldal",
         detail:
-          "Kiinduló: testsúly az egyik lábon, másik hátul csak támasz. Mozdulat: csípő hátra, törzs előre, visszaállás. Fókusz: csípőből indul a mozgás, térd stabil.",
+          "Kiinduló: testsúly az egyik lábon, másik hátul csak támasz.\nMozdulat: csípő hátra, törzs előre, visszaállás.\nFókusz: csípőből indul a mozgás, térd stabil.",
       },
       {
         name: "Wall Warrior III",
         reps: "3×20-30 mp/oldal",
         detail:
-          "Kiinduló: egyik kéz a falon. Mozdulat: csípőből előredőlés, hátsó láb emel. Fókusz: medence nem fordul ki, apró egyensúlykorrekciók.",
-      },
-      {
-        name: "Kontrollált Squat",
-        reps: "2×6",
-        detail:
-          "Mozdulat: csípő hátra, lassú ereszkedés, sarok lent marad. Tempó: 3 mp le. Fókusz: térd követi a lábujjakat.",
+          "Kiinduló: egyik kéz a falon.\nMozdulat: csípőből előredőlés, hátsó láb emel.\nFókusz: medence nem fordul ki, apró egyensúlykorrekciók.",
       },
     ],
   },
   {
-    id: "stability-block",
-    label: "Stabilitási blokk (20–25 perc)",
+    id: "acl-stability-patch",
+    label: "ACL fejlesztő",
     category: "block",
-    focus: "Célzott térdstabilitás, heti 2×.",
+    focus: "20–25 perc · ACL stabilitás patch.",
     exercises: [
+      {
+        name: "Heel Dig Bridge",
+        reps: "2×8",
+        detail:
+          "Kiinduló: hanyatt fekvés, térd hajlítva.\nMozdulat: sarkak nyom, csípő emel.\nFókusz: combhát + farizom, derék ne dolgozzon.",
+      },
+      {
+        name: "Hamstring Walkout",
+        reps: "2×5",
+        detail:
+          "Kiinduló: híd pozíció.\nMozdulat: csípő fent, 3–4 kis saroklépés előre és vissza.\nFókusz: combhát feszül, medence stabil.",
+      },
+      {
+        name: "Kickstand Hinge",
+        reps: "2×6/oldal",
+        detail:
+          "Kiinduló: egyik lábon terhelés, a másik csak támasz.\nMozdulat: csípő hátra, törzs előre, vissza.\nFókusz: csípőből indul, térd stabil.",
+      },
+      {
+        name: "Fal melletti Warrior III",
+        reps: "3×20 mp/oldal",
+        detail:
+          "Kiinduló: fal mellett könnyű támasz.\nMozdulat: csípőből dőlés, hátsó láb emel.\nFókusz: medence nem fordul, egyensúly kontroll.",
+      },
+    ],
+  },
+  {
+    id: "single-leg-stability",
+    label: "Egylábas stabilitás",
+    category: "block",
+    focus: "Egylábas stabilitás · egyensúly és propriocepció.",
+    exercises: [
+      {
+        name: "Single Leg Balance",
+        reps: "30 mp/oldal",
+        detail:
+          "Kiinduló: állás egy lábon.\nMozdulat: apró korrekciók, stabil légzés.\nFókusz: talp 3 pontja, csípő nem billen.",
+      },
       {
         name: "Single Leg RDL",
         reps: "3×6/oldal",
         detail:
-          "Mozdulat: testsúly egy lábon, csípő hátra, törzs előre. Fókusz: talp három pontja stabil, lassú mozgás.",
+          "Kiinduló: testsúly egy lábon.\nMozdulat: csípő hátra, törzs előre, vissza.\nFókusz: lassú kontroll, térd stabil.",
+      },
+      {
+        name: "Lateral Step",
+        reps: "10/oldal",
+        detail:
+          "Kiinduló: félguggolás közeli helyzet.\nMozdulat: oldalra lépés, vissza.\nFókusz: csípő stabil, térd a lábfej irányát követi.",
+      },
+      {
+        name: "Single Leg Mini Squat",
+        reps: "6/oldal",
+        detail:
+          "Kiinduló: állás egy lábon.\nMozdulat: kis guggolás, lassú fel.\nFókusz: térd nem esik be, talp stabil.",
+      },
+    ],
+  },
+  {
+    id: "squat-control",
+    label: "Guggoló stabilitás",
+    category: "block",
+    focus: "Squat kontroll · guggolásmechanika javítása.",
+    exercises: [
+      {
+        name: "Box Squat",
+        reps: "3×6",
+        detail:
+          "Kiinduló: doboz/szék mögött.\nMozdulat: csípő hátra, érintés, fel.\nFókusz: kontrollált mélység, sarok lent.",
+      },
+      {
+        name: "Goblet-style Bodyweight Squat",
+        reps: "3×8",
+        detail:
+          "Kiinduló: kéz előre (mintha súlyt tartanál).\nMozdulat: guggolás, fel.\nFókusz: törzs függőleges, térd követi a lábujjat.",
+      },
+      {
+        name: "Pause Squat",
+        reps: "3×5",
+        detail:
+          "Mozdulat: guggolás alján 2 mp tartás.\nFókusz: stabil térd- és törzstartás.",
+      },
+      {
+        name: "Heel Elevated Squat",
+        reps: "3×6",
+        detail:
+          "Kiinduló: sarok megemelve (pl. könyv/törölköző).\nMozdulat: guggolás.\nFókusz: boka mobilitás támogatása, kontrollált térd.",
+      },
+    ],
+  },
+  {
+    id: "hip-stability",
+    label: "Csípő stabilitás",
+    category: "block",
+    focus: "Csípő stabilitás · glute med + glute max.",
+    exercises: [
+      {
+        name: "Side Plank Hip Lift",
+        reps: "3×8/oldal",
+        detail:
+          "Mozdulat: oldalsó plankben csípő le/fel.\nFókusz: törzs stabil, csípő oldala dolgozik.",
+      },
+      {
+        name: "Lateral Walk",
+        reps: "10/oldal",
+        detail:
+          "Kiinduló: enyhe térdhajlítás.\nMozdulat: oldalra lépés sorozat.\nFókusz: csípő nem billeg, lábfej stabil.",
       },
       {
         name: "Single Leg Bridge",
         reps: "3×8/oldal",
         detail:
-          "Mozdulat: egyik láb talajon, másik felemelve, csípő emel. Fókusz: farizom dolgozik, csípő nem billen.",
+          "Mozdulat: csípő emel egy lábon.\nFókusz: farizom dolgozik, medence nem fordul.",
       },
       {
-        name: "Step Back Lunge",
-        reps: "3×6/oldal",
+        name: "Hip Airplane (egyszerűsített)",
+        reps: "5/oldal",
         detail:
-          "Mozdulat: hátralépés, lassú ereszkedés, visszaállás. Fókusz: elöl lévő térd stabil, törzs egyenes.",
+          "Kiinduló: csípőből döntött helyzet.\nMozdulat: medence finom nyit-zár.\nFókusz: stabil bokatérd, kontrollált mozgás.",
       },
+    ],
+  },
+  {
+    id: "core-posture",
+    label: "Core stabilitás",
+    category: "block",
+    focus: "Core + testtartás · törzs stabilitás és hát aktiváció.",
+    exercises: [
       {
-        name: "Side Plank Hip Lift",
+        name: "Dead Bug",
         reps: "3×8/oldal",
         detail:
-          "Mozdulat: oldalsó plank, csípő le és fel. Fókusz: csípő oldala dolgozik, törzs stabil.",
+          "Kiinduló: hanyatt, derék neutrál.\nMozdulat: ellentétes kar-láb nyújt.\nFókusz: hát lent marad.",
+      },
+      {
+        name: "Hollow Hold",
+        reps: "3×20 mp",
+        detail:
+          "Mozdulat: bordák le, has aktív.\nFókusz: derék nem emelkedik el.",
+      },
+      {
+        name: "Superman Hold",
+        reps: "3×20 mp",
+        detail:
+          "Mozdulat: hason fekve kar-láb emel.\nFókusz: lapocka + farizom aktiváció.",
+      },
+      {
+        name: "Bird Dog",
+        reps: "3×10/oldal",
+        detail:
+          "Kiinduló: négykézláb.\nMozdulat: ellentétes kar-láb nyújt.\nFókusz: medence stabil, lassú kontroll.",
+      },
+      {
+        name: "Plank Shoulder Tap",
+        reps: "2×20 érintés",
+        detail:
+          "Kiinduló: plank.\nMozdulat: váll érintés váltott kézzel.\nFókusz: csípő nem billeg.",
       },
     ],
   },
@@ -166,7 +294,7 @@ export const ACL_ROUTINES: ACLRoutine[] = [
 export const STRENGTH_WORKOUTS: StrengthWorkout[] = [
   {
     id: "easy-a",
-    label: "Enyhébb teljes testes edzés A",
+    label: "Csendes Acél",
     category: "easy",
     rounds: "3 kör",
     exercises: [
@@ -175,49 +303,45 @@ export const STRENGTH_WORKOUTS: StrengthWorkout[] = [
       { name: "Glute Bridge", reps: "3×12", detail: "Sarok nyom, csípő emel." },
       { name: "Dead Bug", reps: "3×8/oldal", detail: "Hát a talajon, ellentétes kar-láb nyújt." },
       { name: "Bird Dog", reps: "3×10/oldal", detail: "Négykézláb, ellentétes kar-láb nyújt." },
-      { name: "Side Plank", reps: "2×20 mp", detail: "Test egy vonalban." },
     ],
   },
   {
     id: "easy-b",
-    label: "Enyhébb teljes testes edzés B",
+    label: "Farkaslépés",
     category: "easy",
     rounds: "3 kör",
     exercises: [
       { name: "Narrow Push-up", reps: "3×6-8", detail: "Kezek közelebb, tricepsz dolgozik." },
       { name: "Reverse Lunge", reps: "3×8/oldal", detail: "Hátralépés, kontrollált mozgás." },
-      { name: "Single-Leg Bridge", reps: "3×8/oldal", detail: "Farizom aktiváció." },
-      { name: "Hollow Hold", reps: "3×20 mp", detail: "Hát alsó része talajon, has aktív." },
+      { name: "Single Leg Bridge", reps: "3×8/oldal", detail: "Farizom fókusz." },
+      { name: "Side Plank", reps: "3×20 mp/oldal", detail: "Test egy vonalban." },
       { name: "Superman Hold", reps: "3×20 mp", detail: "Hason fekve, kar-láb emel." },
-      { name: "Plank Shoulder Tap", reps: "2×20 érintés", detail: "Plank, váll érintés." },
     ],
   },
   {
     id: "intense-a",
-    label: "Intenzív teljes testes edzés A",
+    label: "Viharverő",
     category: "intense",
     rounds: "4 kör",
     exercises: [
       { name: "Decline Push-up", reps: "3×6", detail: "Láb megemelve, váll erősítés." },
       { name: "Squat", reps: "3×10", detail: "Lassú ereszkedés." },
       { name: "Reverse Lunge", reps: "3×8/oldal", detail: "Stabil térd." },
-      { name: "Single-Leg Bridge", reps: "3×10", detail: "Farizom fókusz." },
-      { name: "Side Plank Hip Lift", reps: "3×10", detail: "Csípő emelés." },
-      { name: "Superman Hold", reps: "3×30 mp", detail: "Hason fekve, kar-láb emel." },
+      { name: "Single Leg Bridge", reps: "3×10/oldal", detail: "Farizom erő." },
+      { name: "Hollow Hold", reps: "3×30 mp", detail: "Core feszítés." },
     ],
   },
   {
     id: "intense-b",
-    label: "Intenzív teljes testes edzés B",
+    label: "Hegylánc",
     category: "intense",
     rounds: "4 kör",
     exercises: [
       { name: "Pike Push-up", reps: "3×6-8", detail: "Csípő magas, váll tolóerő." },
       { name: "Wide Squat", reps: "3×10-12", detail: "Széles állás, térd kifelé." },
       { name: "Step Squat", reps: "3×10", detail: "Guggolás + oldal lépés." },
-      { name: "Glute Bridge Hold", reps: "3×30 mp", detail: "Csípő fent tart." },
-      { name: "Hollow Hold", reps: "3×30 mp", detail: "Hát alsó része talajon, has aktív." },
-      { name: "Bird Dog", reps: "3×12/oldal", detail: "Négykézláb, ellentétes kar-láb nyújt." },
+      { name: "Bridge Hold", reps: "3×30 mp", detail: "Csípő fent tart." },
+      { name: "Bird Dog", reps: "3×12/oldal", detail: "Stabil törzs." },
     ],
   },
 ];

@@ -2,38 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAdminUserFromCookies } from "@/lib/auth";
 import { getBirdById, updateBird } from "@/lib/birdService";
 import { getScienceDossierForBird } from "@/lib/scienceDossierService";
-import { visualBriefSchemaV1 } from "@/lib/imageAccuracySchemas";
+import { generateVisualBriefV1 } from "@/lib/imageAccuracyGeneration";
 import { upsertVisualBriefDraft } from "@/lib/visualBriefService";
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
-}
-
-function extractMark(entry: unknown): string | null {
-  if (!isRecord(entry)) {
-    return null;
-  }
-  const mark = entry.mark;
-  if (typeof mark !== "string") {
-    return null;
-  }
-  const trimmed = mark.trim();
-  return trimmed ? trimmed : null;
-}
-
-function pickFocusTraits(sciencePayload: unknown): string[] {
-  if (!isRecord(sciencePayload)) {
-    return [];
-  }
-
-  const keyFieldMarks = sciencePayload.key_field_marks;
-  if (!Array.isArray(keyFieldMarks)) {
-    return [];
-  }
-
-  const strings = keyFieldMarks.map(extractMark).filter((mark): mark is string => Boolean(mark));
-  return strings.slice(0, 3);
-}
+import { getLatestContentBlockForBird } from "@/lib/contentService";
+import { scienceDossierSchemaV1 } from "@/lib/imageAccuracySchemas";
 
 export async function POST(
   request: NextRequest,
@@ -72,32 +44,21 @@ export async function POST(
     );
   }
 
-  const focus = pickFocusTraits(science.payload);
-  const silhouetteFocus = focus.length >= 2 ? focus.slice(0, 3) : ["Head shape", "Beak", "Wing outline"];
-
-  const payload = visualBriefSchemaV1.parse({
-    scientific: {
-      main_habitat: {
-        pose: "Full-body side view, standing. Calm and identification-friendly.",
-        composition_rules: ["Bird fills 70–80% of the frame", "Dominant side view"],
-        habitat_hint_elements: ["Subtle vegetation hint", "Minimal ground line"],
-        background_rules: ["Pale paper background", "No scene perspective", "No dramatic lighting"],
-        must_not: ["No strong habitat scene", "No background animals", "No human objects"],
-      },
-    },
-    iconic: {
-      silhouette_focus: silhouetteFocus,
-      simplify_features: ["Reduce micro-feather detail", "Keep key markers readable"],
-      must_not: ["No habitat background", "No props"],
-      background: "none",
-    },
-  });
+  const contentBlock = await getLatestContentBlockForBird(bird.id);
+  const fieldGuideDossier = contentBlock?.blocks_json ?? null;
 
   try {
+    const parsedScience = scienceDossierSchemaV1.parse(science.payload);
+    const result = await generateVisualBriefV1({
+      bird,
+      dossier: fieldGuideDossier,
+      scienceDossier: parsedScience,
+    });
+
     const saved = await upsertVisualBriefDraft({
       bird_id: bird.id,
       schema_version: "v1",
-      payload,
+      payload: result.payload,
       created_by: "ai",
     });
 

@@ -191,8 +191,8 @@ svg {
   flex-wrap: wrap;
   gap: 0.75rem;
   padding-block: 0.75rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.2);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid rgba(var(--brand-accent-rgb), 0.25);
+  border-bottom: 1px solid rgba(var(--brand-accent-rgb), 0.15);
   font-size: 0.75rem;
   letter-spacing: 0.3em;
   text-transform: uppercase;
@@ -217,6 +217,12 @@ svg {
 .admin-tab--inactive {
   border: 1px solid rgba(255, 255, 255, 0.3);
   color: var(--muted);
+}
+
+.admin-tab--inactive:hover,
+.admin-tab--inactive:focus-visible {
+  border-color: rgba(var(--brand-ink-rgb), 0.55);
+  color: var(--foreground);
 }
 
 .admin-panel {
@@ -494,6 +500,96 @@ svg {
   color: var(--brand-ink);
 }
 
+.admin-text-muted {
+  color: var(--muted);
+}
+
+.admin-text-ink {
+  color: var(--brand-ink);
+}
+
+.admin-text-warm {
+  color: var(--brand-warm);
+}
+
+.admin-inline-code {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 9999px;
+  border: 1px solid var(--line);
+  background: rgba(var(--brand-ink-rgb), 0.08);
+  padding: 0.15rem 0.6rem;
+  font-size: 0.75rem;
+  letter-spacing: 0.15em;
+  color: var(--foreground);
+  font-family: var(--font-display);
+}
+
+.admin-message {
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  padding: 0.75rem 1rem;
+  font-size: 0.85rem;
+}
+
+.admin-message--error {
+  border-color: rgba(244, 63, 94, 0.55);
+  background: rgba(244, 63, 94, 0.12);
+  color: var(--foreground);
+}
+
+.admin-message--success {
+  border-color: rgba(16, 185, 129, 0.55);
+  background: rgba(16, 185, 129, 0.12);
+  color: var(--foreground);
+}
+
+.admin-message--warning {
+  border-color: rgba(241, 161, 30, 0.55);
+  background: rgba(241, 161, 30, 0.12);
+  color: var(--foreground);
+}
+
+.admin-overlay-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem;
+  background: rgba(0, 0, 0, 0.78);
+}
+
+.admin-overlay-panel {
+  width: min(100%, 42rem);
+  border-radius: 18px;
+  border: 1px solid var(--line);
+  background: var(--panel-2);
+  box-shadow: var(--shadow);
+  padding: 1.5rem;
+}
+
+.admin-code-textarea {
+  width: 100%;
+  border-radius: 14px;
+  border: 1px solid rgba(var(--brand-ink-rgb), 0.28);
+  background: rgba(var(--brand-ink-rgb), 0.08);
+  padding: 1rem;
+  color: var(--foreground);
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.admin-code-textarea:focus-visible {
+  border-color: rgba(var(--brand-ink-rgb), 0.55);
+}
+
+.admin-code-textarea:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .admin-inline-actions {
   display: flex;
   flex-wrap: wrap;
@@ -616,6 +712,24 @@ svg {
   background-color: rgba(255, 255, 255, 0.04);
 }
 
+.admin-badge--warning {
+  border-color: rgba(241, 161, 30, 0.55);
+  background: rgba(241, 161, 30, 0.12);
+  color: var(--foreground);
+}
+
+.admin-badge--success {
+  border-color: rgba(16, 185, 129, 0.55);
+  background: rgba(16, 185, 129, 0.12);
+  color: var(--foreground);
+}
+
+.admin-badge--muted {
+  border-color: rgba(var(--brand-ink-rgb), 0.28);
+  background: rgba(var(--brand-ink-rgb), 0.08);
+  color: var(--foreground);
+}
+
   .btn {
     border-radius: 9999px;
     border: 1px solid var(--line);
@@ -697,7 +811,7 @@ svg {
 .form-helper {
   font-size: 0.7rem;
   letter-spacing: 0.1em;
-  color: rgba(255, 255, 255, 0.75);
+  color: var(--muted);
   text-transform: none;
   font-weight: 400;
 }
@@ -1358,10 +1472,49 @@ svg {
   margin-bottom: 0.25rem;
 }
 
+.yoga-exercise-popover__body {
+  display: grid;
+  gap: 0.4rem;
+  margin-top: 0.25rem;
+}
+
 .yoga-exercise-popover p {
   margin: 0;
   font-size: 0.85rem;
   color: var(--brand-ink);
+}
+
+.yoga-exercise-popover__body p + p {
+  margin-top: 0.35rem;
+}
+
+.yoga-exercise-detail {
+  margin: 0;
+  display: grid;
+  gap: 0.45rem;
+}
+
+.yoga-exercise-detail__row {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.yoga-exercise-detail dt {
+  margin: 0;
+  font-size: 0.7rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  opacity: 0.75;
+}
+
+.yoga-exercise-detail dd {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--brand-ink);
+}
+
+.yoga-exercise-detail-inline {
+  margin-top: 0.5rem;
 }
 
 .yoga-category-switch {

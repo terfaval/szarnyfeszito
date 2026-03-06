@@ -168,27 +168,26 @@ export default function BirdClassificationQueue({
         return (
           <Card key={bird.id} className="space-y-4">
             <div className="flex flex-col gap-1">
-              <p className="text-lg font-semibold text-white">{bird.name_hu}</p>
+              <p className="admin-list-title">{bird.name_hu}</p>
               <p className="admin-list-meta">{bird.slug}</p>
-              <p className="text-xs text-zinc-500">
+              <p className="text-xs admin-text-muted">
                 {bird.name_latin ?? "No Latin name yet"}
               </p>
             </div>
 
             {suggestion && (
-              <div className="rounded-[14px] border border-zinc-800 bg-zinc-950/40 px-4 py-3 text-sm text-zinc-200">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.35em] text-zinc-500">
-                  AI suggestion ({suggestion.confidence})
-                </p>
+              <div className="admin-message">
+                <p className="admin-subheading">AI suggestion ({suggestion.confidence})</p>
                 <p className="mt-1">{suggestion.rationale}</p>
               </div>
             )}
 
             <div className="grid gap-4 md:grid-cols-2">
-              <label className="flex flex-col gap-2 text-xs font-semibold uppercase tracking-[0.3em] text-zinc-400">
-                Méret kategória
+              <label className="form-field">
+                <span className="form-field__label">Méret kategória</span>
+                <div className="form-field__row">
                 <select
-                  className="rounded-[14px] border border-zinc-800 bg-transparent px-4 py-2 text-sm text-white focus:border-white focus:outline-none"
+                  className="input"
                   value={draft?.size_category ?? ""}
                   onChange={(event) =>
                     updateDraft(bird.id, {
@@ -206,12 +205,14 @@ export default function BirdClassificationQueue({
                     </option>
                   ))}
                 </select>
+                </div>
               </label>
 
-              <label className="flex flex-col gap-2 text-xs font-semibold uppercase tracking-[0.3em] text-zinc-400">
-                Láthatóság kategória
+              <label className="form-field">
+                <span className="form-field__label">Láthatóság kategória</span>
+                <div className="form-field__row">
                 <select
-                  className="rounded-[14px] border border-zinc-800 bg-transparent px-4 py-2 text-sm text-white focus:border-white focus:outline-none"
+                  className="input"
                   value={draft?.visibility_category ?? ""}
                   onChange={(event) =>
                     updateDraft(bird.id, {
@@ -229,6 +230,7 @@ export default function BirdClassificationQueue({
                     </option>
                   ))}
                 </select>
+                </div>
               </label>
             </div>
 
@@ -252,12 +254,12 @@ export default function BirdClassificationQueue({
             </div>
 
             {error && (
-              <p className="text-xs font-medium text-rose-500" aria-live="assertive">
+              <p className="admin-message admin-message--error" aria-live="assertive">
                 {error}
               </p>
             )}
             {message && (
-              <p className="text-xs font-medium text-emerald-400" aria-live="polite">
+              <p className="admin-message admin-message--success" aria-live="polite">
                 {message}
               </p>
             )}
@@ -267,4 +269,3 @@ export default function BirdClassificationQueue({
     </section>
   );
 }
-

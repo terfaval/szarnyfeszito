@@ -31,6 +31,82 @@ function formatMonthKey(date: Date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
 }
 
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function renderExerciseDetail(detail?: string) {
+  const trimmed = detail?.trim();
+  if (!trimmed) {
+    return <p>Nincs további információ ehhez a gyakorlathoz.</p>;
+  }
+
+  const normalized = trimmed.replace(/\r\n/g, "\n");
+  const taggedMarkers = ["Kiinduló", "Mozdulat", "Fókusz", "Tempó", "Cél", "Megjegyzés"];
+
+  let expanded = normalized;
+  for (const marker of taggedMarkers) {
+    const token = `${marker}:`;
+    const pattern = new RegExp(`\\s*${escapeRegExp(token)}`, "g");
+    expanded = expanded.replace(pattern, (match, offset) => (offset === 0 ? token : `\n${token}`));
+  }
+
+  const lines = expanded
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  const sections: Array<{ term: string; text: string }> = [];
+  const freeform: string[] = [];
+  for (const line of lines) {
+    const match = line.match(/^([^:]{2,24}):\s*(.+)$/);
+    if (match) {
+      const term = match[1]?.trim() ?? "";
+      const text = match[2]?.trim() ?? "";
+      if (taggedMarkers.includes(term) && text) {
+        sections.push({ term, text });
+        continue;
+      }
+    }
+
+    freeform.push(line);
+  }
+
+  if (sections.length > 0) {
+    return (
+      <>
+        <dl className="yoga-exercise-detail">
+          {sections.map((section) => (
+            <div key={section.term} className="yoga-exercise-detail__row">
+              <dt>{section.term}</dt>
+              <dd>{section.text}</dd>
+            </div>
+          ))}
+        </dl>
+        {freeform.length > 0 && (
+          <div className="yoga-exercise-detail__freeform">
+            {freeform.map((line) => (
+              <p key={line}>{line}</p>
+            ))}
+          </div>
+        )}
+      </>
+    );
+  }
+
+  if (freeform.length > 1) {
+    return (
+      <div className="yoga-exercise-detail__freeform">
+        {freeform.map((line) => (
+          <p key={line}>{line}</p>
+        ))}
+      </div>
+    );
+  }
+
+  return <p>{normalized}</p>;
+}
+
 function formatDateKey(date: Date) {
   // Use local time instead of UTC to avoid off-by-one issues around midnight/timezones.
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
@@ -1437,22 +1513,20 @@ export default function YogaPage() {
                                 <span className="yoga-exercise-reps">{exercise.reps}</span>
                                 {isOpen && (
                                   <div className="yoga-exercise-popover">
-                                  <div className="yoga-exercise-popover__head">
-                                    <strong>{overlayExerciseDetail.title}</strong>
-                                    <button
-                                      type="button"
-                                      className="btn btn--ghost"
-                                      onClick={() => setOverlayExerciseDetail(null)}
-                                      aria-label="Bezárás"
-                                    >
-                                      <X size={14} />
-                                    </button>
-                                  </div>
-                                  <p>
-                                    {overlayExerciseDetail.detail?.trim()
-                                      ? overlayExerciseDetail.detail
-                                      : "Nincs további információ ehhez a gyakorlathoz."}
-                                  </p>
+                                    <div className="yoga-exercise-popover__head">
+                                      <strong>{overlayExerciseDetail.title}</strong>
+                                      <button
+                                        type="button"
+                                        className="btn btn--ghost"
+                                        onClick={() => setOverlayExerciseDetail(null)}
+                                        aria-label="Bezárás"
+                                      >
+                                        <X size={14} />
+                                      </button>
+                                    </div>
+                                    <div className="yoga-exercise-popover__body">
+                                      {renderExerciseDetail(overlayExerciseDetail.detail)}
+                                    </div>
                                   </div>
                                 )}
                               </div>
@@ -1490,7 +1564,7 @@ export default function YogaPage() {
                       <p className="yoga-detail-card__desc">
                         {routine.category === "routine"
                           ? "Aktiváló rutin jóga vagy futás előtt."
-                          : "Stabilitási blokk heti 2×, célzott térdstabilitás."}
+                          : "Dokumentált stabilitási blokk: fókusz + gyakorlatlista."}
                       </p>
                       <p className="yoga-detail-card__focus">{routine.focus}</p>
                       <div className="yoga-exercise-list">
@@ -1528,11 +1602,9 @@ export default function YogaPage() {
                                       <X size={14} />
                                     </button>
                                   </div>
-                                  <p>
-                                    {overlayExerciseDetail.detail?.trim()
-                                      ? overlayExerciseDetail.detail
-                                      : "Nincs további információ ehhez a gyakorlathoz."}
-                                  </p>
+                                  <div className="yoga-exercise-popover__body">
+                                    {renderExerciseDetail(overlayExerciseDetail.detail)}
+                                  </div>
                                 </div>
                               )}
                             </div>
@@ -1824,15 +1896,15 @@ export default function YogaPage() {
                           <li key={exercise.name}>
                             <span>{exercise.name}</span>
                             <span>{exercise.reps}</span>
-                            {exercise.detail && (
-                              <details>
-                                <summary>Részletek</summary>
-                                <p>{exercise.detail}</p>
-                              </details>
-                            )}
-                          </li>
-                        ))}
-                      </ul>
+                         {exercise.detail && (
+                           <details>
+                             <summary>Részletek</summary>
+                             <div className="yoga-exercise-detail-inline">{renderExerciseDetail(exercise.detail)}</div>
+                           </details>
+                         )}
+                       </li>
+                     ))}
+                   </ul>
                     </button>
                   ))}
                 </div>
@@ -1881,16 +1953,16 @@ export default function YogaPage() {
                       <li key={exercise.name}>
                         <span>{exercise.name}</span>
                         <span>{exercise.reps}</span>
-                        {exercise.detail && (
-                          <details>
-                            <summary>Részletek</summary>
-                            <p>{exercise.detail}</p>
-                          </details>
-                        )}
-                      </li>
-                    ))}
-                  </ul>
-                </button>
+                         {exercise.detail && (
+                           <details>
+                             <summary>Részletek</summary>
+                             <div className="yoga-exercise-detail-inline">{renderExerciseDetail(exercise.detail)}</div>
+                           </details>
+                         )}
+                       </li>
+                     ))}
+                   </ul>
+                 </button>
               ))}
             </div>
 

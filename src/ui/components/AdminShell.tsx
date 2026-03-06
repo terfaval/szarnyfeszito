@@ -20,13 +20,15 @@ export function AdminShell({
         <AdminTopBar action={action} />
         <div className="space-y-6">
           {title || subtitle ? (
-            <header className="space-y-2">
+            <header className="admin-heading">
               {title && (
-                <p className="text-xs uppercase tracking-[0.4em] text-zinc-400">
-                  {title}
-                </p>
+                <p className="admin-heading__label">{title}</p>
               )}
-              {subtitle && <h1 className="text-3xl font-semibold">{subtitle}</h1>}
+              {subtitle && (
+                <h1 className="admin-heading__title admin-heading__title--large">
+                  {subtitle}
+                </h1>
+              )}
             </header>
           ) : null}
 

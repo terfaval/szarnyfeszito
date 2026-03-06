@@ -13,11 +13,17 @@ import type { BirdDossier } from "@/types/dossier";
 const SYSTEM_PROMPT = `You are classifying birds for a Hungarian bird guide admin registry.
 Return JSON only (no commentary).
 
-You must propose:
-- size_category: very_small | small | medium | large (nullable)
-- visibility_category: frequent | seasonal | rare (nullable)
-- confidence: low | medium | high
-- rationale: short Hungarian explanation (<= 600 chars)
+Output shape:
+{
+  "suggested": {
+    "size_category": "very_small" | "small" | "medium" | "large" | null,
+    "visibility_category": "frequent" | "seasonal" | "rare" | null,
+    "confidence": "low" | "medium" | "high",
+    "rationale": string
+  }
+}
+
+Do NOT include any other top-level keys. (The server injects schema_version + inputs.)
 
 SIZE BUCKET THRESHOLDS (cm):
 - very_small: < 12
@@ -38,6 +44,53 @@ export type BirdClassificationGenerationResult = {
   request_id: string;
   finish_reason: string;
 };
+
+function normalizeSuggestedShape(raw: Record<string, unknown>) {
+  const hasFlatSuggestedKeys =
+    "size_category" in raw ||
+    "visibility_category" in raw ||
+    "confidence" in raw ||
+    "rationale" in raw;
+
+  if (typeof raw.suggested === "object" && raw.suggested !== null) {
+    if (!hasFlatSuggestedKeys) {
+      return raw;
+    }
+
+    const { size_category, visibility_category, confidence, rationale, ...rest } = raw;
+    return rest;
+  }
+
+  if (!hasFlatSuggestedKeys) {
+    return raw;
+  }
+
+  const {
+    size_category,
+    visibility_category,
+    confidence,
+    rationale,
+    ...rest
+  } = raw;
+
+  const normalizeString = (value: unknown) =>
+    typeof value === "string" ? value.trim() : value;
+
+  const normalizedConfidence =
+    typeof confidence === "string" ? confidence.trim().toLowerCase() : confidence;
+
+  return {
+    ...rest,
+    suggested: {
+      size_category: normalizeString(size_category) ?? null,
+      visibility_category: normalizeString(visibility_category) ?? null,
+      confidence: normalizedConfidence ?? "low",
+      rationale:
+        (typeof rationale === "string" ? rationale.trim() : null) ??
+        "Nincs indoklás.",
+    },
+  };
+}
 
 function dossierInputs(dossier: BirdDossier) {
   return {
@@ -110,8 +163,9 @@ export async function generateBirdClassificationSuggestion(args: {
   const rawJson = extracted.raw;
 
   try {
+    const normalized = normalizeSuggestedShape(extracted.payload);
     const payload = parseBirdClassificationPayloadV1({
-      ...extracted.payload,
+      ...normalized,
       schema_version: "v1",
       inputs,
     });
@@ -133,4 +187,3 @@ export async function generateBirdClassificationSuggestion(args: {
     throw error;
   }
 }
-

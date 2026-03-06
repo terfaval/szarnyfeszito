@@ -5,7 +5,8 @@ import { getScienceDossierForBird } from "@/lib/scienceDossierService";
 import { getVisualBriefForBird } from "@/lib/visualBriefService";
 import ImageAccuracyHandoff from "@/components/admin/ImageAccuracyHandoff";
 import { upsertScienceDossierDraft } from "@/lib/scienceDossierService";
-import { scienceDossierSchemaV1 } from "@/lib/imageAccuracySchemas";
+import { generateScienceDossierV1 } from "@/lib/imageAccuracyGeneration";
+import { getLatestContentBlockForBird } from "@/lib/contentService";
 import { updateBird } from "@/lib/birdService";
 
 export const metadata = {
@@ -13,31 +14,6 @@ export const metadata = {
 };
 
 export const dynamic = "force-dynamic";
-
-function buildBootstrapScienceDossier(bird: { name_hu: string; name_latin?: string | null }) {
-  return scienceDossierSchemaV1.parse({
-    species_identity: {
-      name_hu: bird.name_hu,
-      name_latin: bird.name_latin ?? bird.name_hu,
-    },
-    confusion_set: [],
-    key_field_marks: [],
-    proportions: {
-      neck: "medium",
-      legs: "medium",
-      body: "average",
-      beak: { length: "medium", shape: "straight" },
-    },
-    plumage_variants: {
-      adult: "TODO",
-      juvenile: "not_applicable",
-      breeding: "not_applicable",
-      non_breeding: "not_applicable",
-    },
-    must_not_include: ["wrong species", "fantasy colors", "extra limbs"],
-    confidence: { per_section: "low", notes: "Bootstrapped draft. Please review." },
-  });
-}
 
 export default async function ImageAccuracyPage({
   params,
@@ -63,11 +39,16 @@ export default async function ImageAccuracyPage({
   let scienceDossier = initialScienceDossier;
 
   if (!scienceDossier) {
-    const payload = buildBootstrapScienceDossier(bird);
+    const contentBlock = await getLatestContentBlockForBird(bird.id);
+    const fieldGuideDossier = contentBlock?.blocks_json ?? null;
+    const result = await generateScienceDossierV1({
+      bird,
+      dossier: fieldGuideDossier,
+    });
     await upsertScienceDossierDraft({
       bird_id: bird.id,
       schema_version: "v1",
-      payload,
+      payload: result.payload,
       created_by: "ai",
     });
     await updateBird({ id: bird.id, science_dossier_status: "generated" });

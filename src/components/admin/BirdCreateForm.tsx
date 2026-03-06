@@ -70,10 +70,8 @@ export default function BirdCreateForm() {
   return (
     <Card className="space-y-4 text-sm">
       <div className="space-y-2">
-        <p className="text-xs uppercase tracking-[0.4em] text-zinc-400">
-          Quick create
-        </p>
-        <p className="text-xs text-zinc-500">
+        <p className="admin-subheading">Quick create</p>
+        <p className="admin-note-small">
           Provide a Latin name (Hungarian optional) and we will generate the slug
           for you. Slugs stay lowercase, ASCII, and hyphenated; duplicates get a
           numeric suffix.
@@ -113,12 +111,12 @@ export default function BirdCreateForm() {
           {creating ? "Creating..." : "Create bird record"}
         </Button>
         {error && (
-          <p className="text-xs font-medium text-rose-500" aria-live="assertive">
+          <p className="admin-message admin-message--error" aria-live="assertive">
             {error}
           </p>
         )}
         {message && (
-          <p className="text-xs font-medium text-emerald-400" aria-live="polite">
+          <p className="admin-message admin-message--success" aria-live="polite">
             {message}
           </p>
         )}

@@ -22,7 +22,7 @@
 .headerSubtitle {
   margin: 0;
   font-size: 0.9rem;
-  color: rgba(255, 255, 255, 0.65);
+  color: var(--muted);
 }
 
 .headerBadge {
@@ -30,13 +30,13 @@
   align-items: center;
   gap: 0.25rem;
   border-radius: 9999px;
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  border: 1px solid var(--line);
   padding: 0.35rem 0.85rem;
   font-size: 0.65rem;
   text-transform: uppercase;
   letter-spacing: 0.3em;
-  color: #34d399;
-  background: rgba(52, 211, 153, 0.1);
+  color: var(--brand-ink);
+  background: rgba(var(--brand-ink-rgb), 0.08);
 }
 
 .grid {
@@ -49,7 +49,7 @@
   aspect-ratio: 4 / 3;
   width: 100%;
   border-radius: 14px;
-  background: #0f172a;
+  background: var(--panel-2);
   overflow: hidden;
 }
 
@@ -69,5 +69,5 @@
   font-size: 0.65rem;
   letter-spacing: 0.3em;
   text-transform: uppercase;
-  color: rgba(5, 118, 141, 0.8);
+  color: var(--brand-ink);
 }

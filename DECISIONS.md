@@ -2,6 +2,36 @@
 
 ---
 
+## D19 — Studio text roles + coloring semantics v1 (Dashboard as baseline)
+
+**Status:** Accepted  
+**Date:** 2026-03-06  
+**Scope:** Studio admin surfaces. Explorer out of scope. Yoga page is an explicit exception.
+
+### Context
+The Studio UI currently mixes:
+- semantic helper classes backed by `src/app/globals.css` tokens (best example: `/admin` Dashboard), and
+- ad-hoc Tailwind color utilities / per-page CSS modules with hardcoded hex colors (harder to maintain and drift-prone).
+
+This makes it unclear which *kind of text* (label, title, help, warning, error, etc.) should look like what, and increases the cost of global palette tweaks.
+
+### Decision
+1) **Dashboard is the canonical visual baseline** for Studio typography + color semantics (except Yoga).
+2) **Text styling must be semantic and global-first:**
+   - prefer global helper classes in `src/app/globals.css` (driven by CSS variables),
+   - avoid Tailwind color utilities (`text-*`, `bg-*`) and hardcoded hex values in admin pages/components,
+   - when a missing role appears (e.g. error/success callouts), add a new global helper class in `src/app/globals.css` and document it in `UI_DESIGN_STOCK.md` before using it.
+3) **Canonical mapping lives in `UI_DESIGN_STOCK.md`** under “Text roles (dashboard baseline)”.
+
+### Exceptions
+- `/admin/yoga` keeps its own surface rules (still token-backed, but not forced to match Dashboard’s text roles 1:1).
+
+### Out of scope
+- Implementing the refactor across every page/component (tracked separately under the style-system tickets).
+
+### Open questions
+- Should `/admin/login` be fully Dashboard-aligned (paper background + brand tokens), or is a “dark entry gate” acceptable as a permanent exception alongside Yoga?
+
 ## D18 — Bird size + visibility classification (Studio filters + AI suggestion queue)
 
 **Status:** Accepted  

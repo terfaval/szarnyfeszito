@@ -458,6 +458,13 @@ Whenever Studio needs to colorize or badge Bird pipeline statuses, it must follo
 - Use `StatusPill` for Bird statuses.
 - Never introduce ad-hoc colors for statuses outside the `status-pill--*` rules in `src/app/globals.css`.
 
+### Text coloring rule (global)
+Whenever Studio needs to colorize text (labels, headings, help text, warnings, errors), it must follow the Dashboard conventions and the semantic text-role mapping in `UI_DESIGN_STOCK.md`:
+
+- Prefer semantic helper classes in `src/app/globals.css` (token-driven via CSS variables).
+- Avoid hardcoded hex colors and Tailwind color utilities (`text-*`, `bg-*`, `border-*`) in Studio pages/components.
+- Exception: `/admin/yoga` is allowed to diverge (see D16), but should still remain token-backed.
+
 ### Post text approval handoff
 After approving Bird text (transition to `text_approved`), Studio navigates to an intermediate review screen to prepare image generation inputs:
 

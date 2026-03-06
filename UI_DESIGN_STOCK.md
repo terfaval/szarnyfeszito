@@ -1,6 +1,6 @@
 # UI/Design Stock Guide
 
-This repo keeps a single source of design truth in `app/globals.css`, with shared shells and atoms under `src/ui`. Reusing the same tokens and component wiring from Novira helps Szarnyfeszito deliver consistent admin surfaces while keeping the data layers separate.
+This repo keeps a single source of design truth in `src/app/globals.css`, with shared shells and atoms under `src/ui`. Reusing the same tokens and component wiring from Novira helps Szarnyfeszito deliver consistent admin surfaces while keeping the data layers separate.
 
 ## Theme tokens
 
@@ -24,10 +24,34 @@ Keep these tokens inside `app/globals.css` and let `prefers-color-scheme: dark` 
 
 ## Layout shells
 
-- `AdminShell` (`src/ui/shell/AdminShell.tsx`) is the root wrapper for every `/admin` route; it enforces the Novira-aligned max width (~1120px via `--shell-main-max`) and side padding (`--shell-side-pad`) before layering.
+- `AdminShell` (`src/ui/components/AdminShell.tsx`) is the root wrapper for every `/admin` route; it enforces the Novira-aligned max width (~1120px via `--shell-main-max`) and side padding (`--shell-side-pad`) before layering.
 - The top bar (`AdminTopBar`) keeps brand left, optional breadcrumb/section label middle, and an Icon-driven logout action on the right.
 - Optional left nav mirrors Novira structure with Dashboard, Birds, Places, and Phenomena links; the content slot is a `.card` grid.
 - `.admin-shell__content` ensures every page-Dashboard, Bird list, editors-respects the same layout before injecting page-specific components.
+
+## Text roles (dashboard baseline)
+
+Studio pages should treat the `/admin` Dashboard as the canonical reference for which *text role* maps to which color + behavior. Prefer the semantic helpers in `src/app/globals.css` and avoid ad-hoc Tailwind color utilities.
+
+| Role | Where it appears | Preferred class / component | Color source | Behavior |
+| --- | --- | --- | --- | --- |
+| Section label | “Dashboard”, “Birds”, “Publish gate” headings | `.admin-heading__label` | `--muted` | Uppercase + wide tracking; small |
+| Page/section title | Main heading inside cards/pages | `.admin-heading__title` | `--brand-warm` | Display font; weight 600 |
+| Supporting description | One-sentence guidance under titles | `.admin-heading__description` | `--brand-ink` | Sentence case; readable size |
+| Subheading | In-card sub headings / separators | `.admin-subheading` | `--muted` | Uppercase + wide tracking |
+| Stat label | “draft”, “Places” labels | `.admin-stat-label` | `--brand-ink` | Uppercase + wide tracking |
+| Stat value | Big count number | `.admin-stat-count` | `--brand-warm` | Display-ish emphasis |
+| Stat note / helper | “New birds awaiting text” | `.admin-stat-note`, `.admin-note-small` | `--brand-ink` | Smaller, calm tone |
+| Navigation links | Top bar links | `.admin-nav-link` | `--brand-ink` → `--brand-warm` | Uppercase; hover/active shifts warm |
+| Bird pipeline statuses | Draft → Published badges | `StatusPill` | `status-pill--*` rules | Canonical palette; never ad-hoc |
+| Publish gate items | Gate checklist rows | `.gate-checklist__item--complete/pending` | fixed colors in globals | Uppercase micro-labels |
+| Review warning callout | “Heads up” notes during review | `.admin-review-note` | fixed color in globals | Bordered callout block |
+| Form labels | Field labels | `.form-field__label` / `.form-field` | `--muted` | Uppercase micro-label; wide tracking |
+| Form helper text | Under inputs | `.form-helper` | token-backed (or add helper) | Sentence case; smaller |
+| Error message | Validation/API error | `.admin-message.admin-message--error` | global helper | Must not be `text-rose-*` in pages |
+| Success message | “Saved” / “Link sent” | `.admin-message.admin-message--success` | global helper | Must not be `text-emerald-*` in pages |
+
+Allowed Tailwind usage on admin pages: spacing/layout utilities (`grid`, `gap-*`, `flex`, etc.). Avoid Tailwind color utilities (`text-*`, `bg-*`, `border-*`) outside `/admin/yoga`.
 
 ## UI primitives
 

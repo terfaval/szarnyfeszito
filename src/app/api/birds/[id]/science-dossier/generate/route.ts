@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAdminUserFromCookies } from "@/lib/auth";
 import { getBirdById, updateBird } from "@/lib/birdService";
 import { getLatestContentBlockForBird } from "@/lib/contentService";
-import { scienceDossierSchemaV1 } from "@/lib/imageAccuracySchemas";
+import { generateScienceDossierV1 } from "@/lib/imageAccuracyGeneration";
 import { upsertScienceDossierDraft } from "@/lib/scienceDossierService";
 
 export async function POST(
@@ -28,49 +28,18 @@ export async function POST(
   }
 
   const contentBlock = await getLatestContentBlockForBird(bird.id);
-  const dossier = contentBlock?.blocks_json;
-  const keyMarks =
-    dossier?.identification?.key_features
-      ?.map((feature) => `${feature.title} — ${feature.description}`.trim())
-      .filter(Boolean)
-      .slice(0, 8) ?? [];
-
-  const adultText =
-    dossier?.identification?.identification_paragraph?.trim() ||
-    dossier?.header?.short_summary?.trim() ||
-    "Draft: please add key identification details.";
-
-  const payload = scienceDossierSchemaV1.parse({
-    species_identity: {
-      name_hu: bird.name_hu,
-      name_latin: bird.name_latin ?? bird.name_hu,
-    },
-    confusion_set: [],
-    key_field_marks: keyMarks.map((mark) => ({ mark })),
-    proportions: {
-      neck: "medium",
-      legs: "medium",
-      body: "average",
-      beak: { length: "medium", shape: "straight" },
-    },
-    plumage_variants: {
-      adult: adultText,
-      juvenile: "not_applicable",
-      breeding: "not_applicable",
-      non_breeding: "not_applicable",
-    },
-    must_not_include: ["wrong species", "fantasy colors", "extra limbs"],
-    confidence: {
-      per_section: dossier ? "medium" : "low",
-      notes: "Generated draft. Please review.",
-    },
-  });
+  const fieldGuideDossier = contentBlock?.blocks_json ?? null;
 
   try {
+    const result = await generateScienceDossierV1({
+      bird,
+      dossier: fieldGuideDossier,
+    });
+
     const saved = await upsertScienceDossierDraft({
       bird_id: bird.id,
       schema_version: "v1",
-      payload,
+      payload: result.payload,
       created_by: "ai",
     });
 
@@ -84,4 +53,3 @@ export async function POST(
     );
   }
 }
-

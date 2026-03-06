@@ -939,14 +939,10 @@ export default function BirdTextReview({
 
             {reviewComment && (
               <blockquote className="admin-review-note">
-                <p className="text-xs uppercase tracking-[0.3em] text-[#F1A11E]/70">
-                  Last review note
-                </p>
-                <p className="mt-1 text-sm font-semibold text-white">
-                  {reviewComment}
-                </p>
+                <p className="admin-subheading">Last review note</p>
+                <p className="mt-1 text-sm font-semibold">{reviewComment}</p>
                 {reviewRequestedAt && (
-                  <p className="text-[10px] text-zinc-400">
+                  <p className="text-xs admin-text-muted">
                     Requested on{" "}
                     {new Date(reviewRequestedAt).toLocaleString(undefined, {
                       dateStyle: "medium",
@@ -958,9 +954,11 @@ export default function BirdTextReview({
             )}
           </>
         ) : (
-          <div className="admin-panel admin-panel--muted text-sm text-zinc-400">
+          <div className="admin-panel admin-panel--muted">
+            <p className="admin-note-small">
             No dossier found yet. Run the generator (via quick add or the bird
             editor buttons) to seed the review flow.
+            </p>
           </div>
         )}
       </Card>
@@ -970,10 +968,8 @@ export default function BirdTextReview({
         data-ui-section="review-actions"
       >
         <div className="space-y-2" data-ui-section="review-instructions">
-          <p className="text-xs uppercase tracking-[0.35em] text-zinc-400">
-            Need edits?
-          </p>
-          <p className="text-sm text-zinc-400">
+          <p className="admin-subheading">Need edits?</p>
+          <p className="admin-note-small">
             Tap the pencil icon in the panel you want revised, describe the change,
             and send the review note from the overlay.
           </p>
@@ -985,20 +981,20 @@ export default function BirdTextReview({
             onClick={handleRegenerate}
             disabled={!contentBlock || regenerating || approving || isApproved}
             variant="ghost"
-            className="flex w-full items-center justify-center gap-2 border border-white/10 bg-zinc-950/40 px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-white transition hover:border-white/40 disabled:cursor-not-allowed disabled:opacity-50"
+            className="w-full justify-center"
           >
             <Icon name="sync" size={16} />
             {regenerating ? "Regenerating…" : "Regenerate draft"}
           </Button>
-          <p className="text-[10px] text-zinc-500">
+          <p className="text-xs admin-text-muted">
             Regenerate re-runs the Field-Guide prompt using the identity-locked names and any review note you saved.
           </p>
           <Button
             type="button"
             onClick={handleApprove}
             disabled={approving || isApproved}
-            variant="ghost"
-            className="flex w-full items-center justify-center gap-2 border-emerald-400/60 bg-emerald-500/10 text-emerald-200 hover:border-emerald-300 disabled:cursor-not-allowed disabled:opacity-50"
+            variant="accent"
+            className="w-full justify-center"
           >
             <Icon name="accept" size={16} />
             {approving
@@ -1009,13 +1005,13 @@ export default function BirdTextReview({
           </Button>
 
           {statusMessage && (
-            <p className="text-xs text-emerald-300" aria-live="polite">
+            <p className="admin-message admin-message--success" aria-live="polite">
               {statusMessage}
             </p>
           )}
 
           {error && (
-            <p className="text-xs text-rose-400" aria-live="assertive">
+            <p className="admin-message admin-message--error" aria-live="assertive">
               {error}
             </p>
           )}

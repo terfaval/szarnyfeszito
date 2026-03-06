@@ -2,16 +2,16 @@
 
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Card } from "@/ui/components/Card";
+import { Button } from "@/ui/components/Button";
+import { Input } from "@/ui/components/Input";
 
 type AdminLoginFormProps = {
   allowedEmail: string;
   redirectTo: string;
 };
 
-export default function AdminLoginForm({
-  allowedEmail,
-  redirectTo,
-}: AdminLoginFormProps) {
+export default function AdminLoginForm({ allowedEmail, redirectTo }: AdminLoginFormProps) {
   const router = useRouter();
   const [email, setEmail] = useState(allowedEmail);
   const [password, setPassword] = useState("");
@@ -66,87 +66,83 @@ export default function AdminLoginForm({
     } catch (fetchError) {
       setMagicState("idle");
       setMagicError(
-        fetchError instanceof Error
-          ? fetchError.message
-          : "Unable to send the magic link."
+        fetchError instanceof Error ? fetchError.message : "Unable to send the magic link."
       );
     }
   };
 
   return (
-    <div className="w-full max-w-sm space-y-6">
-      <form
-        onSubmit={handleSubmit}
-        className="space-y-4 rounded-2xl bg-white/80 p-6 shadow-xl backdrop-blur"
-      >
-        <div>
-          <label className="text-sm font-semibold uppercase tracking-wide text-zinc-600">
-            Admin email
-          </label>
-          <input
-            className="mt-1 w-full rounded-xl border border-zinc-200 px-3 py-2 text-sm focus:border-zinc-500 focus:outline-none"
+    <section className="grid gap-6 md:grid-cols-2">
+      <Card className="stack">
+        <header className="admin-heading">
+          <p className="admin-heading__label">Password</p>
+          <h2 className="admin-heading__title">Admin sign-in</h2>
+          <p className="admin-heading__description">
+            Only the allow-listed admin email (<span className="font-semibold">{allowedEmail}</span>) is accepted.
+          </p>
+        </header>
+
+        <form onSubmit={handleSubmit} className="stack">
+          <Input
+            label="Admin email"
             type="email"
             value={email}
             onChange={(event) => setEmail(event.target.value)}
             required
           />
-          <p className="mt-1 text-xs text-zinc-500">
-            Only the allow-listed admin email (<span className="font-semibold">{allowedEmail}</span>) is accepted.
-          </p>
-        </div>
-
-        <div>
-          <label className="text-sm font-semibold uppercase tracking-wide text-zinc-600">
-            Password
-          </label>
-          <input
-            className="mt-1 w-full rounded-xl border border-zinc-200 px-3 py-2 text-sm focus:border-zinc-500 focus:outline-none"
+          <Input
+            label="Password"
             type="password"
             value={password}
             onChange={(event) => setPassword(event.target.value)}
             required
           />
-        </div>
 
-        {error && (
-          <p className="text-xs font-medium text-rose-600">{error}</p>
-        )}
+          {error && (
+            <p className="admin-message admin-message--error" aria-live="assertive">
+              {error}
+            </p>
+          )}
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full rounded-2xl bg-zinc-900 px-4 py-2 text-sm font-semibold uppercase tracking-wide text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          {loading ? "Signing in…" : "Sign in as admin"}
-        </button>
-      </form>
+          <Button type="submit" disabled={loading} variant="primary" className="w-full justify-center">
+            {loading ? "Signing in…" : "Sign in as admin"}
+          </Button>
+        </form>
+      </Card>
 
-      <div className="space-y-3 rounded-2xl border border-zinc-200/60 bg-white/80 p-6 shadow-xl text-center">
-        <p className="text-xs uppercase tracking-[0.4em] text-zinc-500">Magic link</p>
-        <p className="text-sm text-zinc-500">
-          Send a single-use link to{" "}
-          <span className="font-semibold">{allowedEmail}</span> and return straight to the admin dashboard.
-        </p>
+      <Card className="stack">
+        <header className="admin-heading">
+          <p className="admin-heading__label">Magic link</p>
+          <h2 className="admin-heading__title">One-time sign-in</h2>
+          <p className="admin-heading__description">
+            Send a single-use link to <span className="font-semibold">{allowedEmail}</span> and return straight to the
+            dashboard.
+          </p>
+        </header>
 
         {magicError && (
-          <p className="text-xs font-medium text-rose-600">{magicError}</p>
+          <p className="admin-message admin-message--error" aria-live="assertive">
+            {magicError}
+          </p>
         )}
 
         {magicState === "sent" && (
-          <p className="text-xs text-emerald-600">
+          <p className="admin-message admin-message--success" aria-live="polite">
             Check your inbox; the magic link will expire in a few minutes.
           </p>
         )}
 
-        <button
+        <Button
           type="button"
           onClick={handleMagicLink}
           disabled={isMagicSending}
-          className="w-full rounded-2xl border border-zinc-900 bg-white px-4 py-2 text-sm font-semibold uppercase tracking-wide text-zinc-900 transition hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-70"
+          variant="secondary"
+          className="w-full justify-center"
         >
           {isMagicSending ? "Sending magic link…" : "Send magic link"}
-        </button>
-      </div>
-    </div>
+        </Button>
+      </Card>
+    </section>
   );
 }
+

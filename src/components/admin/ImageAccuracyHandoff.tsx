@@ -63,6 +63,9 @@ export function ImageAccuracyHandoff({
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
+  const scienceLabel = scienceDossier ? "Regenerate" : "Generate";
+  const briefLabel = visualBrief ? "Regenerate" : "Generate";
+
   useEffect(() => {
     setScienceJson(safeJsonStringify(scienceDossier?.payload ?? null));
   }, [scienceDossier?.id, scienceDossier?.updated_at]);
@@ -205,10 +208,10 @@ export function ImageAccuracyHandoff({
   return (
     <section className="space-y-4">
       <Card className="space-y-3">
-        <header className="space-y-1">
-          <p className="text-xs uppercase tracking-[0.4em] text-zinc-400">Handoff</p>
-          <h1 className="text-lg font-semibold text-white">Image accuracy inputs</h1>
-          <p className="text-sm text-zinc-400">
+        <header className="admin-heading">
+          <p className="admin-heading__label">Handoff</p>
+          <h1 className="admin-heading__title">Image accuracy inputs</h1>
+          <p className="admin-heading__description">
             Review and approve the structured artifacts that drive image generation.
           </p>
         </header>
@@ -217,8 +220,8 @@ export function ImageAccuracyHandoff({
       <Card className="space-y-3">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <h2 className="text-base font-semibold text-white">Science Dossier (v1)</h2>
-            <p className="text-sm text-zinc-500">
+            <h2 className="admin-heading__title">Science Dossier (v1)</h2>
+            <p className="admin-note-small">
               Identification-first facts and constraints (not user-facing narrative).
             </p>
           </div>
@@ -229,7 +232,7 @@ export function ImageAccuracyHandoff({
               disabled={saving !== null || approving !== null || generating !== null}
               onClick={generateScience}
             >
-              {generating === "science" ? "Generating…" : "Generate"}
+              {generating === "science" ? "Generating…" : scienceLabel}
             </Button>
             <Button
               type="button"
@@ -253,7 +256,7 @@ export function ImageAccuracyHandoff({
         </div>
 
         <textarea
-          className="min-h-[280px] w-full rounded-[14px] border border-white/10 bg-black/20 p-4 font-mono text-xs text-zinc-200 outline-none focus:border-white/30"
+          className="admin-code-textarea min-h-[280px] font-mono text-xs"
           value={scienceJson}
           onChange={(event) => setScienceJson(event.target.value)}
           spellCheck={false}
@@ -263,8 +266,8 @@ export function ImageAccuracyHandoff({
       <Card className="space-y-3">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <h2 className="text-base font-semibold text-white">Visual Brief (v1)</h2>
-            <p className="text-sm text-zinc-500">
+            <h2 className="admin-heading__title">Visual Brief (v1)</h2>
+            <p className="admin-note-small">
               Composition rules and must-not constraints for each required/optional variant.
             </p>
           </div>
@@ -277,7 +280,7 @@ export function ImageAccuracyHandoff({
               }
               onClick={generateBrief}
             >
-              {generating === "brief" ? "Generating…" : "Generate"}
+              {generating === "brief" ? "Generating…" : briefLabel}
             </Button>
             <Button
               type="button"
@@ -303,13 +306,13 @@ export function ImageAccuracyHandoff({
         </div>
 
         {!canEditBrief && (
-          <p className="text-sm text-amber-200">
+          <p className="admin-message admin-message--warning">
             Approve the Science Dossier first to unlock the Visual Brief editor.
           </p>
         )}
 
         <textarea
-          className="min-h-[280px] w-full rounded-[14px] border border-white/10 bg-black/20 p-4 font-mono text-xs text-zinc-200 outline-none focus:border-white/30 disabled:opacity-50"
+          className="admin-code-textarea min-h-[280px] font-mono text-xs"
           value={briefJson}
           onChange={(event) => setBriefJson(event.target.value)}
           disabled={!canEditBrief}
@@ -318,20 +321,20 @@ export function ImageAccuracyHandoff({
       </Card>
 
       {error && (
-        <p className="text-xs text-rose-400" aria-live="assertive">
+        <p className="admin-message admin-message--error" aria-live="assertive">
           {error}
         </p>
       )}
       {message && (
-        <p className="text-xs text-emerald-300" aria-live="polite">
+        <p className="admin-message admin-message--success" aria-live="polite">
           {message}
         </p>
       )}
 
       <Card className="space-y-2">
-        <p className="text-sm text-zinc-500">
+        <p className="admin-note-small">
           When both artifacts are approved, return to the bird editor to run{" "}
-          <span className="font-semibold text-white">Generate Images</span>.
+          <span className="font-semibold">Generate Images</span>.
         </p>
       </Card>
     </section>

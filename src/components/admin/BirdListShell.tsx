@@ -41,9 +41,7 @@ type SortKey =
 export default function BirdListShell({ birds }: BirdListShellProps) {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<BirdStatus | "all">("all");
-  const [sizeFilter, setSizeFilter] = useState<
-    BirdSizeCategory | "all" | "missing"
-  >("all");
+  const [sizeFilter, setSizeFilter] = useState<BirdSizeCategory | "all" | "missing">("all");
   const [visibilityFilter, setVisibilityFilter] = useState<
     BirdVisibilityCategory | "all" | "missing"
   >("all");
@@ -53,9 +51,7 @@ export default function BirdListShell({ birds }: BirdListShellProps) {
 
   const missingClassificationCount = useMemo(() => {
     return birds.reduce((count, bird) => {
-      return bird.size_category === null || bird.visibility_category === null
-        ? count + 1
-        : count;
+      return bird.size_category === null || bird.visibility_category === null ? count + 1 : count;
     }, 0);
   }, [birds]);
 
@@ -65,22 +61,21 @@ export default function BirdListShell({ birds }: BirdListShellProps) {
         bird.name_hu.toLowerCase().includes(normalizedSearch) ||
         bird.slug.toLowerCase().includes(normalizedSearch);
 
-      const matchesStatus =
-        statusFilter === "all" || bird.status === statusFilter;
+      const matchesStatus = statusFilter === "all" || bird.status === statusFilter;
 
       const matchesSize =
         sizeFilter === "all"
           ? true
           : sizeFilter === "missing"
-          ? bird.size_category === null
-          : bird.size_category === sizeFilter;
+            ? bird.size_category === null
+            : bird.size_category === sizeFilter;
 
       const matchesVisibility =
         visibilityFilter === "all"
           ? true
           : visibilityFilter === "missing"
-          ? bird.visibility_category === null
-          : bird.visibility_category === visibilityFilter;
+            ? bird.visibility_category === null
+            : bird.visibility_category === visibilityFilter;
 
       return matchesSearch && matchesStatus && matchesSize && matchesVisibility;
     });
@@ -126,13 +121,10 @@ export default function BirdListShell({ birds }: BirdListShellProps) {
   }, [birds, normalizedSearch, statusFilter, sizeFilter, visibilityFilter, sortKey]);
 
   const statusCounts = useMemo(() => {
-    const initial = BIRD_STATUS_VALUES.reduce<Record<BirdStatus, number>>(
-      (acc, status) => {
-        acc[status] = 0;
-        return acc;
-      },
-      {} as Record<BirdStatus, number>
-    );
+    const initial = BIRD_STATUS_VALUES.reduce<Record<BirdStatus, number>>((acc, status) => {
+      acc[status] = 0;
+      return acc;
+    }, {} as Record<BirdStatus, number>);
 
     return birds.reduce((counts, bird) => {
       counts[bird.status] = (counts[bird.status] ?? 0) + 1;
@@ -146,8 +138,8 @@ export default function BirdListShell({ birds }: BirdListShellProps) {
         <p className="admin-heading__label">Birds registry</p>
         <h1 className="admin-heading__title">Birds list</h1>
         <p className="admin-heading__description">
-          {birds.length} birds tracked in the pipeline. Filter by status or
-          search names and slugs to find the one you need.
+          {birds.length} birds tracked in the pipeline. Filter by status or search names and
+          slugs to find the one you need.
         </p>
         <div className="flex flex-wrap gap-3">
           <Link className="admin-nav-link" href="/admin/birds/sorting">
@@ -167,90 +159,92 @@ export default function BirdListShell({ birds }: BirdListShellProps) {
               helperText="Search names or slugs"
               onChange={(event) => setSearch(event.target.value)}
             />
-            <label className="flex flex-col gap-1 text-xs font-semibold uppercase tracking-[0.3em] text-zinc-400 lg:w-40">
-              Status filter
-              <select
-                value={statusFilter}
-                onChange={(event) =>
-                  setStatusFilter(
-                    (event.target.value || "all") as BirdStatus | "all"
-                  )
-                }
-                className="rounded-[14px] border border-zinc-800 bg-transparent px-4 py-2 text-sm text-white focus:border-white focus:outline-none"
-              >
-                <option value="all">All statuses</option>
-                {BIRD_STATUS_VALUES.map((status) => (
-                  <option key={status} value={status}>
-                    {status}
-                  </option>
-                ))}
+            <label className="form-field lg:w-40">
+              <span className="form-field__label">Status filter</span>
+              <div className="form-field__row">
+                <select
+                  value={statusFilter}
+                  onChange={(event) =>
+                    setStatusFilter((event.target.value || "all") as BirdStatus | "all")
+                  }
+                  className="input"
+                >
+                  <option value="all">All statuses</option>
+                  {BIRD_STATUS_VALUES.map((status) => (
+                    <option key={status} value={status}>
+                      {status}
+                    </option>
+                  ))}
                 </select>
-              </label>
+              </div>
+            </label>
           </div>
 
           <div className="grid gap-4 md:grid-cols-3">
-            <label className="flex flex-col gap-1 text-xs font-semibold uppercase tracking-[0.3em] text-zinc-400">
-              Size
-              <select
-                value={sizeFilter}
-                onChange={(event) =>
-                  setSizeFilter(event.target.value as BirdSizeCategory | "all" | "missing")
-                }
-                className="rounded-[14px] border border-zinc-800 bg-transparent px-4 py-2 text-sm text-white focus:border-white focus:outline-none"
-              >
-                <option value="all">All sizes</option>
-                <option value="missing">Missing size</option>
-                <option value="very_small">Very small (&lt; 12 cm)</option>
-                <option value="small">Small (12–20 cm)</option>
-                <option value="medium">Medium (20–40 cm)</option>
-                <option value="large">Large (&gt; 40 cm)</option>
-              </select>
+            <label className="form-field">
+              <span className="form-field__label">Size</span>
+              <div className="form-field__row">
+                <select
+                  value={sizeFilter}
+                  onChange={(event) =>
+                    setSizeFilter(event.target.value as BirdSizeCategory | "all" | "missing")
+                  }
+                  className="input"
+                >
+                  <option value="all">All sizes</option>
+                  <option value="missing">Missing size</option>
+                  <option value="very_small">Very small (&lt; 12 cm)</option>
+                  <option value="small">Small (12–20 cm)</option>
+                  <option value="medium">Medium (20–40 cm)</option>
+                  <option value="large">Large (&gt; 40 cm)</option>
+                </select>
+              </div>
             </label>
 
-            <label className="flex flex-col gap-1 text-xs font-semibold uppercase tracking-[0.3em] text-zinc-400">
-              Visibility
-              <select
-                value={visibilityFilter}
-                onChange={(event) =>
-                  setVisibilityFilter(
-                    event.target.value as BirdVisibilityCategory | "all" | "missing"
-                  )
-                }
-                className="rounded-[14px] border border-zinc-800 bg-transparent px-4 py-2 text-sm text-white focus:border-white focus:outline-none"
-              >
-                <option value="all">All visibility</option>
-                <option value="missing">Missing visibility</option>
-                <option value="frequent">Frequent</option>
-                <option value="seasonal">Seasonal</option>
-                <option value="rare">Rare</option>
-              </select>
+            <label className="form-field">
+              <span className="form-field__label">Visibility</span>
+              <div className="form-field__row">
+                <select
+                  value={visibilityFilter}
+                  onChange={(event) =>
+                    setVisibilityFilter(
+                      event.target.value as BirdVisibilityCategory | "all" | "missing"
+                    )
+                  }
+                  className="input"
+                >
+                  <option value="all">All visibility</option>
+                  <option value="missing">Missing visibility</option>
+                  <option value="frequent">Frequent</option>
+                  <option value="seasonal">Seasonal</option>
+                  <option value="rare">Rare</option>
+                </select>
+              </div>
             </label>
 
-            <label className="flex flex-col gap-1 text-xs font-semibold uppercase tracking-[0.3em] text-zinc-400">
-              Sort
-              <select
-                value={sortKey}
-                onChange={(event) => setSortKey(event.target.value as SortKey)}
-                className="rounded-[14px] border border-zinc-800 bg-transparent px-4 py-2 text-sm text-white focus:border-white focus:outline-none"
-              >
-                <option value="updated_desc">Recently updated</option>
-                <option value="name_asc">Name (A→Z)</option>
-                <option value="size_asc">Size (small→large)</option>
-                <option value="visibility_asc">Visibility (frequent→rare)</option>
-                <option value="missing_first">Missing first</option>
-              </select>
+            <label className="form-field">
+              <span className="form-field__label">Sort</span>
+              <div className="form-field__row">
+                <select
+                  value={sortKey}
+                  onChange={(event) => setSortKey(event.target.value as SortKey)}
+                  className="input"
+                >
+                  <option value="updated_desc">Recently updated</option>
+                  <option value="name_asc">Name (A→Z)</option>
+                  <option value="size_asc">Size (small→large)</option>
+                  <option value="visibility_asc">Visibility (frequent→rare)</option>
+                  <option value="missing_first">Missing first</option>
+                </select>
+              </div>
             </label>
           </div>
 
           <div className="admin-stat-grid">
             {BIRD_STATUS_VALUES.map((status) => (
               <article key={status} className="admin-stat-card">
-                <p className="text-[10px] uppercase tracking-[0.35em] text-zinc-500">
-                  {status}
-                </p>
-                <p className="text-2xl font-semibold text-white">
-                  {statusCounts[status] ?? 0}
-                </p>
+                <p className="admin-stat-label">{status}</p>
+                <p className="admin-stat-count">{statusCounts[status] ?? 0}</p>
               </article>
             ))}
             <article className="admin-stat-card admin-stat-card--note">
@@ -263,16 +257,14 @@ export default function BirdListShell({ birds }: BirdListShellProps) {
           <BirdCreateForm />
           <Card className="space-y-3 text-sm">
             <div className="space-y-1">
-              <p className="text-xs uppercase tracking-[0.4em] text-zinc-400">
-                Sorting panel
-              </p>
-              <p className="text-xs text-zinc-500">
-                Group birds by size + visibility. Missing items go to a dedicated
-                queue with AI suggestions and manual approval.
+              <p className="admin-subheading">Sorting panel</p>
+              <p className="admin-note-small">
+                Group birds by size + visibility. Missing items go to a dedicated queue with AI
+                suggestions and manual approval.
               </p>
             </div>
             <div className="flex items-center justify-between gap-3">
-              <p className="text-sm text-white">
+              <p className="admin-note-small">
                 Missing classification:{" "}
                 <span className="font-semibold">{missingClassificationCount}</span>
               </p>
@@ -287,22 +279,15 @@ export default function BirdListShell({ birds }: BirdListShellProps) {
       <div className="space-y-4">
         {filteredBirds.length === 0 ? (
           <Card className="admin-stat-card admin-stat-card--note">
-            No birds match the current filters. Adjust the search or status to
-            continue.
+            No birds match the current filters. Adjust the search or status to continue.
           </Card>
         ) : (
           filteredBirds.map((bird) => (
-            <Link
-              key={bird.id}
-              href={`/admin/birds/${bird.id}`}
-              className="admin-list-link"
-            >
+            <Link key={bird.id} href={`/admin/birds/${bird.id}`} className="admin-list-link">
               <div className="admin-list-details">
-                <p className="text-lg font-semibold text-white">{bird.name_hu}</p>
+                <p className="admin-list-title">{bird.name_hu}</p>
                 <p className="admin-list-meta">{bird.slug}</p>
-                <p className="text-xs text-zinc-500">
-                  {bird.name_latin ?? "No Latin name yet"}
-                </p>
+                <p className="text-xs admin-text-muted">{bird.name_latin ?? "No Latin name yet"}</p>
                 <p className="admin-list-date">
                   Updated{" "}
                   {new Intl.DateTimeFormat(undefined, {
@@ -322,3 +307,4 @@ export default function BirdListShell({ birds }: BirdListShellProps) {
     </section>
   );
 }
+

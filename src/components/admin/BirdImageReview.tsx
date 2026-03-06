@@ -20,9 +20,9 @@ const VARIANT_LABELS: Record<ImageRecord["variant"], string> = {
 };
 
 const STATUS_BADGES: Record<ImageReviewStatus, string> = {
-  draft: "text-xs uppercase tracking-[0.3em] text-orange-200",
-  reviewed: "text-xs uppercase tracking-[0.3em] text-amber-200",
-  approved: "text-xs uppercase tracking-[0.3em] text-emerald-200",
+  draft: "admin-badge admin-badge--muted",
+  reviewed: "admin-badge admin-badge--warning",
+  approved: "admin-badge admin-badge--success",
 };
 
 const STATUS_HINTS: Record<ImageReviewStatus, string> = {
@@ -166,27 +166,29 @@ export default function BirdImageReview({
     <section className={styles.section}>
       <Card className="space-y-4">
         <header className={styles.header}>
-          <div>
-            <p className="text-xs uppercase tracking-[0.4em] text-zinc-400">Images</p>
-            <h2 className={styles.headerTitle}>Image review</h2>
-            <p className={styles.headerSubtitle}>
+          <div className="admin-heading">
+            <p className="admin-heading__label">Images</p>
+            <h2 className="admin-heading__title">Image review</h2>
+            <p className="admin-heading__description">
               Approve each variant so the image stage can advance to publication.
             </p>
           </div>
 
           {allApproved && (
             <span className={styles.headerBadge}>
-              <Icon name="accept" size={14} className="text-emerald-300" />
+              <Icon name="accept" size={14} />
               All approved
             </span>
           )}
         </header>
 
         {images.length === 0 ? (
-          <Card className="rounded-[14px] border border-dashed border-white/5 bg-white/5 p-4 text-sm text-zinc-400">
-            Images are generated after the text is approved. Run the generator to
-            create the placeholders before reviewing.
-          </Card>
+          <div className="admin-panel admin-panel--muted">
+            <p className="admin-note-small">
+              Images are generated after the text is approved. Run the generator to create the
+              placeholders before reviewing.
+            </p>
+          </div>
         ) : (
           <div className={styles.grid}>
             {images.map((image) => {
@@ -203,21 +205,19 @@ export default function BirdImageReview({
                         className="h-full w-full object-cover"
                       />
                     ) : (
-                      <div className="flex h-full w-full items-center justify-center text-xs uppercase tracking-[0.3em] text-zinc-500">
-                        Preview unavailable
+                      <div className="flex h-full w-full items-center justify-center">
+                        <span className="admin-heading__label">Preview unavailable</span>
                       </div>
                     )}
                   </div>
 
                   <div className={styles.imageMeta}>
                     <div className="flex items-center justify-between gap-3">
-                      <p className="text-sm font-semibold text-white">
-                        {VARIANT_LABELS[image.variant]}
-                      </p>
+                      <p className="admin-link-card__title">{VARIANT_LABELS[image.variant]}</p>
                       <Button
                         type="button"
                         variant="ghost"
-                        className="h-9 w-9 rounded-full border border-white/10 text-white hover:border-white/40"
+                        className="h-9 w-9 rounded-full"
                         onClick={() =>
                           openRequestOverlay(image.id, VARIANT_LABELS[image.variant])
                         }
@@ -230,7 +230,7 @@ export default function BirdImageReview({
                       <span className={STATUS_BADGES[image.review_status]}>
                         {STATUS_HINTS[image.review_status]}
                       </span>
-                      <span className="text-xs text-zinc-500">
+                      <span className="text-xs admin-text-muted">
                         Generated{" "}
                         {new Date(image.created_at).toLocaleString(undefined, {
                           dateStyle: "medium",
@@ -241,15 +241,13 @@ export default function BirdImageReview({
                   </div>
 
                   <div className={styles.imageActions}>
-                    <p className="text-xs uppercase tracking-[0.3em] text-[#05768D]">
-                      Review action
-                    </p>
+                    <p className="admin-subheading">Review action</p>
                     {isApproved ? (
                       <Button
                         type="button"
                         disabled
-                        variant="ghost"
-                        className="inline-flex items-center justify-center gap-2 border-emerald-400/40 bg-emerald-500/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.35em] text-emerald-200"
+                        variant="secondary"
+                        className="w-full justify-center"
                       >
                         <Icon name="accept" size={16} />
                         Approved
@@ -257,8 +255,8 @@ export default function BirdImageReview({
                     ) : (
                       <Button
                         type="button"
-                        variant="ghost"
-                        className="inline-flex items-center justify-center gap-2 border-[#BE2D12]/70 bg-[#BE2D12]/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.35em] text-[#BE2D12] transition hover:border-[#BE2D12] disabled:cursor-not-allowed disabled:opacity-50"
+                        variant="accent"
+                        className="w-full justify-center"
                         onClick={() => handleApprove(image.id)}
                         disabled={isLoading}
                       >
@@ -274,21 +272,20 @@ export default function BirdImageReview({
       </Card>
 
       {error && (
-        <p className="text-xs text-rose-400" aria-live="assertive">
+        <p className="admin-message admin-message--error" aria-live="assertive">
           {error}
         </p>
       )}
 
       {requestStatusMessage && (
-        <p className="text-xs text-emerald-300" aria-live="polite">
+        <p className="admin-message admin-message--success" aria-live="polite">
           {requestStatusMessage}
         </p>
       )}
 
-      <p className="text-xs text-zinc-500">
+      <p className="admin-note-small">
         Once every variant is approved, the bird status will advance to{" "}
-        <span className="font-semibold text-white">images_approved</span> and the
-        publish gate will unlock.
+        <span className="font-semibold">images_approved</span> and the publish gate will unlock.
       </p>
 
       <ReviewRequestOverlay
