@@ -2,5 +2,6 @@ export const metadata = {
   title: "Bird sorting — Szarnyfeszito Admin",
 };
 
-export { dynamic, default } from "../classification/page";
+export const dynamic = "force-dynamic";
 
+export { default } from "../classification/page";
