@@ -2,6 +2,53 @@
 
 ---
 
+## D18 — Bird size + visibility classification (Studio filters + AI suggestion queue)
+
+**Status:** Accepted  
+**Date:** 2026-03-06  
+**Scope:** Content Studio (Admin Birds registry UX). Explorer out of scope.
+
+### Context
+The Studio `/admin/birds` list needs a stable way to filter and sort birds by:
+- size category (Hungarian “méret” buckets)
+- visibility / encounter frequency (Hungarian “elterjedtség / észlelhetőség” buckets)
+
+The core `BirdDossier` payload contains numeric size ranges (`pill_meta.size_cm`) but does not define canonical list-filter fields, and visibility frequency is not reliably derivable without explicit metadata.
+
+### Decision
+Introduce a reviewable “classification” layer for Birds:
+
+1) Persist **final** categories on `birds`:
+- `size_category`: very_small | small | medium | large
+- `visibility_category`: frequent | seasonal | rare
+- `classification_status`: none → generated → approved
+
+2) Add a dedicated, auditable artifact table `bird_classifications`:
+- Stores AI suggestions + rationale as JSONB (schema v1)
+- Review status: draft → approved (or rejected)
+
+3) Add a Studio “Classification queue”:
+- Lists birds missing either category
+- Allows generating AI suggestions server-side (no runtime AI in UI)
+- Allows manual selection + approval to write final categories onto `birds`
+
+### Size bucket thresholds (cm)
+- very_small: < 12
+- small: 12 ≤ x < 20
+- medium: 20 ≤ x ≤ 40
+- large: > 40
+
+For dossiers that provide ranges, derive using the midpoint when possible; otherwise use the available bound. If no numeric size is available, size remains unset until manual approval.
+
+### Rationale
+- Keeps list filters deterministic and queryable without reinterpreting dossier text in the UI.
+- Preserves auditability: suggestions are stored, reviewed, and only approved values are used as canonical `birds` fields.
+- Allows incremental enrichment without blocking the publish pipeline.
+
+### Out of scope
+- External bird databases/APIs to source true distribution statistics.
+- Explorer UX changes.
+
 ## D17 — Image Accuracy Pipeline v1 (Science Dossier + Visual Brief gating)
 
 **Status:** Accepted  

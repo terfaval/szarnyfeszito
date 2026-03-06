@@ -3,14 +3,41 @@ import { redirect } from "next/navigation";
 import { getBirdById, getBirdBySlug, isUuid } from "@/lib/birdService";
 import { getScienceDossierForBird } from "@/lib/scienceDossierService";
 import { getVisualBriefForBird } from "@/lib/visualBriefService";
-import { Card } from "@/ui/components/Card";
 import ImageAccuracyHandoff from "@/components/admin/ImageAccuracyHandoff";
+import { upsertScienceDossierDraft } from "@/lib/scienceDossierService";
+import { scienceDossierSchemaV1 } from "@/lib/imageAccuracySchemas";
+import { updateBird } from "@/lib/birdService";
 
 export const metadata = {
   title: "Image accuracy handoff",
 };
 
 export const dynamic = "force-dynamic";
+
+function buildBootstrapScienceDossier(bird: { name_hu: string; name_latin?: string | null }) {
+  return scienceDossierSchemaV1.parse({
+    species_identity: {
+      name_hu: bird.name_hu,
+      name_latin: bird.name_latin ?? bird.name_hu,
+    },
+    confusion_set: [],
+    key_field_marks: [],
+    proportions: {
+      neck: "medium",
+      legs: "medium",
+      body: "average",
+      beak: { length: "medium", shape: "straight" },
+    },
+    plumage_variants: {
+      adult: "TODO",
+      juvenile: "not_applicable",
+      breeding: "not_applicable",
+      non_breeding: "not_applicable",
+    },
+    must_not_include: ["wrong species", "fantasy colors", "extra limbs"],
+    confidence: { per_section: "low", notes: "Bootstrapped draft. Please review." },
+  });
+}
 
 export default async function ImageAccuracyPage({
   params,
@@ -28,30 +55,30 @@ export default async function ImageAccuracyPage({
     redirect(`/admin/birds/${bird.id}`);
   }
 
-  const [scienceDossier, visualBrief] = await Promise.all([
+  let [scienceDossier, visualBrief] = await Promise.all([
     getScienceDossierForBird(bird.id),
     getVisualBriefForBird(bird.id),
   ]);
 
+  if (!scienceDossier) {
+    const payload = buildBootstrapScienceDossier(bird);
+    await upsertScienceDossierDraft({
+      bird_id: bird.id,
+      schema_version: "v1",
+      payload,
+      created_by: "ai",
+    });
+    await updateBird({ id: bird.id, science_dossier_status: "generated" });
+    scienceDossier = await getScienceDossierForBird(bird.id);
+  }
+
   return (
     <section className="admin-stack">
-      <Card className="stack">
-        <header className="admin-heading inline-flex items-start justify-between gap-3">
-          <div>
-            <p className="admin-heading__label">Bird</p>
-            <h1 className="admin-heading__title admin-heading__title--large">
-              {bird.name_hu}
-            </h1>
-            <p className="admin-heading__description">
-              Status: <span className="font-semibold">{bird.status}</span>
-            </p>
-          </div>
-          <Link className="admin-nav-link" href={`/admin/birds/${bird.id}`}>
-            Back to editor
-          </Link>
-        </header>
-      </Card>
-
+      <div className="flex items-center justify-between">
+        <Link className="admin-nav-link" href={`/admin/birds/${bird.id}`}>
+          Back to editor
+        </Link>
+      </div>
       <ImageAccuracyHandoff
         birdId={bird.id}
         scienceDossier={scienceDossier}
@@ -62,4 +89,3 @@ export default async function ImageAccuracyPage({
     </section>
   );
 }
-

@@ -6,20 +6,53 @@ import BirdCreateForm from "@/components/admin/BirdCreateForm";
 import { Card } from "@/ui/components/Card";
 import { Input } from "@/ui/components/Input";
 import { StatusPill } from "@/ui/components/StatusPill";
-import { Bird, BirdStatus, BIRD_STATUS_VALUES } from "@/types/bird";
+import {
+  Bird,
+  BirdStatus,
+  BIRD_STATUS_VALUES,
+  BirdSizeCategory,
+  BirdVisibilityCategory,
+} from "@/types/bird";
 
 type BirdListShellProps = {
   birds: Bird[];
 };
 
+const SIZE_ORDER: Record<BirdSizeCategory, number> = {
+  very_small: 0,
+  small: 1,
+  medium: 2,
+  large: 3,
+};
+
+const VISIBILITY_ORDER: Record<BirdVisibilityCategory, number> = {
+  frequent: 0,
+  seasonal: 1,
+  rare: 2,
+};
+
+type SortKey =
+  | "updated_desc"
+  | "name_asc"
+  | "size_asc"
+  | "visibility_asc"
+  | "missing_first";
+
 export default function BirdListShell({ birds }: BirdListShellProps) {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<BirdStatus | "all">("all");
+  const [sizeFilter, setSizeFilter] = useState<
+    BirdSizeCategory | "all" | "missing"
+  >("all");
+  const [visibilityFilter, setVisibilityFilter] = useState<
+    BirdVisibilityCategory | "all" | "missing"
+  >("all");
+  const [sortKey, setSortKey] = useState<SortKey>("updated_desc");
 
   const normalizedSearch = search.trim().toLowerCase();
 
   const filteredBirds = useMemo(() => {
-    return birds.filter((bird) => {
+    const filtered = birds.filter((bird) => {
       const matchesSearch =
         bird.name_hu.toLowerCase().includes(normalizedSearch) ||
         bird.slug.toLowerCase().includes(normalizedSearch);
@@ -27,9 +60,62 @@ export default function BirdListShell({ birds }: BirdListShellProps) {
       const matchesStatus =
         statusFilter === "all" || bird.status === statusFilter;
 
-      return matchesSearch && matchesStatus;
+      const matchesSize =
+        sizeFilter === "all"
+          ? true
+          : sizeFilter === "missing"
+          ? bird.size_category === null
+          : bird.size_category === sizeFilter;
+
+      const matchesVisibility =
+        visibilityFilter === "all"
+          ? true
+          : visibilityFilter === "missing"
+          ? bird.visibility_category === null
+          : bird.visibility_category === visibilityFilter;
+
+      return matchesSearch && matchesStatus && matchesSize && matchesVisibility;
     });
-  }, [birds, normalizedSearch, statusFilter]);
+
+    const sorted = [...filtered].sort((a, b) => {
+      if (sortKey === "name_asc") {
+        return a.name_hu.localeCompare(b.name_hu, "hu");
+      }
+
+      if (sortKey === "size_asc") {
+        const aRank =
+          a.size_category === null ? Number.POSITIVE_INFINITY : SIZE_ORDER[a.size_category];
+        const bRank =
+          b.size_category === null ? Number.POSITIVE_INFINITY : SIZE_ORDER[b.size_category];
+        if (aRank !== bRank) return aRank - bRank;
+        return b.updated_at.localeCompare(a.updated_at);
+      }
+
+      if (sortKey === "visibility_asc") {
+        const aRank =
+          a.visibility_category === null
+            ? Number.POSITIVE_INFINITY
+            : VISIBILITY_ORDER[a.visibility_category];
+        const bRank =
+          b.visibility_category === null
+            ? Number.POSITIVE_INFINITY
+            : VISIBILITY_ORDER[b.visibility_category];
+        if (aRank !== bRank) return aRank - bRank;
+        return b.updated_at.localeCompare(a.updated_at);
+      }
+
+      if (sortKey === "missing_first") {
+        const aMissing = Number(a.size_category === null || a.visibility_category === null);
+        const bMissing = Number(b.size_category === null || b.visibility_category === null);
+        if (aMissing !== bMissing) return bMissing - aMissing;
+        return b.updated_at.localeCompare(a.updated_at);
+      }
+
+      return b.updated_at.localeCompare(a.updated_at);
+    });
+
+    return sorted;
+  }, [birds, normalizedSearch, statusFilter, sizeFilter, visibilityFilter, sortKey]);
 
   const statusCounts = useMemo(() => {
     const initial = BIRD_STATUS_VALUES.reduce<Record<BirdStatus, number>>(
@@ -55,6 +141,11 @@ export default function BirdListShell({ birds }: BirdListShellProps) {
           {birds.length} birds tracked in the pipeline. Filter by status or
           search names and slugs to find the one you need.
         </p>
+        <div className="flex flex-wrap gap-3">
+          <Link className="admin-nav-link" href="/admin/birds/classification">
+            Open classification queue
+          </Link>
+        </div>
       </header>
 
       <div className="grid gap-4 md:grid-cols-[1.5fr,1fr]">
@@ -85,6 +176,60 @@ export default function BirdListShell({ birds }: BirdListShellProps) {
                     {status}
                   </option>
                 ))}
+                </select>
+              </label>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-3">
+            <label className="flex flex-col gap-1 text-xs font-semibold uppercase tracking-[0.3em] text-zinc-400">
+              Size
+              <select
+                value={sizeFilter}
+                onChange={(event) =>
+                  setSizeFilter(event.target.value as BirdSizeCategory | "all" | "missing")
+                }
+                className="rounded-[14px] border border-zinc-800 bg-transparent px-4 py-2 text-sm text-white focus:border-white focus:outline-none"
+              >
+                <option value="all">All sizes</option>
+                <option value="missing">Missing size</option>
+                <option value="very_small">Very small (&lt; 12 cm)</option>
+                <option value="small">Small (12–20 cm)</option>
+                <option value="medium">Medium (20–40 cm)</option>
+                <option value="large">Large (&gt; 40 cm)</option>
+              </select>
+            </label>
+
+            <label className="flex flex-col gap-1 text-xs font-semibold uppercase tracking-[0.3em] text-zinc-400">
+              Visibility
+              <select
+                value={visibilityFilter}
+                onChange={(event) =>
+                  setVisibilityFilter(
+                    event.target.value as BirdVisibilityCategory | "all" | "missing"
+                  )
+                }
+                className="rounded-[14px] border border-zinc-800 bg-transparent px-4 py-2 text-sm text-white focus:border-white focus:outline-none"
+              >
+                <option value="all">All visibility</option>
+                <option value="missing">Missing visibility</option>
+                <option value="frequent">Frequent</option>
+                <option value="seasonal">Seasonal</option>
+                <option value="rare">Rare</option>
+              </select>
+            </label>
+
+            <label className="flex flex-col gap-1 text-xs font-semibold uppercase tracking-[0.3em] text-zinc-400">
+              Sort
+              <select
+                value={sortKey}
+                onChange={(event) => setSortKey(event.target.value as SortKey)}
+                className="rounded-[14px] border border-zinc-800 bg-transparent px-4 py-2 text-sm text-white focus:border-white focus:outline-none"
+              >
+                <option value="updated_desc">Recently updated</option>
+                <option value="name_asc">Name (A→Z)</option>
+                <option value="size_asc">Size (small→large)</option>
+                <option value="visibility_asc">Visibility (frequent→rare)</option>
+                <option value="missing_first">Missing first</option>
               </select>
             </label>
           </div>

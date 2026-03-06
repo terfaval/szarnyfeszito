@@ -54,12 +54,20 @@ Core mezők:
 - name_hu
 - name_latin
 - status (draft | text_approved | images_approved | published)
+- size_category (optional; enum)
+- visibility_category (optional; enum)
+- classification_status (none | generated | approved)
 - created_at
 - updated_at
 
 Kapcsolódó:
 - content_blocks
 - images
+
+Kiegészítő meta (D18):
+- A Studio `/admin/birds` oldalon a madarak szűrhetők/rendezhetők `size_category` (méret) és `visibility_category` (észlelhetőség) alapján.
+- A kategóriák nem publish-gate feltételek (nem blokkolják a publish-t), kizárólag admin taxonómia / registry célokra szolgálnak.
+- Ha bármelyik hiányzik, a madár bekerül a “Classification queue” listába, ahol AI-javaslat generálható és/vagy kézzel jóváhagyható.
 
 ---
 
@@ -451,6 +459,8 @@ After approving Bird text (transition to `text_approved`), Studio navigates to a
 - Visual Brief: review/edit structured, generation-oriented JSON, then approve.
 
 These artifacts are the canonical “prompt inputs” for images. Studio does not expose raw prompt strings; prompt templating remains server-side.
+
+On first entry to the handoff screen, Studio bootstraps a draft Science Dossier (and later a draft Visual Brief once eligible) if none exists yet, so the editor is never empty.
 
 ### API (artifact editing)
 In addition to the generator/approve endpoints above, Studio may persist manual edits to draft artifacts:

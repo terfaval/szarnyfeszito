@@ -1,24 +1,22 @@
-import Link from "next/link";
-import { Card } from "@/ui/components/Card";
-import BirdEditorForm from "@/components/admin/BirdEditorForm";
+import BirdTextReview from "@/components/admin/BirdTextReview";
 import { getBirdById, getBirdBySlug, isUuid } from "@/lib/birdService";
-import styles from "./page.module.css";
+import { getLatestContentBlockForBird } from "@/lib/contentService";
+import { Card } from "@/ui/components/Card";
+import styles from "../page.module.css";
 
 export const metadata = {
-  title: "Admin bird editor",
+  title: "Bird text review",
 };
 
 export const dynamic = "force-dynamic";
 
-export default async function BirdEditorPage({
+export default async function BirdTextPage({
   params,
 }: {
   params: Promise<{ birdId: string }>;
 }) {
   const { birdId } = await params;
-  const bird = isUuid(birdId)
-    ? await getBirdById(birdId)
-    : await getBirdBySlug(birdId);
+  const bird = isUuid(birdId) ? await getBirdById(birdId) : await getBirdBySlug(birdId);
 
   if (!bird) {
     return (
@@ -28,16 +26,16 @@ export default async function BirdEditorPage({
           The requested bird does not exist or was deleted. Return to the list to
           pick another one.
         </p>
-        <Link className={styles.backLinkButton} href="/admin/birds">
-          Back to birds
-        </Link>
       </section>
     );
   }
 
+  const contentBlock = await getLatestContentBlockForBird(bird.id);
+
   return (
     <Card className={styles.cardSection}>
-      <BirdEditorForm bird={bird} />
+      <BirdTextReview birdId={bird.id} contentBlock={contentBlock} />
     </Card>
   );
 }
+

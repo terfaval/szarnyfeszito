@@ -15,6 +15,9 @@ const baseBird: Bird = {
   status: "draft",
   science_dossier_status: "none",
   visual_brief_status: "none",
+  size_category: null,
+  visibility_category: null,
+  classification_status: "none",
   created_at: "2026-01-01T00:00:00.000Z",
   updated_at: "2026-01-01T00:00:00.000Z",
 };

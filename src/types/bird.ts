@@ -8,6 +8,10 @@ export type BirdStatus =
 
 export type BirdSubStatus = "none" | "generated" | "approved";
 
+export type BirdSizeCategory = "very_small" | "small" | "medium" | "large";
+
+export type BirdVisibilityCategory = "frequent" | "seasonal" | "rare";
+
 export type Bird = {
   id: string;
   slug: string;
@@ -16,6 +20,9 @@ export type Bird = {
   status: BirdStatus;
   science_dossier_status: BirdSubStatus;
   visual_brief_status: BirdSubStatus;
+  size_category: BirdSizeCategory | null;
+  visibility_category: BirdVisibilityCategory | null;
+  classification_status: BirdSubStatus;
   created_at: string;
   updated_at: string;
 };
@@ -34,6 +41,9 @@ export type BirdUpdateInput = {
   status?: BirdStatus;
   science_dossier_status?: BirdSubStatus;
   visual_brief_status?: BirdSubStatus;
+  size_category?: BirdSizeCategory | null;
+  visibility_category?: BirdVisibilityCategory | null;
+  classification_status?: BirdSubStatus;
 };
 
 export const BIRD_STATUS_VALUES: BirdStatus[] = [
