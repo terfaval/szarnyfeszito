@@ -34,10 +34,9 @@ export type BirdDistributionMapRecord = {
   bird_id: string;
   schema_version: string;
   summary: string;
-  references: unknown;
+  references_list: unknown;
   ranges: unknown;
   generation_meta?: unknown;
   created_at: string;
   updated_at: string;
 };
-

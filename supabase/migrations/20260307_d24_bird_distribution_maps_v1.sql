@@ -6,7 +6,8 @@ create table if not exists bird_distribution_maps (
   bird_id uuid not null references birds (id) on delete cascade,
   schema_version text not null default 'v1',
   summary text not null,
-  references jsonb not null default '[]'::jsonb,
+  -- "references" collides with SQL grammar; store as a JSON array under a safe name.
+  references_list jsonb not null default '[]'::jsonb,
   ranges jsonb not null default '[]'::jsonb,
   generation_meta jsonb,
   created_at timestamptz not null default now(),
@@ -27,4 +28,3 @@ create index if not exists bird_distribution_maps_bird_id_idx
 
 -- 3) RLS (server uses service role key)
 alter table bird_distribution_maps enable row level security;
-

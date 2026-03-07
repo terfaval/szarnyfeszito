@@ -31,7 +31,7 @@ export async function upsertDistributionMapForBird(args: {
     bird_id: birdId,
     schema_version: "v1",
     summary: payload.summary,
-    references: payload.references,
+    references_list: payload.references,
     ranges: payload.ranges,
     generation_meta,
     updated_at: new Date().toISOString(),
@@ -49,4 +49,3 @@ export async function upsertDistributionMapForBird(args: {
 
   return data as BirdDistributionMapRecord;
 }
-
