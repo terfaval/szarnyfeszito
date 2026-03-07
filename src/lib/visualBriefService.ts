@@ -17,6 +17,23 @@ export async function getVisualBriefForBird(
   return (data as VisualBriefRecord | null) ?? null;
 }
 
+export async function getApprovedVisualBriefForBird(
+  birdId: string
+): Promise<VisualBriefRecord | null> {
+  const { data, error } = await supabaseServerClient
+    .from("bird_visual_briefs")
+    .select("*")
+    .eq("bird_id", birdId)
+    .eq("review_status", "approved")
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  return (data as VisualBriefRecord | null) ?? null;
+}
+
 export async function upsertVisualBriefDraft(input: {
   bird_id: string;
   schema_version: string;

@@ -3,12 +3,13 @@
 import { useEffect, useRef } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import type { BirdDossierLeafletsV1 } from "@/types/dossier";
+import type { BirdDossierLeaflets } from "@/types/dossier";
 import { getHungaryRegionDef, getWorldRegionDef } from "@/lib/leafletsRegions";
+import { getHungaryRegionV2Def, getWorldRegionV2Def } from "@/lib/leafletsRegionsV2";
 
 type LeafletMiniMapProps = {
   kind: "world" | "hungary";
-  leaflets: BirdDossierLeafletsV1 | null | undefined;
+  leaflets: BirdDossierLeaflets | null | undefined;
   className?: string;
 };
 
@@ -75,11 +76,50 @@ export default function BirdLeaflets({ kind, leaflets, className }: LeafletMiniM
       return;
     }
 
+    if (leaflets.schema_version === "leaflets_v2") {
+      const present = kind === "world" ? leaflets.world.present : leaflets.hungary.present;
+      const hover = kind === "world" ? leaflets.world.hover_hu : leaflets.hungary.hover_hu;
+      const fill = kind === "world" ? "#36a853" : "#2b7bbb";
+      const stroke = kind === "world" ? "#1f6b35" : "#1b4f7a";
+
+      present.forEach((code) => {
+        const def =
+          kind === "world"
+            ? getWorldRegionV2Def(code as never)
+            : getHungaryRegionV2Def(code as never);
+
+        def.bounds.forEach((b) => {
+          L.rectangle(
+            [
+              [b.south, b.west],
+              [b.north, b.east],
+            ],
+            {
+              color: stroke,
+              weight: 1,
+              fillColor: fill,
+              fillOpacity: 0.55,
+            }
+          )
+            .bindTooltip(
+              hover ? `${def.label} — ${hover}` : def.label,
+              { direction: "top", opacity: 0.9 }
+            )
+            .addTo(overlay);
+        });
+      });
+
+      return;
+    }
+
     const regions = kind === "world" ? leaflets.world.regions : leaflets.hungary.regions;
     const radius = kind === "world" ? 700_000 : 55_000;
 
     regions.forEach((region) => {
-      const def = kind === "world" ? getWorldRegionDef(region.code as never) : getHungaryRegionDef(region.code as never);
+      const def =
+        kind === "world"
+          ? getWorldRegionDef(region.code as never)
+          : getHungaryRegionDef(region.code as never);
       const color = intensityColor(region.intensity);
 
       L.circle([def.center.lat, def.center.lng], {

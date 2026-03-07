@@ -12,6 +12,8 @@ export async function POST(request: NextRequest) {
 
   const body = await request.json().catch(() => ({}));
   const birdId = body?.bird_id;
+  const forceRegenerate =
+    typeof body?.force_regenerate === "boolean" ? body.force_regenerate : false;
 
   if (!birdId || typeof birdId !== "string") {
     return NextResponse.json(
@@ -27,8 +29,16 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const result = await generateImagesForBird(bird);
-    return NextResponse.json({ data: result });
+    const result = await generateImagesForBird(bird, {
+      forceRegenerate,
+    });
+
+    return NextResponse.json({
+      ok: true,
+      bird_id: bird.id,
+      required_success: result.required_success,
+      results: result.results,
+    });
   } catch (error) {
     return NextResponse.json(
       { error: (error as Error)?.message ?? "Unable to generate images." },

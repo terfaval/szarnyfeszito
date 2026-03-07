@@ -8,8 +8,11 @@ import { Icon } from "@/ui/icons/Icon";
 import { ReviewStatusPill } from "@/ui/components/ReviewStatusPill";
 import type { BirdDossier } from "@/types/dossier";
 import type { ContentBlock, GeneratedContent } from "@/types/content";
+import type { BirdDistributionMapRecord, DistributionStatus, DistributionRange } from "@/types/distributionMap";
 import ReviewRequestOverlay from "@/components/admin/ReviewRequestOverlay";
-import BirdLeaflets from "@/components/admin/BirdLeaflets";
+import BirdDistributionMap from "@/components/maps/BirdDistributionMap";
+import DistributionLegend from "@/components/maps/DistributionLegend";
+import { distributionRangeSchema } from "@/lib/distributionMapSchema";
 import styles from "./BirdTextReview.module.css";
 
 const formatRange = (
@@ -254,7 +257,6 @@ export default function BirdTextReview({
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [regenerating, setRegenerating] = useState(false);
-  const [backfillingLeaflets, setBackfillingLeaflets] = useState(false);
   const [overlayTarget, setOverlayTarget] = useState<TextReviewSection | null>(
     null
   );
@@ -270,6 +272,19 @@ export default function BirdTextReview({
   const [editingSlot, setEditingSlot] = useState<EditSlot | null>(null);
   const [editBuffer, setEditBuffer] = useState("");
   const [selectedParagraphIndex, setSelectedParagraphIndex] = useState(0);
+  const [distributionMap, setDistributionMap] =
+    useState<BirdDistributionMapRecord | null>(null);
+  const [distributionLoading, setDistributionLoading] = useState(false);
+  const [distributionGenerating, setDistributionGenerating] = useState(false);
+  const [distributionError, setDistributionError] = useState<string | null>(null);
+  const [activeStatuses, setActiveStatuses] = useState<
+    Record<DistributionStatus, boolean>
+  >({
+    resident: true,
+    breeding: true,
+    wintering: true,
+    passage: true,
+  });
 
   useEffect(() => {
     setEditableContent({
@@ -295,6 +310,46 @@ export default function BirdTextReview({
       setSelectedParagraphIndex(paragraphCount - 1);
     }
   }, [dossier, selectedParagraphIndex]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const load = async () => {
+      setDistributionLoading(true);
+      setDistributionError(null);
+
+      try {
+        const response = await fetch(`/api/birds/${birdId}/distribution-map`, {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+        });
+        const payload = await response.json().catch(() => null);
+        if (!response.ok) {
+          throw new Error(payload?.error ?? "Unable to load distribution map.");
+        }
+
+        if (!cancelled) {
+          setDistributionMap(payload?.data?.distribution_map ?? null);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setDistributionError(
+            err instanceof Error ? err.message : "Unable to load distribution map."
+          );
+        }
+      } finally {
+        if (!cancelled) {
+          setDistributionLoading(false);
+        }
+      }
+    };
+
+    load();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [birdId]);
 
   const meta = contentBlock?.generation_meta;
   const reviewComment = meta?.review_comment;
@@ -323,8 +378,18 @@ export default function BirdTextReview({
     () => parseHungarianSites(dossier?.typical_places ?? []),
     [dossier?.typical_places]
   );
+  const speciesSummary =
+    dossier?.header.short_summary?.trim() ||
+    dossier?.header.subtitle?.trim() ||
+    "Species summary pending.";
+  const distributionRanges = useMemo<DistributionRange[]>(() => {
+    if (!distributionMap) {
+      return [];
+    }
+    const parsed = distributionRangeSchema.array().safeParse(distributionMap.ranges);
+    return parsed.success ? parsed.data : [];
+  }, [distributionMap]);
   const paragraphs = dossier?.long_paragraphs ?? [];
-  const hasLeaflets = dossier?.leaflets?.schema_version === "leaflets_v1";
   const selectedParagraphText =
     paragraphs[selectedParagraphIndex] ?? "Awaiting generated paragraph.";
 
@@ -470,40 +535,43 @@ export default function BirdTextReview({
     }
   };
 
-  const handleBackfillLeaflets = async () => {
-    if (!contentBlock?.blocks_json) {
-      setError("Generate the dossier before backfilling leaflets.");
-      return;
-    }
+  const toggleDistributionStatus = (status: DistributionStatus) => {
+    setActiveStatuses((previous) => ({
+      ...previous,
+      [status]: !previous[status],
+    }));
+  };
 
-    setBackfillingLeaflets(true);
-    setError(null);
+  const handleGenerateDistributionMap = async () => {
+    setDistributionGenerating(true);
+    setDistributionError(null);
     setStatusMessage(null);
 
     try {
-      const response = await fetch(`/api/birds/${birdId}/leaflets/backfill`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-      });
+      const response = await fetch(
+        `/api/birds/${birdId}/distribution-map/generate`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+        }
+      );
 
       const payload = await response.json().catch(() => null);
 
-      if (!response.ok || !payload?.data?.content_block) {
-        throw new Error(payload?.error ?? "Unable to backfill leaflets.");
+      if (!response.ok || !payload?.data?.distribution_map) {
+        throw new Error(payload?.error ?? "Unable to generate distribution map.");
       }
 
-      setContentBlock(payload.data.content_block);
-      setStatusMessage(
-        hasLeaflets ? "Leaflets regenerated." : "Leaflets generated."
-      );
+      setDistributionMap(payload.data.distribution_map);
+      setStatusMessage("Distribution map generated.");
     } catch (err) {
-      setError(
+      setDistributionError(
         err instanceof Error
           ? err.message
-          : "Unable to backfill leaflets right now."
+          : "Unable to generate distribution map right now."
       );
     } finally {
-      setBackfillingLeaflets(false);
+      setDistributionGenerating(false);
     }
   };
 
@@ -682,74 +750,89 @@ export default function BirdTextReview({
             <div className={styles.regionRow}>
               <div className={styles.mapColumn}>
                 <div className={styles.mapHeader}>
-                  <p className={styles.mapLabel}>Elterjedés</p>
+                  <p className={styles.mapLabel}>Distribution</p>
                   <Button
                     type="button"
                     variant="ghost"
                     className={styles.leafletsButton}
-                    onClick={handleBackfillLeaflets}
-                    disabled={!contentBlock?.blocks_json || backfillingLeaflets}
+                    onClick={handleGenerateDistributionMap}
+                    disabled={distributionGenerating || distributionLoading}
                   >
-                    {backfillingLeaflets
-                      ? "Backfilling..."
-                      : hasLeaflets
+                    {distributionGenerating
+                      ? "Generating..."
+                      : distributionMap
                         ? "Regenerate"
-                        : "Backfill"}
+                        : "Generate"}
                   </Button>
                 </div>
-                {hasLeaflets ? (
-                  <BirdLeaflets
-                    kind="world"
-                    leaflets={dossier?.leaflets}
-                    className={styles.mapPlaceholder}
+                {distributionRanges.length > 0 ? (
+                  <BirdDistributionMap
+                    mapType="global"
+                    ranges={distributionRanges}
+                    activeStatuses={activeStatuses}
+                    speciesSummary={speciesSummary}
                   />
                 ) : (
                   <div className={styles.mapPlaceholder}>
                     <div className={styles.mapPlaceholderEmpty}>
-                      <span>Leaflets pending</span>
+                      <span>Distribution data unavailable</span>
                     </div>
                   </div>
                 )}
               </div>
               <div className={styles.mapColumn}>
-                <p className={styles.mapLabel}>Megfigyelhető</p>
-                {hasLeaflets ? (
-                  <BirdLeaflets
-                    kind="hungary"
-                    leaflets={dossier?.leaflets}
-                    className={styles.mapPlaceholder}
+                <p className={styles.mapLabel}>Hungary</p>
+                {distributionRanges.length > 0 ? (
+                  <BirdDistributionMap
+                    mapType="hungary"
+                    ranges={distributionRanges}
+                    activeStatuses={activeStatuses}
+                    speciesSummary={speciesSummary}
                   />
                 ) : (
                   <div className={styles.mapPlaceholder}>
                     <div className={styles.mapPlaceholderEmpty}>
-                      <span>Leaflets pending</span>
+                      <span>Distribution data unavailable</span>
                     </div>
                   </div>
                 )}
               </div>
               <div className={styles.statsColumn}>
-                <div className={styles.statPills}>
-                  {physicalPills.length > 0 && (
-                    <div className={styles.statRow}>
-                      {physicalPills.map((item) => (
-                        <div key={item.label} className={styles.statPill}>
-                          <span className={styles.statLabel}>{item.label}</span>
-                          <span className={styles.statValue}>{item.value}</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  {dietPills.length > 0 && (
-                    <div className={`${styles.statRow} ${styles.statRowDiet}`}>
-                      {dietPills.map((item) => (
-                        <div key={item.label} className={styles.statPill}>
-                          <span className={styles.statLabel}>{item.label}</span>
-                          <span className={styles.statValue}>{item.value}</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
+                {distributionLoading && (
+                  <p className={styles.distributionNote}>Loading distribution…</p>
+                )}
+                {distributionError && (
+                  <p className={styles.distributionError}>{distributionError}</p>
+                )}
+                <DistributionLegend
+                  active={activeStatuses}
+                  onToggle={toggleDistributionStatus}
+                />
+              </div>
+            </div>
+
+            <div className={styles.statPillsBelow}>
+              <div className={styles.statPills}>
+                {physicalPills.length > 0 && (
+                  <div className={styles.statRow}>
+                    {physicalPills.map((item) => (
+                      <div key={item.label} className={styles.statPill}>
+                        <span className={styles.statLabel}>{item.label}</span>
+                        <span className={styles.statValue}>{item.value}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {dietPills.length > 0 && (
+                  <div className={`${styles.statRow} ${styles.statRowDiet}`}>
+                    {dietPills.map((item) => (
+                      <div key={item.label} className={styles.statPill}>
+                        <span className={styles.statLabel}>{item.label}</span>
+                        <span className={styles.statValue}>{item.value}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
 

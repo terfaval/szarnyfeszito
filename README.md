@@ -53,8 +53,8 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 
 ## Image generation API
 
-- `POST /api/generate-images` is protected by the admin session and requires `bird_id`. The endpoint only allows execution when `birds.status` is `text_approved`, creates one record per required variant, and updates the bird to `images_generated`.
-- Configure `AI_MODEL_IMAGE` (for metadata) and `SUPABASE_IMAGE_BUCKET` (default `bird-images`) in your `.env*`. Ensure the bucket exists on Supabase and grants the service role key write access; `src/lib/config.ts` centralizes these canonical names before the handler uploads placeholder text blobs into that bucket and inserts `images` rows with `review_status=draft`.
+- `POST /api/generate-images` is protected by the admin session and requires `bird_id` (plus optional `force_regenerate`). The endpoint enforces `birds.status=text_approved` (or `images_generated` with `force_regenerate=true`) plus approved Science Dossier + Visual Brief, then generates PNG assets via the configured provider, upserts canonical `images` rows, and sets `birds.status=images_generated` only when required variants succeed.
+- Configure `IMAGE_PROVIDER` (default `stub`), `AI_MODEL_IMAGE` (metadata), and `SUPABASE_IMAGE_BUCKET` (default `bird-images`) in your `.env*`. Ensure the bucket exists on Supabase, is private, and grants the service role key write access; `src/lib/config.ts` centralizes these canonical names before the handler uploads binary PNG objects (overwrite enabled) and resets `images.review_status` to `draft` on regeneration.
 
 ## Admin experience
 

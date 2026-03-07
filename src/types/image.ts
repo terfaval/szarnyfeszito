@@ -18,6 +18,14 @@ export type ImageRecord = {
   storage_path: string;
   review_status: ImageReviewStatus;
   version: string;
+  style_config_id?: string | null;
+  seed?: number | null;
+  width_px?: number | null;
+  height_px?: number | null;
+  provider_model?: string | null;
+  spec_hash?: string | null;
+  prompt_hash?: string | null;
+  created_by?: string | null;
   created_at: string;
   updated_at: string;
   review_comment?: string;

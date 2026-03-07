@@ -17,6 +17,23 @@ export async function getScienceDossierForBird(
   return (data as ScienceDossierRecord | null) ?? null;
 }
 
+export async function getApprovedScienceDossierForBird(
+  birdId: string
+): Promise<ScienceDossierRecord | null> {
+  const { data, error } = await supabaseServerClient
+    .from("bird_science_dossiers")
+    .select("*")
+    .eq("bird_id", birdId)
+    .eq("review_status", "approved")
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  return (data as ScienceDossierRecord | null) ?? null;
+}
+
 export async function upsertScienceDossierDraft(input: {
   bird_id: string;
   schema_version: string;

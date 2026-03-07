@@ -229,10 +229,26 @@
   gap: 0.75rem;
 }
 
+.distributionNote {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.distributionError {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--brand-warm);
+}
+
 .leafletsButton {
   padding: 0.35rem 0.75rem;
   font-size: 0.8rem;
   border-radius: 999px;
+}
+
+.statPillsBelow {
+  margin-top: 1rem;
 }
 
 .regionTeaser {

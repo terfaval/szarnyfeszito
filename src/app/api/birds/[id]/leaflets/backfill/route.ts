@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getAdminUserFromCookies } from "@/lib/auth";
 import { getBirdById } from "@/lib/birdService";
 import { getLatestContentBlockForBird, updateContentBlock } from "@/lib/contentService";
-import { generateLeafletsV1 } from "@/lib/leafletsGeneration";
+import { generateLeafletsV2 } from "@/lib/leafletsGeneration";
 
 export async function POST(
   _request: Request,
@@ -31,7 +31,7 @@ export async function POST(
   }
 
   try {
-    const result = await generateLeafletsV1({
+    const result = await generateLeafletsV2({
       bird,
       dossier: block.blocks_json,
       source: "backfill",
@@ -52,4 +52,3 @@ export async function POST(
     );
   }
 }
-

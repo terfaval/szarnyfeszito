@@ -286,18 +286,14 @@ const JSON_TEMPLATE_V2_2 = `{
   "ethics_tip": "...",
   "typical_places": ["..."],
   "leaflets": {
-    "schema_version": "leaflets_v1",
+    "schema_version": "leaflets_v2",
     "world": {
-      "regions": [
-        { "code": "europe", "intensity": 0.6, "rationale": "..." }
-      ],
-      "note": "..."
+      "present": ["western_europe", "eastern_europe"],
+      "hover_hu": "..."
     },
     "hungary": {
-      "regions": [
-        { "code": "HU10", "intensity": 0.4, "rationale": "..." }
-      ],
-      "note": "..."
+      "present": ["HU10"],
+      "hover_hu": "..."
     }
   }
 }`;

@@ -1,11 +1,11 @@
 import { randomUUID } from "crypto";
 import type { Bird } from "@/types/bird";
-import type { BirdDossier, BirdDossierLeafletsV1 } from "@/types/dossier";
+import type { BirdDossier, BirdDossierLeafletsV2 } from "@/types/dossier";
 import { AI_MODEL_TEXT } from "@/lib/config";
 import { callOpenAIChatCompletion, OpenAIChatMessage } from "@/lib/openaiClient";
 import { extractJsonPayload, AIJsonParseError } from "@/lib/aiUtils";
 import { ZodError } from "zod";
-import { leafletsSchemaV1, parseLeafletsV1 } from "@/lib/leafletsSchema";
+import { leafletsSchemaV2, parseLeafletsV2 } from "@/lib/leafletsSchema";
 import { hashPrompt } from "@/lib/promptHash";
 
 const MAX_ATTEMPTS = 3;
@@ -18,12 +18,25 @@ Keep region choices conservative and explain uncertainty in note fields.
 `.trim();
 
 const WORLD_REGIONS = [
-  "europe",
-  "africa",
-  "asia",
+  "northern_europe",
+  "western_europe",
+  "eastern_europe",
+  "southern_europe",
+  "northern_africa",
+  "sub_saharan_africa",
+  "western_asia",
+  "central_asia",
+  "southern_asia",
+  "eastern_asia",
+  "south_eastern_asia",
   "north_america",
+  "central_america",
+  "caribbean",
   "south_america",
-  "oceania",
+  "australia_nz",
+  "melanesia",
+  "micronesia",
+  "polynesia",
 ] as const;
 
 const HUNGARY_REGIONS = [
@@ -50,14 +63,14 @@ function buildRepairHintFromZod(error: ZodError) {
 }
 
 export type LeafletsGenerationResult = {
-  leaflets: BirdDossierLeafletsV1;
+  leaflets: BirdDossierLeafletsV2;
   prompt: string;
   prompt_hash: string;
   model: string;
   generated_at: string;
 };
 
-export async function generateLeafletsV1(args: {
+export async function generateLeafletsV2(args: {
   bird: Bird;
   dossier: BirdDossier;
   source: "with_text" | "backfill";
@@ -86,20 +99,16 @@ Inputs (do not invent beyond these; prefer conservative choices):
 - dossier.migration.migration_note: ${JSON.stringify(migrationNote)}
 - dossier.typical_places (HU): ${JSON.stringify(typicalPlaces)}
 
-Output JSON that matches this schema exactly:
-{
-  "schema_version": "leaflets_v1",
+  Output JSON that matches this schema exactly:
+  {
+  "schema_version": "leaflets_v2",
   "world": {
-    "regions": [
-      { "code": <WORLD_REGION_CODE>, "intensity": <0..1>, "rationale": <short> }
-    ],
-    "note": <short>
+    "present": [<WORLD_REGION_CODE>, ...],
+    "hover_hu": <optional short>
   },
   "hungary": {
-    "regions": [
-      { "code": <HUNGARY_REGION_CODE>, "intensity": <0..1>, "rationale": <short> }
-    ],
-    "note": <short>
+    "present": [<HUNGARY_REGION_CODE>, ...],
+    "hover_hu": <optional short>
   }
 }
 
@@ -110,13 +119,11 @@ Allowed HUNGARY_REGION_CODE values (7 regions):
 ${HUNGARY_REGIONS.map((c) => `- ${c}`).join("\n")}
 
 Rules:
-- World regions: choose 1–4 regions that best match the distribution inputs. Always include at least 1 region.
+- World regions: choose 1–8 region codes that best match the distribution inputs. Always include at least 1 region.
 - Hungary regions:
-  - If visibility_category_hu == "not_in_hu": hungary.regions MUST be [] and hungary.note must say it's not observable in Hungary.
-  - Otherwise: choose 1–4 regions based on typical_places + distribution/migration notes; if uncertain, choose fewer regions with lower intensities.
-- Intensities must be within 0..1 (low≈0.2, medium≈0.5, high≈0.8).
-- Rationales must be short and concrete (≤220 chars).
-- Notes: mention seasonality/uncertainty briefly (≤600 chars).
+  - If visibility_category_hu == "not_in_hu": hungary.present MUST be [].
+  - Otherwise: choose 0–7 region codes based on typical_places + distribution/migration notes; if uncertain, choose fewer codes.
+- hover_hu is optional: a short Hungarian hover note (≤600 chars). Do not use it to encode coverage; coverage must be in the present[] lists.
 
 Output JSON only.
 `.trim();
@@ -161,18 +168,18 @@ Output JSON only.
     }
 
     try {
-      const parsed = parseLeafletsV1(extracted.payload);
+      const parsed = parseLeafletsV2(extracted.payload);
       const generatedAt = new Date().toISOString();
-      const withMeta: BirdDossierLeafletsV1 = {
+      const withMeta: BirdDossierLeafletsV2 = {
         ...parsed,
         model: response.modelName ?? AI_MODEL_TEXT,
         generated_at: generatedAt,
         source,
       };
 
-      if (visibility === "not_in_hu" && withMeta.hungary.regions.length > 0) {
-        withMeta.hungary.regions = [];
-        withMeta.hungary.note = "not_in_hu: a faj nem megfigyelhető Magyarországon.";
+      if (visibility === "not_in_hu" && withMeta.hungary.present.length > 0) {
+        withMeta.hungary.present = [];
+        withMeta.hungary.hover_hu = "not_in_hu: a faj nem megfigyelhető Magyarországon.";
       }
 
       const concatPrompt = `${SYSTEM_PROMPT}\n\n${prompt}`;
@@ -189,7 +196,7 @@ Output JSON only.
         continue;
       }
 
-      const schemaPreview = leafletsSchemaV1.safeParse(extracted.payload);
+      const schemaPreview = leafletsSchemaV2.safeParse(extracted.payload);
       if (!schemaPreview.success) {
         repairHint = buildRepairHintFromZod(schemaPreview.error);
         continue;

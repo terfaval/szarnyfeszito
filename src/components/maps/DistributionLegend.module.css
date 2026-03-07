@@ -1,0 +1,40 @@
+.legend {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.45rem 0.6rem;
+  border-radius: 999px;
+  border: 1px solid rgba(var(--brand-ink-rgb), 0.25);
+  background: rgba(var(--brand-ink-rgb), 0.08);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.itemOff {
+  opacity: 0.5;
+}
+
+.itemOn {
+  opacity: 1;
+}
+
+.swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+}
+
+.label {
+  font-size: 0.85rem;
+}
+

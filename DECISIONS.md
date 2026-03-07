@@ -149,6 +149,58 @@ generates *only* the `leaflets` payload for existing dossiers (no text rewrite).
 - External bird databases/APIs and “true” occurrence heatmaps.
 - Explorer map UX.
 
+---
+
+## D23 — Leaflets v2 (list-based regions + filled map areas)
+
+**Status:** Accepted  
+**Date:** 2026-03-07  
+**Scope:** Studio Bird dossier (Text tab). Explorer out of scope.
+
+### Context
+Leaflets v1 used per-region intensity + short rationales. The desired UX is closer to classic range maps:
+- a small number of solid colors,
+- clearer “which areas” semantics (list-based region membership),
+- more granular world nomenclature than continents.
+
+### Decision
+1) Introduce `leaflets.schema_version = "leaflets_v2"` and keep v1 accepted for legacy dossiers.
+2) v2 payload is **list-first**:
+   - `world.present[]` and `hungary.present[]` are arrays of region codes.
+   - optional `hover_hu` strings provide short Hungarian hover context per map (not required to encode coverage).
+3) Rendering uses filled region areas (no heat circles). Geometry is deterministic and can be refined later without changing the payload schema.
+
+---
+
+## D24 — Bird distribution maps v1 (GeoJSON polygon ranges + shared legend)
+
+**Status:** Accepted  
+**Date:** 2026-03-07  
+**Scope:** Studio Bird page module (two maps: global + Hungary viewport). Explorer out of scope.
+
+### Context
+Leaflets are a lightweight, region-coded approximation. The desired “species distribution” UX is closer to classic
+range maps: polygon-based zones (not point observations) with status layers (resident/breeding/wintering/passage),
+shared legend toggles, and strict AI-generated structured data stored in Supabase.
+
+### Decision
+1) Introduce a dedicated Supabase table `bird_distribution_maps` keyed by `bird_id` storing:
+   - `summary`, `references[]`, and a JSONB `ranges[]` array.
+2) `ranges[]` entries are **GeoJSON Polygon/MultiPolygon** with:
+   - `status` enum: resident | breeding | wintering | passage
+   - `confidence` (0..1) informational only
+   - optional `note` for tooltips
+3) Rendering:
+   - Two viewports (global + Hungary) over the same dataset in MVP.
+   - Layer order: resident → breeding → wintering → passage.
+   - Fill colors fixed; no borders.
+   - Legend toggles are shared across both maps.
+4) Generation:
+   - Server-side only, strict JSON + GeoJSON validation.
+   - Per-bird “Generate/Regenerate distribution map” action in Studio.
+
+
+
 ## D17 — Image Accuracy Pipeline v1 (Science Dossier + Visual Brief gating)
 
 **Status:** Accepted  

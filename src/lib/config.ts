@@ -23,6 +23,14 @@ export const ADMIN_EMAIL = optionalEnv("ADMIN_EMAIL", "") ?? "";
 export const ADMIN_EMAIL_LOWERCASE = ADMIN_EMAIL.toLowerCase();
 export const SUPABASE_IMAGE_BUCKET =
   optionalEnv("SUPABASE_IMAGE_BUCKET", "bird-images") ?? "bird-images";
+
+export const IMAGE_PROVIDER = optionalEnv("IMAGE_PROVIDER", "stub") ?? "stub";
+
+export const IMAGE_STYLE_CONFIG_ID_SCIENTIFIC =
+  optionalEnv("IMAGE_STYLE_CONFIG_ID_SCIENTIFIC", "scientific_v1") ?? "scientific_v1";
+
+export const IMAGE_STYLE_CONFIG_ID_ICONIC =
+  optionalEnv("IMAGE_STYLE_CONFIG_ID_ICONIC", "iconic_v1") ?? "iconic_v1";
 export const NODE_ENV = process.env.NODE_ENV?.trim() || "development";
 export const IS_PRODUCTION = NODE_ENV === "production";
 export const APP_URL = optionalEnv("NEXT_PUBLIC_APP_URL") ?? "http://localhost:3000";

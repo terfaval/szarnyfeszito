@@ -1,0 +1,13 @@
+.wrap {
+  height: 220px;
+  border-radius: 20px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  background: var(--panel);
+}
+
+.map {
+  height: 100%;
+  width: 100%;
+}
+

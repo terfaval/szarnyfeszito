@@ -27,6 +27,7 @@ Ez a rendszer a Szárnyfeszítő tartalomgyártási motorja.
 - Publish gate (állapotvezérelt)
 - Verziózás (alap szinten)
 - Dokumentált pipeline
+- Bird distribution map modul (D24): polygon alapú elterjedési zónák + közös legend (Studio)
 
 ### OUT (MVP-ben NINCS)
 

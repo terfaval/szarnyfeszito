@@ -97,7 +97,10 @@ export default function BirdImageReview({
       const response = await fetch("/api/generate-images", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ bird_id: birdId }),
+        body: JSON.stringify({
+          bird_id: birdId,
+          force_regenerate: birdStatus === "images_generated" || images.length > 0,
+        }),
       });
 
       const payload = await response.json().catch(() => null);

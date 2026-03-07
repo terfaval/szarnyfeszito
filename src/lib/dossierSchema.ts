@@ -1,6 +1,6 @@
 import { z } from "zod";
 import type { BirdDossier } from "@/types/dossier";
-import { leafletsSchemaV1 } from "@/lib/leafletsSchema";
+import { leafletsSchema } from "@/lib/leafletsSchema";
 
 const trimmedString = () => z.string().trim().min(1);
 
@@ -177,7 +177,7 @@ export const birdDossierSchema = z
     did_you_know: trimmedString(),
     ethics_tip: trimmedString(),
     typical_places: z.array(trimmedString()).min(1, "Include at least one typical place."),
-    leaflets: leafletsSchemaV1,
+    leaflets: leafletsSchema,
   })
   .strict();
 
