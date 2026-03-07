@@ -9,6 +9,7 @@ import { ReviewStatusPill } from "@/ui/components/ReviewStatusPill";
 import type { BirdDossier } from "@/types/dossier";
 import type { ContentBlock, GeneratedContent } from "@/types/content";
 import ReviewRequestOverlay from "@/components/admin/ReviewRequestOverlay";
+import BirdLeaflets from "@/components/admin/BirdLeaflets";
 import styles from "./BirdTextReview.module.css";
 
 const formatRange = (
@@ -253,6 +254,7 @@ export default function BirdTextReview({
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [regenerating, setRegenerating] = useState(false);
+  const [backfillingLeaflets, setBackfillingLeaflets] = useState(false);
   const [overlayTarget, setOverlayTarget] = useState<TextReviewSection | null>(
     null
   );
@@ -322,6 +324,7 @@ export default function BirdTextReview({
     [dossier?.typical_places]
   );
   const paragraphs = dossier?.long_paragraphs ?? [];
+  const hasLeaflets = dossier?.leaflets?.schema_version === "leaflets_v1";
   const selectedParagraphText =
     paragraphs[selectedParagraphIndex] ?? "Awaiting generated paragraph.";
 
@@ -464,6 +467,43 @@ export default function BirdTextReview({
       );
     } finally {
       setRegenerating(false);
+    }
+  };
+
+  const handleBackfillLeaflets = async () => {
+    if (!contentBlock?.blocks_json) {
+      setError("Generate the dossier before backfilling leaflets.");
+      return;
+    }
+
+    setBackfillingLeaflets(true);
+    setError(null);
+    setStatusMessage(null);
+
+    try {
+      const response = await fetch(`/api/birds/${birdId}/leaflets/backfill`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+
+      const payload = await response.json().catch(() => null);
+
+      if (!response.ok || !payload?.data?.content_block) {
+        throw new Error(payload?.error ?? "Unable to backfill leaflets.");
+      }
+
+      setContentBlock(payload.data.content_block);
+      setStatusMessage(
+        hasLeaflets ? "Leaflets regenerated." : "Leaflets generated."
+      );
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Unable to backfill leaflets right now."
+      );
+    } finally {
+      setBackfillingLeaflets(false);
     }
   };
 
@@ -642,17 +682,52 @@ export default function BirdTextReview({
             <div className={styles.regionRow}>
               <div className={styles.mapColumn}>
                 <p className={styles.mapLabel}>Elterjedés</p>
-                <div className={styles.mapPlaceholder}>
-                  <span>Leaflet placeholder</span>
-                </div>
+                {hasLeaflets ? (
+                  <BirdLeaflets
+                    kind="world"
+                    leaflets={dossier?.leaflets}
+                    className={styles.mapPlaceholder}
+                  />
+                ) : (
+                  <div className={styles.mapPlaceholder}>
+                    <div className={styles.mapPlaceholderEmpty}>
+                      <span>Leaflets pending</span>
+                    </div>
+                  </div>
+                )}
               </div>
               <div className={styles.mapColumn}>
                 <p className={styles.mapLabel}>Megfigyelhető</p>
-                <div className={styles.mapPlaceholder}>
-                  <span>Leaflet placeholder</span>
-                </div>
+                {hasLeaflets ? (
+                  <BirdLeaflets
+                    kind="hungary"
+                    leaflets={dossier?.leaflets}
+                    className={styles.mapPlaceholder}
+                  />
+                ) : (
+                  <div className={styles.mapPlaceholder}>
+                    <div className={styles.mapPlaceholderEmpty}>
+                      <span>Leaflets pending</span>
+                    </div>
+                  </div>
+                )}
               </div>
               <div className={styles.statsColumn}>
+                <div className={styles.leafletsActions}>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    className={styles.leafletsButton}
+                    onClick={handleBackfillLeaflets}
+                    disabled={!contentBlock?.blocks_json || backfillingLeaflets}
+                  >
+                    {backfillingLeaflets
+                      ? "Backfilling leaflets..."
+                      : hasLeaflets
+                        ? "Regenerate leaflets"
+                        : "Backfill leaflets"}
+                  </Button>
+                </div>
                 <div className={styles.statPills}>
                   {physicalPills.length > 0 && (
                     <div className={styles.statRow}>

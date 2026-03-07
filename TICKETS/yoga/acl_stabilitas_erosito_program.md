@@ -239,3 +239,14 @@ Csütörtök – jóga / mobilizáló
 Péntek – pihenő  
 Szombat – stabilitási blokk vagy teljes testes erősítés  
 Vasárnap – jóga / könnyű mozgás
+
+---
+
+# Javasolt heti arány (UI hint)
+
+Csak irányadó (a heti sor felett jelenik meg számok + ikonok formában):
+
+- Jóga: 3
+- Erősítés: 1
+- ACL-stabilitás: 2
+- Futás: 1

@@ -31,7 +31,7 @@ Ez a rendszer a Szárnyfeszítő tartalomgyártási motorja.
 ### OUT (MVP-ben NINCS)
 
 - Publikus UI
-- Térkép
+- Explorer map (Leaflet + OSM)
 - Journaling
 - Közösségi funkciók
 - Multi-role rendszer
@@ -132,14 +132,21 @@ Flow:
 
 Struktúra (`blocks_json`):
 
-- `header` (title, subtitle, scientific_name, short_summary, opcionális region)
-- `quick_traits` (legalább 3 { label, value } pár)
+- Field-Guide Dossier `schema_version: "v2.2"` (lásd D12)
+- `signature_trait`
+- `header` (name_hu, name_latin, subtitle, short_summary)
+- `pill_meta` (habitat_class, region_teaser, size_cm, wingspan_cm, diet_short, lifespan_years)
 - `short_options` (pontos három rövid opció / tagline)
-- `long_paragraphs` (legalább két hosszú bekezdés)
-- `fact_box` (legalább két tény { label, detail })
+- `long_paragraphs` (pontos két bekezdés)
+- `identification` (key_features: Csőr/Tollazat/Hang/Mozgás + identification_paragraph)
+- `distribution` (taxonomy + iucn_status + distribution_regions + distribution_note)
+- `nesting`
+- `migration`
 - `fun_fact`
+- `did_you_know`
 - `ethics_tip`
 - `typical_places`
+- `leaflets` (D22): régió-szintű elterjedés + HU-megfigyelhetőség jelölés (világ + Magyarország)
 
 `generation_meta` tartalmazza a modell nevét, a prompt hash-ét és a generálás időpontját, így később nyomon követhető a promptváltozás.
 

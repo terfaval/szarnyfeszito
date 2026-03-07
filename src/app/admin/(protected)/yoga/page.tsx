@@ -175,6 +175,13 @@ const ACTIVITY_LABELS: Record<ActivityType, string> = {
   running: "FUTÁS",
 };
 
+const WEEKLY_RECOMMENDED_COUNTS: Record<ActivityType, number> = {
+  yoga: 3,
+  strength: 1,
+  acl: 2,
+  running: 1,
+};
+
 const CATEGORY_COLORS: Record<ActivityType, string> = {
   yoga: "#db9221",
   strength: "#05768d",
@@ -1633,6 +1640,30 @@ export default function YogaPage() {
       )}
 
       <div className="yoga-week-card admin-card">
+        <div className="yoga-week-ratio" aria-label="Javasolt heti arány">
+          {ACTIVITY_ORDER.map((activity) => {
+            const Icon =
+              activity === "yoga"
+                ? Flower2
+                : activity === "strength"
+                  ? Dumbbell
+                  : activity === "acl"
+                    ? ShieldCheck
+                    : Footprints;
+            const count = WEEKLY_RECOMMENDED_COUNTS[activity] ?? 0;
+            return (
+              <span
+                key={`weekly-ratio-${activity}`}
+                className="yoga-week-ratio__item"
+                title={`${ACTIVITY_LABELS[activity]}: ${count} / hét`}
+                aria-label={`Javasolt: ${ACTIVITY_LABELS[activity]} ${count} / hét`}
+              >
+                <Icon size={16} />
+                <strong className="yoga-week-ratio__count">{count}</strong>
+              </span>
+            );
+          })}
+        </div>
         <div className="yoga-week-days">
           {selectedWeek.map((day) => {
             const key = formatDateKey(day);

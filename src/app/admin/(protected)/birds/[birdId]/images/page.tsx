@@ -40,8 +40,13 @@ export default async function BirdImagesPage({
 
   return (
     <Card className={styles.cardSection}>
-      <BirdImageReview birdId={bird.id} images={imagesWithPreview} />
+      <BirdImageReview
+        birdId={bird.id}
+        images={imagesWithPreview}
+        birdStatus={bird.status}
+        scienceDossierStatus={bird.science_dossier_status}
+        visualBriefStatus={bird.visual_brief_status}
+      />
     </Card>
   );
 }
-

@@ -889,6 +889,31 @@ svg {
   box-shadow: var(--shadow);
 }
 
+.yoga-week-ratio {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.9rem;
+  flex-wrap: wrap;
+}
+
+.yoga-week-ratio__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--panel-2);
+  color: var(--brand-ink);
+}
+
+.yoga-week-ratio__count {
+  font-size: 0.9rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
 .yoga-week-days {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));

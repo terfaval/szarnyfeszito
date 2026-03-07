@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/ui/components/Button";
 import { Card } from "@/ui/components/Card";
 import { Icon } from "@/ui/icons/Icon";
@@ -12,7 +13,7 @@ type BirdImageWithPreview = ImageRecord & {
   previewUrl: string | null;
 };
 
-const VARIANT_LABELS: Record<ImageRecord["variant"], string> = {
+const VARIANT_LABELS: Partial<Record<ImageRecord["variant"], string>> = {
   main_habitat: "Scientific · Main Habitat",
   standing_clean: "Scientific · Standing",
   flight_clean: "Scientific · Flight",
@@ -34,14 +35,33 @@ const STATUS_HINTS: Record<ImageReviewStatus, string> = {
 type BirdImageReviewProps = {
   birdId: string;
   images: BirdImageWithPreview[];
+  birdStatus: string;
+  scienceDossierStatus: string;
+  visualBriefStatus: string;
 };
+
+function isProbablyImageUrl(url: string) {
+  const cleaned = url.split("?")[0]?.toLowerCase() ?? "";
+  return (
+    cleaned.endsWith(".png") ||
+    cleaned.endsWith(".jpg") ||
+    cleaned.endsWith(".jpeg") ||
+    cleaned.endsWith(".webp") ||
+    cleaned.endsWith(".gif")
+  );
+}
 
 export default function BirdImageReview({
   birdId,
   images: initialImages,
+  birdStatus,
+  scienceDossierStatus,
+  visualBriefStatus,
 }: BirdImageReviewProps) {
+  const router = useRouter();
   const [images, setImages] = useState(initialImages);
   const [loadingId, setLoadingId] = useState<string | null>(null);
+  const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [requestOverlay, setRequestOverlay] = useState<{
     imageId: string;
@@ -56,6 +76,44 @@ export default function BirdImageReview({
 
   const allApproved =
     images.length > 0 && images.every((image) => image.review_status === "approved");
+
+  const canGenerate =
+    (birdStatus === "text_approved" || birdStatus === "images_generated") &&
+    scienceDossierStatus === "approved" &&
+    visualBriefStatus === "approved";
+
+  const generateLabel = images.length === 0 ? "Generate images" : "Regenerate images";
+
+  const handleGenerate = async () => {
+    if (!canGenerate || generating) {
+      return;
+    }
+
+    setGenerating(true);
+    setError(null);
+    setRequestStatusMessage(null);
+
+    try {
+      const response = await fetch("/api/generate-images", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ bird_id: birdId }),
+      });
+
+      const payload = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        throw new Error(payload?.error ?? "Unable to generate images.");
+      }
+
+      setRequestStatusMessage("Images generated. Refreshingâ€¦");
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to generate images.");
+    } finally {
+      setGenerating(false);
+    }
+  };
 
   const handleApprove = async (imageId: string) => {
     if (loadingId) {
@@ -174,13 +232,37 @@ export default function BirdImageReview({
             </p>
           </div>
 
-          {allApproved && (
-            <span className={styles.headerBadge}>
-              <Icon name="accept" size={14} />
-              All approved
-            </span>
-          )}
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <Button
+              type="button"
+              variant="accent"
+              onClick={handleGenerate}
+              disabled={!canGenerate || generating}
+              className="whitespace-nowrap"
+            >
+              {generating ? "Generatingâ€¦" : generateLabel}
+            </Button>
+
+            {allApproved && (
+              <span className={styles.headerBadge}>
+                <Icon name="accept" size={14} />
+                All approved
+              </span>
+            )}
+          </div>
         </header>
+
+        {!canGenerate && (
+          <div className="admin-panel admin-panel--muted">
+            <p className="admin-note-small">
+              To generate images, the bird must be{" "}
+              <span className="font-semibold">text_approved</span> (or already{" "}
+              <span className="font-semibold">images_generated</span>), and both{" "}
+              <span className="font-semibold">Science Dossier</span> and{" "}
+              <span className="font-semibold">Visual Brief</span> must be approved.
+            </p>
+          </div>
+        )}
 
         {images.length === 0 ? (
           <div className="admin-panel admin-panel--muted">
@@ -192,39 +274,55 @@ export default function BirdImageReview({
         ) : (
           <div className={styles.grid}>
             {images.map((image) => {
+              const label = VARIANT_LABELS[image.variant] ?? image.variant;
               const isApproved = image.review_status === "approved";
               const isLoading = loadingId === image.id;
+              const hasRenderablePreview =
+                Boolean(image.previewUrl) && isProbablyImageUrl(image.previewUrl ?? "");
 
               return (
                 <Card key={image.id} className="space-y-4">
                   <div className={styles.imagePreview}>
-                    {image.previewUrl ? (
+                    {hasRenderablePreview ? (
                       <img
-                        src={image.previewUrl}
-                        alt={`${VARIANT_LABELS[image.variant]} preview`}
+                        src={image.previewUrl ?? ""}
+                        alt={`${label} preview`}
                         className="h-full w-full object-cover"
                       />
                     ) : (
                       <div className="flex h-full w-full items-center justify-center">
-                        <span className="admin-heading__label">Preview unavailable</span>
+                        <span className="admin-heading__label">
+                          {image.previewUrl ? "Preview unavailable" : "Not generated yet"}
+                        </span>
                       </div>
                     )}
                   </div>
 
                   <div className={styles.imageMeta}>
                     <div className="flex items-center justify-between gap-3">
-                      <p className="admin-link-card__title">{VARIANT_LABELS[image.variant]}</p>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        className="h-9 w-9 rounded-full"
-                        onClick={() =>
-                          openRequestOverlay(image.id, VARIANT_LABELS[image.variant])
-                        }
-                      >
-                        <Icon name="edit" size={16} />
-                        <span className="sr-only">Request changes</span>
-                      </Button>
+                      <p className="admin-link-card__title">{label}</p>
+                      <div className="flex items-center gap-2">
+                        {image.previewUrl && (
+                          <a
+                            className="btn btn--ghost"
+                            href={image.previewUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            download
+                          >
+                            Download
+                          </a>
+                        )}
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          className="h-9 w-9 rounded-full"
+                          onClick={() => openRequestOverlay(image.id, label)}
+                        >
+                          <Icon name="edit" size={16} />
+                          <span className="sr-only">Request changes</span>
+                        </Button>
+                      </div>
                     </div>
                     <div className="flex flex-wrap items-center gap-3">
                       <span className={STATUS_BADGES[image.review_status]}>
@@ -232,7 +330,7 @@ export default function BirdImageReview({
                       </span>
                       <span className="text-xs admin-text-muted">
                         Generated{" "}
-                        {new Date(image.created_at).toLocaleString(undefined, {
+                        {new Date(image.updated_at).toLocaleString(undefined, {
                           dateStyle: "medium",
                           timeStyle: "short",
                         })}

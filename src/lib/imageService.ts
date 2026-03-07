@@ -9,16 +9,20 @@ import { supabaseServerClient } from "@/lib/supabaseServerClient";
 import { getBirdById, updateBird } from "@/lib/birdService";
 import { AI_MODEL_IMAGE, SUPABASE_IMAGE_BUCKET } from "@/lib/config";
 
-const VARIANT_SPECS: ImageSpec[] = [
-  { style_family: "scientific", variant: "main_habitat" },
-  { style_family: "scientific", variant: "standing_clean" },
-  { style_family: "scientific", variant: "flight_clean" },
-  { style_family: "iconic", variant: "fixed_pose_icon_v1" },
-];
-
 const REQUIRED_IMAGE_VARIANTS: ImageVariant[] = [
   "main_habitat",
   "fixed_pose_icon_v1",
+];
+
+const REQUIRED_SPECS: ImageSpec[] = [
+  { style_family: "scientific", variant: "main_habitat" },
+  { style_family: "iconic", variant: "fixed_pose_icon_v1" },
+];
+
+const OPTIONAL_SPECS: ImageSpec[] = [
+  { style_family: "scientific", variant: "standing_clean" },
+  { style_family: "scientific", variant: "flight_clean" },
+  { style_family: "scientific", variant: "nesting_clean" },
 ];
 
 function buildStoragePath(bird: Bird, spec: ImageSpec) {
@@ -47,34 +51,66 @@ async function uploadPlaceholderImage(bird: Bird, spec: ImageSpec) {
 export async function generateImagesForBird(
   bird: Bird
 ): Promise<{ bird: Bird; images: ImageRecord[] }> {
-  if (bird.status !== "text_approved") {
-    throw new Error("Images can only be generated when the bird has text_approved status.");
+  if (bird.status === "images_approved" || bird.status === "published") {
+    throw new Error("Images cannot be generated after images are approved or published.");
+  }
+
+  if (bird.status !== "text_approved" && bird.status !== "images_generated") {
+    throw new Error(
+      "Images can only be generated when the bird has text_approved or images_generated status."
+    );
+  }
+
+  if (bird.science_dossier_status !== "approved") {
+    throw new Error("Science Dossier must be approved before generating images.");
+  }
+
+  if (bird.visual_brief_status !== "approved") {
+    throw new Error("Visual Brief must be approved before generating images.");
   }
 
   const createdImages: ImageRecord[] = [];
 
-  for (const spec of VARIANT_SPECS) {
+  const upsertOne = async (spec: ImageSpec) => {
     const storagePath = await uploadPlaceholderImage(bird, spec);
+    const now = new Date().toISOString();
 
     const { data, error } = await supabaseServerClient
       .from("images")
-    .insert({
-      entity_type: "bird",
-      entity_id: bird.id,
-      style_family: spec.style_family,
-      variant: spec.variant,
-      storage_path: storagePath,
-      review_status: "draft",
-      version: `${AI_MODEL_IMAGE}:${spec.variant}`,
-    })
+      .upsert(
+        {
+          entity_type: "bird",
+          entity_id: bird.id,
+          style_family: spec.style_family,
+          variant: spec.variant,
+          storage_path: storagePath,
+          review_status: "draft",
+          review_comment: null,
+          version: `${AI_MODEL_IMAGE}:${spec.variant}`,
+          updated_at: now,
+        },
+        { onConflict: "entity_type,entity_id,variant" }
+      )
       .select("*")
       .single();
 
     if (error || !data) {
-      throw error ?? new Error("Failed to create image record.");
+      throw error ?? new Error("Failed to upsert image record.");
     }
 
     createdImages.push(data);
+  };
+
+  for (const spec of REQUIRED_SPECS) {
+    await upsertOne(spec);
+  }
+
+  for (const spec of OPTIONAL_SPECS) {
+    try {
+      await upsertOne(spec);
+    } catch {
+      // Optional variants are best-effort in v1.
+    }
   }
 
   const updatedBird = await updateBird({ id: bird.id, status: "images_generated" });

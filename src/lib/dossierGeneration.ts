@@ -284,7 +284,22 @@ const JSON_TEMPLATE_V2_2 = `{
   "fun_fact": "...",
   "did_you_know": "...",
   "ethics_tip": "...",
-  "typical_places": ["..."]
+  "typical_places": ["..."],
+  "leaflets": {
+    "schema_version": "leaflets_v1",
+    "world": {
+      "regions": [
+        { "code": "europe", "intensity": 0.6, "rationale": "..." }
+      ],
+      "note": "..."
+    },
+    "hungary": {
+      "regions": [
+        { "code": "HU10", "intensity": 0.4, "rationale": "..." }
+      ],
+      "note": "..."
+    }
+  }
 }`;
 
 const SYSTEM_PROMPT = `
@@ -294,7 +309,7 @@ You MUST output EXACTLY the following object shape (fill values, keep keys/types
 ${JSON_TEMPLATE_V2_2}
 
 HARD RULES:
-  - Top-level keys must be present: header, pill_meta, short_options, long_paragraphs, identification, distribution, nesting, migration, fun_fact, did_you_know, ethics_tip, typical_places.
+  - Top-level keys must be present: header, pill_meta, short_options, long_paragraphs, identification, distribution, nesting, migration, fun_fact, did_you_know, ethics_tip, typical_places, leaflets.
 - pill_meta.habitat_class must be exactly one of: erdő, vízpart, puszta, hegy, város (pick the strongest).
 - distribution/nesting/migration MUST be objects (never strings).
 - Use null for nullable fields when unknown; when you do provide numbers keep ranges conservative and avoid false precision (no spans < ~2 units unless null).
@@ -341,6 +356,7 @@ function validateMinimumShape(payload: unknown, rawJson: string) {
   mustHave(payload, "did_you_know");
   mustHave(payload, "ethics_tip");
   mustHave(payload, "typical_places");
+  mustHave(payload, "leaflets");
 
   if (issues.length) throw new AISchemaMismatchError(issues, rawJson);
 
@@ -354,6 +370,7 @@ function validateMinimumShape(payload: unknown, rawJson: string) {
   mustBeObject("distribution");
   mustBeObject("nesting");
   mustBeObject("migration");
+  mustBeObject("leaflets");
 
   if (issues.length) throw new AISchemaMismatchError(issues, rawJson);
 }

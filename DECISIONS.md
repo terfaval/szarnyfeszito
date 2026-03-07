@@ -112,6 +112,43 @@ rare/accidental non-resident occurrences).
 - External bird databases/APIs to source true distribution statistics.
 - Explorer UX changes.
 
+---
+
+## D22 — Bird leaflets v1 (region heatmaps for world + Hungary)
+
+**Status:** Accepted  
+**Date:** 2026-03-07  
+**Scope:** Studio Bird dossier (Text tab). Explorer out of scope.
+
+### Context
+The Bird dossier UI currently shows two “Leaflet placeholder” panels. Studio needs a deterministic, review-friendly
+way to render *where the bird can be seen* on:
+1) a world view (distribution), and
+2) a Hungary view (where to look / how observable).
+
+We do not integrate external distribution databases in MVP (e.g. eBird/GBIF), so the maps must be region-level and
+derived from existing Studio artifacts (bird + dossier), without client-side inference.
+
+### Decision
+1) **Leaflets live inside the canonical Bird dossier payload** (`content_blocks.blocks_json.leaflets`) as a v1 schema,
+so the Text review surface can render them without stitching multiple sources.
+2) **Region-level only (v1):**
+   - World: coarse macro-regions (not per-country precision).
+   - Hungary: 7 NUTS-2 style regions.
+3) **Generated with text by default**, using `AI_MODEL_TEXT`.
+4) **Per-bird backfill only:** add an admin-only “Backfill leaflets” action on the Bird Text page that retroactively
+generates *only* the `leaflets` payload for existing dossiers (no text rewrite).
+
+### Data contract (v1)
+`leaflets.schema_version = "leaflets_v1"` with:
+- `leaflets.world.regions[]` (region code + weight/intensity + short rationale)
+- `leaflets.hungary.regions[]` (region code + weight/intensity + short rationale)
+- per-map notes for uncertainty/seasonality
+
+### Out of scope
+- External bird databases/APIs and “true” occurrence heatmaps.
+- Explorer map UX.
+
 ## D17 — Image Accuracy Pipeline v1 (Science Dossier + Visual Brief gating)
 
 **Status:** Accepted  

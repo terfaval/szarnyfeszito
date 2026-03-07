@@ -83,6 +83,17 @@ const baseDossier: BirdDossier = {
   did_you_know: "Ha közelebb merészkedik, gyakran a víztükör peremén fut végig, mintha lépésekkel mérné fel a nádas ritmusát.",
   ethics_tip: "Tisztítsuk meg a partokat, ne zavarjuk a fészkét.",
   typical_places: ["Tisza-tavi nádasa", "Duna menti szigetek"],
+  leaflets: {
+    schema_version: "leaflets_v1",
+    world: {
+      regions: [{ code: "europe", intensity: 0.7, rationale: "Európai elterjedésre utaló dossier-részletek alapján." }],
+      note: "Régió-szintű jelölés (v1).",
+    },
+    hungary: {
+      regions: [{ code: "HU33", intensity: 0.5, rationale: "Alföldi vizes élőhelyek említése alapján." }],
+      note: "Régió-szintű jelölés (v1).",
+    },
+  },
 };
 
 const cloneDossier = () => JSON.parse(JSON.stringify(baseDossier)) as BirdDossier;

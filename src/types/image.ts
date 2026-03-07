@@ -4,6 +4,7 @@ export type ImageVariant =
   | "main_habitat"
   | "standing_clean"
   | "flight_clean"
+  | "nesting_clean"
   | "fixed_pose_icon_v1";
 
 export type ImageReviewStatus = "draft" | "reviewed" | "approved";

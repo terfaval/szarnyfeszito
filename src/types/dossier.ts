@@ -61,6 +61,44 @@ export type BirdDossierMigration = {
   migration_note: string;
 };
 
+export type LeafletsWorldRegionCode =
+  | "europe"
+  | "africa"
+  | "asia"
+  | "north_america"
+  | "south_america"
+  | "oceania";
+
+export type LeafletsHungaryRegionCode =
+  | "HU10" // Közép-Magyarország
+  | "HU21" // Közép-Dunántúl
+  | "HU22" // Nyugat-Dunántúl
+  | "HU23" // Dél-Dunántúl
+  | "HU31" // Észak-Magyarország
+  | "HU32" // Észak-Alföld
+  | "HU33"; // Dél-Alföld
+
+export type BirdDossierLeafletRegion<TCode extends string> = {
+  code: TCode;
+  intensity: number; // 0..1
+  rationale: string;
+};
+
+export type BirdDossierLeafletsV1 = {
+  schema_version: "leaflets_v1";
+  model?: string;
+  generated_at?: string;
+  source?: "with_text" | "backfill";
+  world: {
+    regions: BirdDossierLeafletRegion<LeafletsWorldRegionCode>[];
+    note: string;
+  };
+  hungary: {
+    regions: BirdDossierLeafletRegion<LeafletsHungaryRegionCode>[];
+    note: string;
+  };
+};
+
 export type BirdDossierV2 = {
   schema_version: "v2.2";
   signature_trait: string;
@@ -76,6 +114,7 @@ export type BirdDossierV2 = {
   did_you_know: string;
   ethics_tip: string;
   typical_places: string[];
+  leaflets?: BirdDossierLeafletsV1;
 };
 
 export type BirdDossier = BirdDossierV2;
