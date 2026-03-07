@@ -27,7 +27,7 @@ export default async function ImageAccuracyPage({
     redirect("/admin/birds");
   }
 
-  if (bird.status !== "text_approved") {
+  if (bird.status !== "text_approved" && bird.status !== "images_generated") {
     redirect(`/admin/birds/${bird.id}`);
   }
 

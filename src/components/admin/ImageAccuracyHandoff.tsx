@@ -78,7 +78,7 @@ export function ImageAccuracyHandoff({
     return scienceDossier?.review_status === "draft" || scienceDossierStatus !== "approved";
   }, [scienceDossier?.review_status, scienceDossierStatus]);
 
-  const canEditBrief = scienceDossierStatus === "approved";
+  const canEditBrief = Boolean(scienceDossier);
 
   const canApproveBrief = useMemo(() => {
     if (!canEditBrief) {
@@ -142,7 +142,7 @@ export function ImageAccuracyHandoff({
 
   const generateBrief = async () => {
     if (!canEditBrief) {
-      setError("Approve the Science Dossier before generating the Visual Brief.");
+      setError("Generate the Science Dossier before generating the Visual Brief.");
       return;
     }
     setError(null);
@@ -307,7 +307,7 @@ export function ImageAccuracyHandoff({
 
         {!canEditBrief && (
           <p className="admin-message admin-message--warning">
-            Approve the Science Dossier first to unlock the Visual Brief editor.
+            Generate the Science Dossier first to unlock the Visual Brief editor.
           </p>
         )}
 

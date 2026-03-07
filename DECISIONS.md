@@ -2,6 +2,32 @@
 
 ---
 
+## D25 — Image generation without accuracy gating (prompt inputs auto-bootstrap)
+
+**Status:** Accepted  
+**Date:** 2026-03-07  
+**Scope:** Studio Bird pipeline (text → images → publish). Explorer out of scope.
+
+### Context
+The D17 “Image Accuracy Pipeline” adds an intermediate review/approval step (Science Dossier + Visual Brief) between `text_approved` and image generation.
+In practice this “stepping” slows down iteration: editors want to approve text and immediately generate the first required images, while still keeping the structured artifacts for audit and optional tuning.
+
+### Decision
+1) **Remove accuracy gating from image generation.**
+   - `POST /api/generate-images` is allowed when `bird.status` is `text_approved` (or `images_generated` with `force_regenerate=true`).
+   - It no longer requires `birds.science_dossier_status == approved` and `birds.visual_brief_status == approved`.
+2) **Auto-bootstrap prompt inputs on first run.**
+   - If a Science Dossier or Visual Brief record is missing, the server generates and stores it as a `draft` before generating images.
+3) **Keep `/image-accuracy` as an optional surface.**
+   - Editors may still review/edit/approve Science Dossier + Visual Brief, but approvals are no longer a prerequisite for generating images.
+
+### Publish gate (unchanged)
+Publish remains gated on the required image variants being approved (see D6 + D5).
+
+### Consequences
+- Faster “text approval → first two images” loop (main_habitat + fixed_pose_icon_v1).
+- Structured artifacts remain available for auditability and future tightening of the pipeline.
+
 ## D19 — Studio text roles + coloring semantics v1 (Dashboard as baseline)
 
 **Status:** Accepted  
@@ -203,9 +229,11 @@ shared legend toggles, and strict AI-generated structured data stored in Supabas
 
 ## D17 — Image Accuracy Pipeline v1 (Science Dossier + Visual Brief gating)
 
-**Status:** Accepted  
+**Status:** Superseded by D25  
 **Date:** 2026-03-05  
 **Scope:** Content Studio (Bird text+image review + publish gating). Explorer out of scope.
+
+**Note:** Science Dossier + Visual Brief remain in the system, but image generation is no longer gated on their approval (see D25).
 
 ### Context
 The app is an amateur bird guide; images must be species-accurate and identification-friendly (scientific family especially, but also iconic).

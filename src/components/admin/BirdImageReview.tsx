@@ -77,10 +77,7 @@ export default function BirdImageReview({
   const allApproved =
     images.length > 0 && images.every((image) => image.review_status === "approved");
 
-  const canGenerate =
-    (birdStatus === "text_approved" || birdStatus === "images_generated") &&
-    scienceDossierStatus === "approved" &&
-    visualBriefStatus === "approved";
+  const canGenerate = birdStatus === "text_approved" || birdStatus === "images_generated";
 
   const generateLabel = images.length === 0 ? "Generate images" : "Regenerate images";
 
@@ -260,9 +257,17 @@ export default function BirdImageReview({
             <p className="admin-note-small">
               To generate images, the bird must be{" "}
               <span className="font-semibold">text_approved</span> (or already{" "}
-              <span className="font-semibold">images_generated</span>), and both{" "}
-              <span className="font-semibold">Science Dossier</span> and{" "}
-              <span className="font-semibold">Visual Brief</span> must be approved.
+              <span className="font-semibold">images_generated</span>).
+            </p>
+          </div>
+        )}
+
+        {canGenerate && (
+          <div className="admin-panel admin-panel--muted">
+            <p className="admin-note-small">
+              Image prompt inputs are created automatically on first run: Science Dossier (
+              <span className="font-semibold">{scienceDossierStatus}</span>) and Visual Brief (
+              <span className="font-semibold">{visualBriefStatus}</span>).
             </p>
           </div>
         )}

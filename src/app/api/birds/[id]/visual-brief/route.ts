@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { ZodError } from "zod";
 import { getAdminUserFromCookies } from "@/lib/auth";
 import { getBirdById, updateBird } from "@/lib/birdService";
+import { getScienceDossierForBird } from "@/lib/scienceDossierService";
 import { visualBriefSchemaV1 } from "@/lib/imageAccuracySchemas";
 import { upsertVisualBriefDraft } from "@/lib/visualBriefService";
 
@@ -20,17 +21,18 @@ export async function POST(
     return NextResponse.json({ error: "Bird not found" }, { status: 404 });
   }
 
-  if (bird.status !== "text_approved") {
+  if (bird.status !== "text_approved" && bird.status !== "images_generated") {
     return NextResponse.json(
-      { error: "Visual brief can only be edited when bird.status is text_approved." },
+      { error: "Visual brief can only be edited when bird.status is text_approved or images_generated." },
       { status: 400 }
     );
   }
 
-  if (bird.science_dossier_status !== "approved") {
+  const science = await getScienceDossierForBird(bird.id);
+  if (!science) {
     return NextResponse.json(
-      { error: "Visual brief requires an approved science dossier first." },
-      { status: 400 }
+      { error: "Science dossier not found. Generate it first." },
+      { status: 404 }
     );
   }
 
@@ -62,4 +64,3 @@ export async function POST(
     );
   }
 }
-

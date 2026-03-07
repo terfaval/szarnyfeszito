@@ -22,16 +22,9 @@ export async function POST(
     return NextResponse.json({ error: "Bird not found" }, { status: 404 });
   }
 
-  if (bird.status !== "text_approved") {
+  if (bird.status !== "text_approved" && bird.status !== "images_generated") {
     return NextResponse.json(
-      { error: "Visual brief can only be generated when bird.status is text_approved." },
-      { status: 400 }
-    );
-  }
-
-  if (bird.science_dossier_status !== "approved") {
-    return NextResponse.json(
-      { error: "Visual brief generation requires an approved science dossier first." },
+      { error: "Visual brief can only be generated when bird.status is text_approved or images_generated." },
       { status: 400 }
     );
   }
@@ -39,7 +32,7 @@ export async function POST(
   const science = await getScienceDossierForBird(bird.id);
   if (!science) {
     return NextResponse.json(
-      { error: "Science dossier not found. Generate and approve it first." },
+      { error: "Science dossier not found. Generate it first." },
       { status: 404 }
     );
   }

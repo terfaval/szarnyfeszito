@@ -20,9 +20,9 @@ export async function POST(
     return NextResponse.json({ error: "Bird not found" }, { status: 404 });
   }
 
-  if (bird.status !== "text_approved") {
+  if (bird.status !== "text_approved" && bird.status !== "images_generated") {
     return NextResponse.json(
-      { error: "Science dossier can only be edited when bird.status is text_approved." },
+      { error: "Science dossier can only be edited when bird.status is text_approved or images_generated." },
       { status: 400 }
     );
   }
@@ -55,4 +55,3 @@ export async function POST(
     );
   }
 }
-

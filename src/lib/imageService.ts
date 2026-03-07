@@ -15,10 +15,11 @@ import {
   SUPABASE_IMAGE_BUCKET,
 } from "@/lib/config";
 import { getImageProvider } from "@/lib/imageProvider";
-import {
-  getApprovedScienceDossierForBird,
-} from "@/lib/scienceDossierService";
-import { getApprovedVisualBriefForBird } from "@/lib/visualBriefService";
+import { getLatestContentBlockForBird } from "@/lib/contentService";
+import { generateScienceDossierV1, generateVisualBriefV1 } from "@/lib/imageAccuracyGeneration";
+import { scienceDossierSchemaV1 } from "@/lib/imageAccuracySchemas";
+import { getScienceDossierForBird, upsertScienceDossierDraft } from "@/lib/scienceDossierService";
+import { getVisualBriefForBird, upsertVisualBriefDraft } from "@/lib/visualBriefService";
 
 const REQUIRED_IMAGE_VARIANTS: ImageVariant[] = [
   "main_habitat",
@@ -87,6 +88,64 @@ function sha256Hex(value: unknown) {
   return createHash("sha256").update(text).digest("hex");
 }
 
+async function ensureScienceDossierForImageGen(bird: Bird) {
+  const existing = await getScienceDossierForBird(bird.id);
+  if (existing?.payload) {
+    return existing;
+  }
+
+  const contentBlock = await getLatestContentBlockForBird(bird.id);
+  const fieldGuideDossier = contentBlock?.blocks_json ?? null;
+
+  const result = await generateScienceDossierV1({
+    bird,
+    dossier: fieldGuideDossier,
+  });
+
+  const saved = await upsertScienceDossierDraft({
+    bird_id: bird.id,
+    schema_version: "v1",
+    payload: result.payload,
+    created_by: "ai",
+  });
+
+  if (bird.science_dossier_status !== "approved") {
+    await updateBird({ id: bird.id, science_dossier_status: "generated" });
+  }
+
+  return saved;
+}
+
+async function ensureVisualBriefForImageGen(bird: Bird, scienceDossier: { payload: unknown }) {
+  const existing = await getVisualBriefForBird(bird.id);
+  if (existing?.payload) {
+    return existing;
+  }
+
+  const parsedScience = scienceDossierSchemaV1.parse(scienceDossier.payload);
+  const contentBlock = await getLatestContentBlockForBird(bird.id);
+  const fieldGuideDossier = contentBlock?.blocks_json ?? null;
+
+  const result = await generateVisualBriefV1({
+    bird,
+    dossier: fieldGuideDossier,
+    scienceDossier: parsedScience,
+  });
+
+  const saved = await upsertVisualBriefDraft({
+    bird_id: bird.id,
+    schema_version: "v1",
+    payload: result.payload,
+    created_by: "ai",
+  });
+
+  if (bird.visual_brief_status !== "approved") {
+    await updateBird({ id: bird.id, visual_brief_status: "generated" });
+  }
+
+  return saved;
+}
+
 export async function generateImagesForBird(
   bird: Bird,
   options: { forceRegenerate?: boolean } = {}
@@ -109,26 +168,8 @@ export async function generateImagesForBird(
     throw new Error("Images can only be generated when the bird has text_approved status.");
   }
 
-  if (bird.science_dossier_status !== "approved") {
-    throw new Error("Science Dossier must be approved before generating images.");
-  }
-
-  if (bird.visual_brief_status !== "approved") {
-    throw new Error("Visual Brief must be approved before generating images.");
-  }
-
-  const [scienceDossier, visualBrief] = await Promise.all([
-    getApprovedScienceDossierForBird(bird.id),
-    getApprovedVisualBriefForBird(bird.id),
-  ]);
-
-  if (!scienceDossier) {
-    throw new Error("Approved Science Dossier record not found.");
-  }
-
-  if (!visualBrief) {
-    throw new Error("Approved Visual Brief record not found.");
-  }
+  const scienceDossier = await ensureScienceDossierForImageGen(bird);
+  const visualBrief = await ensureVisualBriefForImageGen(bird, scienceDossier);
 
   const provider = getImageProvider();
   const results: ImageGenerationResult[] = [];

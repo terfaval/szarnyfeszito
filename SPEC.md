@@ -418,7 +418,7 @@ images is canonical for generated assets with:
 ## API (draft)
 
 ### POST /api/generate-science-dossier
-- Preconditions: bird.status == text_approved
+- Preconditions: bird.status == text_approved OR images_generated
 - Output:
   - upsert bird_science_dossiers (review_status=draft)
   - set birds.science_dossier_status = generated
@@ -430,7 +430,7 @@ images is canonical for generated assets with:
   - set birds.science_dossier_status = approved
 
 ### POST /api/generate-visual-brief
-- Preconditions: birds.science_dossier_status == approved AND bird.status == text_approved
+- Preconditions: bird_science_dossiers exists AND bird.status == text_approved OR images_generated
 - Output:
   - upsert bird_visual_briefs (review_status=draft)
   - set birds.visual_brief_status = generated
@@ -443,10 +443,9 @@ images is canonical for generated assets with:
 
 ### POST /api/generate-images  (controlled; T007)
 - Preconditions:
-  - bird.status == text_approved
-  - birds.science_dossier_status == approved
-  - birds.visual_brief_status == approved
+  - bird.status == text_approved OR images_generated
 - Steps:
+  - ensure prompt inputs exist (Science Dossier + Visual Brief; draft OK)
   - buildImageSpec(bird, visualBrief, scienceDossier)
   - generate required variants first (main_habitat + fixed_pose_icon_v1)
   - generate optional variants best-effort (flight_clean, nesting_clean)
@@ -480,14 +479,12 @@ Whenever Studio needs to colorize text (labels, headings, help text, warnings, e
 - Exception: `/admin/yoga` is allowed to diverge (see D16), but should still remain token-backed.
 
 ### Post text approval handoff
-After approving Bird text (transition to `text_approved`), Studio navigates to an intermediate review screen to prepare image generation inputs:
+After approving Bird text (transition to `text_approved`), Studio navigates directly to the image review page.
 
-- Science Dossier: review/edit structured, accuracy-first JSON, then approve.
-- Visual Brief: review/edit structured, generation-oriented JSON, then approve.
+Science Dossier + Visual Brief remain the canonical prompt inputs for images, but Studio does not require an intermediate handoff step before image generation.
 
-These artifacts are the canonical “prompt inputs” for images. Studio does not expose raw prompt strings; prompt templating remains server-side.
-
-On first entry to the handoff screen, Studio bootstraps a draft Science Dossier (and later a draft Visual Brief once eligible) if none exists yet, so the editor is never empty.
+- On first image generation, the server bootstraps missing prompt inputs as drafts.
+- The `/image-accuracy` screen remains available for optional review/edits/approval of those artifacts.
 
 ### API (artifact editing)
 In addition to the generator/approve endpoints above, Studio may persist manual edits to draft artifacts:
