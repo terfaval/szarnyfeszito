@@ -17,10 +17,19 @@ create table if not exists bird_distribution_maps (
 -- 2) One record per bird
 do $$
 begin
-  alter table bird_distribution_maps
-    add constraint bird_distribution_maps_bird_id_key unique (bird_id);
-exception
-  when duplicate_object then null;
+  if not exists (
+    select 1
+    from pg_constraint
+    where conname = 'bird_distribution_maps_bird_id_key'
+  ) then
+    begin
+      alter table bird_distribution_maps
+        add constraint bird_distribution_maps_bird_id_key unique (bird_id);
+    exception
+      when duplicate_object then null;
+      when duplicate_table then null; -- 42P07: underlying index relation already exists
+    end;
+  end if;
 end $$;
 
 create index if not exists bird_distribution_maps_bird_id_idx
