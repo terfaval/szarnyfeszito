@@ -681,7 +681,22 @@ export default function BirdTextReview({
 
             <div className={styles.regionRow}>
               <div className={styles.mapColumn}>
-                <p className={styles.mapLabel}>Elterjedés</p>
+                <div className={styles.mapHeader}>
+                  <p className={styles.mapLabel}>Elterjedés</p>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    className={styles.leafletsButton}
+                    onClick={handleBackfillLeaflets}
+                    disabled={!contentBlock?.blocks_json || backfillingLeaflets}
+                  >
+                    {backfillingLeaflets
+                      ? "Backfilling..."
+                      : hasLeaflets
+                        ? "Regenerate"
+                        : "Backfill"}
+                  </Button>
+                </div>
                 {hasLeaflets ? (
                   <BirdLeaflets
                     kind="world"
@@ -713,21 +728,6 @@ export default function BirdTextReview({
                 )}
               </div>
               <div className={styles.statsColumn}>
-                <div className={styles.leafletsActions}>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    className={styles.leafletsButton}
-                    onClick={handleBackfillLeaflets}
-                    disabled={!contentBlock?.blocks_json || backfillingLeaflets}
-                  >
-                    {backfillingLeaflets
-                      ? "Backfilling leaflets..."
-                      : hasLeaflets
-                        ? "Regenerate leaflets"
-                        : "Backfill leaflets"}
-                  </Button>
-                </div>
                 <div className={styles.statPills}>
                   {physicalPills.length > 0 && (
                     <div className={styles.statRow}>

@@ -190,6 +190,13 @@
   gap: 0.5rem;
 }
 
+.mapHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
 .mapLabel {
   font-size: 0.75rem;
   letter-spacing: 0.4em;
@@ -220,11 +227,6 @@
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-}
-
-.leafletsActions {
-  display: flex;
-  justify-content: flex-end;
 }
 
 .leafletsButton {
