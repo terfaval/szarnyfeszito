@@ -1028,7 +1028,7 @@ export default function BirdTextReview({
                     <img
                       src={flightPreviewUrl}
                       alt="Scientific flight illustration"
-                      className={styles.imageFrameImage}
+                      className={styles.imageFrameImageContain}
                     />
                   ) : (
                     <div className={styles.imageFramePlaceholder}>
@@ -1097,7 +1097,7 @@ export default function BirdTextReview({
                     <img
                       src={nestingPreviewUrl}
                       alt="Scientific nesting illustration"
-                      className={styles.imageFrameImage}
+                      className={styles.imageFrameImageContain}
                     />
                   ) : (
                     <div className={styles.imageFramePlaceholder}>
