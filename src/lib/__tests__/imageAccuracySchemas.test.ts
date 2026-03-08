@@ -106,4 +106,24 @@ describe("visualBriefSchemaV1", () => {
     expect(payload.scientific.flight_clean).toBeUndefined();
     expect(payload.scientific.nesting_clean).toBeUndefined();
   });
+
+  it("drops non-string iconic.color_guidance instead of failing", () => {
+    const payload = visualBriefSchemaV1.parse({
+      scientific: {
+        main_habitat: {
+          pose: "Full-body side view, standing",
+          habitat_hint_elements: ["reeds", "shallow water"],
+        },
+      },
+      iconic: {
+        silhouette_focus: ["long legs", "long neck"],
+        simplify_features: [],
+        color_guidance: true,
+        must_not: [],
+        background: "none",
+      },
+    });
+
+    expect(payload.iconic.color_guidance).toBeUndefined();
+  });
 });

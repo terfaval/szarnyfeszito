@@ -42,6 +42,7 @@ Constraints:
 - If you are not confident about flight/nesting details, OMIT scientific.flight_clean / scientific.nesting_clean entirely (do not guess).
 - Do NOT include main_habitat-only keys (pose/composition_rules/background_rules/must_not/habitat_hint_elements) inside flight_clean or nesting_clean.
 - iconic must be bird-only (background: none). Habitat backgrounds are provided externally (stock assets).
+- If iconic.color_guidance is present, it MUST be a short string (omit it if you don't need it; never return boolean).
 - Avoid invented anatomy, fantasy colors, or mixing with confusion species.`;
 
 function zodIssuesToStrings(error: ZodError) {

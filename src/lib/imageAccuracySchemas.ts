@@ -74,7 +74,19 @@ const visualBriefScientificSchemaV1 = z.preprocess((value) => {
   nesting_clean: visualBriefScientificNestingCleanSchemaV1.optional(),
 }).strict());
 
-const visualBriefIconicSchemaV1 = z
+const visualBriefIconicSchemaV1 = z.preprocess((value) => {
+  if (!value || typeof value !== "object") return value;
+
+  const raw = value as Record<string, unknown>;
+  const next: Record<string, unknown> = { ...raw };
+
+  if (next.color_guidance === null) delete next.color_guidance;
+  if (next.color_guidance !== undefined && typeof next.color_guidance !== "string") {
+    delete next.color_guidance;
+  }
+
+  return next;
+}, z
   .object({
     silhouette_focus: z.array(z.string().min(1)).min(2).max(3),
     simplify_features: z.array(z.string().min(1)).default([]),
@@ -82,7 +94,7 @@ const visualBriefIconicSchemaV1 = z
     must_not: z.array(z.string().min(1)).default([]),
     background: z.literal("none"),
   })
-  .strict();
+  .strict());
 
 export const scienceDossierSchemaV1 = z
   .object({
