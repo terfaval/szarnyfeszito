@@ -856,7 +856,6 @@ export default function BirdTextReview({
                     <p>Scientific (main_habitat)</p>
                   </div>
                 )}
-                <div className={styles.backgroundScrim} aria-hidden="true" />
               </div>
               <div className={styles.overlayLayer}>
                 {dossier.identification.key_features.map((feature, index) => (
@@ -913,9 +912,6 @@ export default function BirdTextReview({
                     </div>
                   ))}
                 </div>
-                <p className={styles.distributionNote}>
-                  {dossier.distribution.distribution_note}
-                </p>
               </article>
 
               <article className={styles.paragraphColumn}>
