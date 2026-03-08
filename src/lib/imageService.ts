@@ -10,6 +10,7 @@ import { supabaseServerClient } from "@/lib/supabaseServerClient";
 import { getBirdById, updateBird } from "@/lib/birdService";
 import {
   AI_MODEL_IMAGE,
+  IMAGE_ACCURACY_INPUTS,
   IMAGE_STYLE_CONFIG_ID_ICONIC,
   IMAGE_STYLE_CONFIG_ID_SCIENTIFIC,
   SUPABASE_IMAGE_BUCKET,
@@ -86,6 +87,14 @@ async function uploadPngToStorage(args: {
 function sha256Hex(value: unknown) {
   const text = JSON.stringify(value ?? null);
   return createHash("sha256").update(text).digest("hex");
+}
+
+function deterministicSeed(args: { birdId: string; styleFamily: string; variant: string }) {
+  const digest = createHash("sha256")
+    .update(`${args.birdId}:${args.styleFamily}:${args.variant}`)
+    .digest();
+  const seed = digest.readUInt32BE(0) % 2147483647;
+  return seed;
 }
 
 async function ensureScienceDossierForImageGen(bird: Bird) {
@@ -168,8 +177,37 @@ export async function generateImagesForBird(
     throw new Error("Images can only be generated when the bird has text_approved status.");
   }
 
-  const scienceDossier = await ensureScienceDossierForImageGen(bird);
-  const visualBrief = await ensureVisualBriefForImageGen(bird, scienceDossier);
+  const contentBlock = await getLatestContentBlockForBird(bird.id);
+  const blocksJson = contentBlock?.blocks_json ?? null;
+  const dossierForImages =
+    blocksJson && typeof blocksJson === "object"
+      ? {
+          signature_trait: (blocksJson as Record<string, unknown>).signature_trait ?? null,
+          identification: (blocksJson as Record<string, unknown>).identification ?? null,
+          distribution: (blocksJson as Record<string, unknown>).distribution ?? null,
+          nesting: (blocksJson as Record<string, unknown>).nesting ?? null,
+          migration: (blocksJson as Record<string, unknown>).migration ?? null,
+        }
+      : null;
+
+  const accuracyMode = (IMAGE_ACCURACY_INPUTS ?? "off").toLowerCase();
+  const scienceDossier =
+    accuracyMode === "auto"
+      ? await ensureScienceDossierForImageGen(bird)
+      : await getScienceDossierForBird(bird.id);
+
+  const visualBrief =
+    accuracyMode === "auto" && scienceDossier
+      ? await ensureVisualBriefForImageGen(bird, scienceDossier)
+      : await getVisualBriefForBird(bird.id);
+
+  const useScienceDossier =
+    accuracyMode === "auto" ||
+    (accuracyMode === "approved" && scienceDossier?.review_status === "approved");
+
+  const useVisualBrief =
+    accuracyMode === "auto" ||
+    (accuracyMode === "approved" && visualBrief?.review_status === "approved");
 
   const provider = getImageProvider();
   const results: ImageGenerationResult[] = [];
@@ -192,11 +230,21 @@ export async function generateImagesForBird(
         storageObjectPath,
         storagePath: `${SUPABASE_IMAGE_BUCKET}/${storageObjectPath}`,
         styleConfigId,
-        seed: null,
+        seed: deterministicSeed({
+          birdId: bird.id,
+          styleFamily: spec.style_family,
+          variant: spec.variant,
+        }),
         promptPayload: {
-          bird: { id: bird.id, slug: bird.slug, name_hu: bird.name_hu, name_latin: bird.name_latin ?? null },
-          science_dossier: scienceDossier.payload ?? null,
-          visual_brief: visualBrief.payload ?? null,
+          bird: {
+            id: bird.id,
+            slug: bird.slug,
+            name_hu: bird.name_hu,
+            name_latin: bird.name_latin ?? null,
+          },
+          field_guide_dossier: dossierForImages,
+          ...(useScienceDossier ? { science_dossier: scienceDossier?.payload ?? null } : {}),
+          ...(useVisualBrief ? { visual_brief: visualBrief?.payload ?? null } : {}),
           style_family: spec.style_family,
           variant: spec.variant,
           style_config_id: styleConfigId,

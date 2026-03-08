@@ -36,8 +36,6 @@ type BirdImageReviewProps = {
   birdId: string;
   images: BirdImageWithPreview[];
   birdStatus: string;
-  scienceDossierStatus: string;
-  visualBriefStatus: string;
 };
 
 function isProbablyImageUrl(url: string) {
@@ -55,8 +53,6 @@ export default function BirdImageReview({
   birdId,
   images: initialImages,
   birdStatus,
-  scienceDossierStatus,
-  visualBriefStatus,
 }: BirdImageReviewProps) {
   const router = useRouter();
   const [images, setImages] = useState(initialImages);
@@ -107,6 +103,7 @@ export default function BirdImageReview({
       }
 
       setRequestStatusMessage("Images generated. Refreshingâ€¦");
+      setRequestStatusMessage("Images generated. Refreshing...");
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to generate images.");
@@ -262,21 +259,11 @@ export default function BirdImageReview({
           </div>
         )}
 
-        {canGenerate && (
-          <div className="admin-panel admin-panel--muted">
-            <p className="admin-note-small">
-              Image prompt inputs are created automatically on first run: Science Dossier (
-              <span className="font-semibold">{scienceDossierStatus}</span>) and Visual Brief (
-              <span className="font-semibold">{visualBriefStatus}</span>).
-            </p>
-          </div>
-        )}
-
         {images.length === 0 ? (
           <div className="admin-panel admin-panel--muted">
             <p className="admin-note-small">
               Images are generated after the text is approved. Run the generator to create the
-              placeholders before reviewing.
+              images before reviewing.
             </p>
           </div>
         ) : (

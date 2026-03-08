@@ -2,6 +2,31 @@
 
 ---
 
+## D26 â€” Distribution maps: region-catalog-based generation v1
+
+**Status:** Accepted  
+**Date:** 2026-03-08  
+**Scope:** Studio-only (server-side generation + admin rendering). Explorer out of scope.
+
+### Context
+D24 allowed the AI to emit freeform GeoJSON polygon coordinates. In practice this is too error-prone and non-deterministic.
+We already maintain authoritative region geometries (ecoregions, countries, HU Natura 2000 SPA) that can be generated offline
+from source layers.
+
+### Decision
+1) Introduce a region catalog store (server-only) containing authoritative MultiPolygon geometries:
+   - Global: RESOLVE ecoregions (priority), Natural Earth Admin 0 countries (fallback)
+   - Hungary: Natura 2000 SPA polygons (used only for HU viewport)
+2) Distribution map generation becomes **selection-only**:
+   - The AI must NOT output polygon coordinates.
+   - The AI outputs `region_ids[]` grouped into distribution `status` layers + optional `note` + `confidence`.
+3) The server expands `region_ids[]` into GeoJSON geometries from the catalog and persists the final `ranges[]` payload
+   into `bird_distribution_maps` (same table as D24).
+4) Candidate regions presented to the AI are narrowed using existing dossier leaflets v2 regions (macro bounds), to keep
+   prompts small and the choice set relevant.
+
+---
+
 ## D25 — Image generation without accuracy gating (prompt inputs auto-bootstrap)
 
 **Status:** Accepted  

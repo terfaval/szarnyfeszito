@@ -31,6 +31,16 @@ export const IMAGE_STYLE_CONFIG_ID_SCIENTIFIC =
 
 export const IMAGE_STYLE_CONFIG_ID_ICONIC =
   optionalEnv("IMAGE_STYLE_CONFIG_ID_ICONIC", "iconic_v1") ?? "iconic_v1";
+
+export const IMAGE_SIZE = optionalEnv("IMAGE_SIZE", "1024x1024") ?? "1024x1024";
+export const IMAGE_QUALITY = optionalEnv("IMAGE_QUALITY", "auto") ?? "auto";
+
+// Controls whether Science Dossier + Visual Brief are used as prompt inputs during image generation.
+// - off: do not use (default; keeps the pipeline simpler while tuning style)
+// - auto: generate drafts if missing and use them
+// - approved: use only if approved records exist (no auto-generation)
+export const IMAGE_ACCURACY_INPUTS =
+  optionalEnv("IMAGE_ACCURACY_INPUTS", "off") ?? "off";
 export const NODE_ENV = process.env.NODE_ENV?.trim() || "development";
 export const IS_PRODUCTION = NODE_ENV === "production";
 export const APP_URL = optionalEnv("NEXT_PUBLIC_APP_URL") ?? "http://localhost:3000";

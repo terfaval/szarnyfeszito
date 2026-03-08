@@ -1,19 +1,32 @@
 import { randomUUID } from "crypto";
 import type { Bird } from "@/types/bird";
 import type { BirdDossier } from "@/types/dossier";
-import type { BirdDistributionMapPayloadV1 } from "@/types/distributionMap";
+import type {
+  BirdDistributionMapPayloadV1,
+  DistributionGeometry,
+  DistributionStatus,
+  GeoJSONMultiPolygon,
+} from "@/types/distributionMap";
 import { AI_MODEL_TEXT } from "@/lib/config";
 import { callOpenAIChatCompletion, OpenAIChatMessage } from "@/lib/openaiClient";
 import { extractJsonPayload, AIJsonParseError } from "@/lib/aiUtils";
+import { leafletsSchema } from "@/lib/leafletsSchema";
+import { getHungaryRegionV2Def, getWorldRegionV2Def } from "@/lib/leafletsRegionsV2";
+import {
+  getDistributionRegionGeometriesById,
+  listDistributionRegionCatalogMeta,
+} from "@/lib/distributionRegionCatalogService";
+import { loadRegionCatalogFromRepo } from "@/lib/distributionRegionCatalogFile";
 import { ZodError } from "zod";
 import { hashPrompt } from "@/lib/promptHash";
-import { parseDistributionMapPayloadV1 } from "@/lib/distributionMapSchema";
+import { geometrySchema, parseDistributionMapPayloadV1 } from "@/lib/distributionMapSchema";
+import { z } from "zod";
 
 const SYSTEM_PROMPT = `
 You generate strict JSON for a bird guide admin tool.
 Output JSON only. No markdown fences. No commentary.
-Geometries must be valid GeoJSON Polygon or MultiPolygon in lon/lat coordinates.
-If uncertain, prefer coarse, conservative polygons over overly detailed shapes.
+Do NOT output polygon coordinates.
+Only select region_ids from the provided candidate lists.
 `.trim();
 
 const MAX_ATTEMPTS = 3;
@@ -40,6 +53,52 @@ export type DistributionMapGenerationResult = {
   generated_at: string;
 };
 
+type Bounds = { south: number; west: number; north: number; east: number };
+
+function bboxIntersects(a: Bounds, b: Bounds) {
+  return a.west <= b.east && a.east >= b.west && a.south <= b.north && a.north >= b.south;
+}
+
+function asMultiPolygon(geom: DistributionGeometry): GeoJSONMultiPolygon {
+  if (geom.type === "MultiPolygon") return geom;
+  return { type: "MultiPolygon", coordinates: [geom.coordinates] };
+}
+
+function mergeAsMultiPolygon(geoms: DistributionGeometry[]): GeoJSONMultiPolygon {
+  const merged: GeoJSONMultiPolygon["coordinates"] = [];
+  geoms.forEach((g) => merged.push(...asMultiPolygon(g).coordinates));
+  return { type: "MultiPolygon", coordinates: merged };
+}
+
+const trimmed = () => z.string().trim().min(1);
+const statusSchema = z.enum(["resident", "breeding", "wintering", "passage"] as const);
+const confidenceSchema = z.number().min(0).max(1);
+
+const selectionRangeSchema = z
+  .object({
+    status: statusSchema,
+    confidence: confidenceSchema,
+    note: z.string().trim().max(600).optional().nullable(),
+    region_ids: z.array(trimmed()).min(1).max(60),
+  })
+  .strict();
+
+const selectionPayloadSchemaV1 = z
+  .object({
+    species_common_name: trimmed(),
+    species_scientific_name: trimmed(),
+    summary: trimmed().max(1200),
+    references: z.array(trimmed().max(400)).max(24),
+    ranges: z.array(selectionRangeSchema).min(1).max(24),
+  })
+  .strict();
+
+type SelectionPayloadV1 = z.infer<typeof selectionPayloadSchemaV1>;
+
+function buildCandidateLines(items: Array<{ region_id: string; name: string }>): string {
+  return items.map((i) => `${i.region_id}|${i.name}`).join("\n");
+}
+
 export async function generateBirdDistributionMapV1(args: {
   bird: Bird;
   dossier?: BirdDossier | null;
@@ -50,53 +109,131 @@ export async function generateBirdDistributionMapV1(args: {
   const distributionNote = dossier?.distribution?.distribution_note ?? "";
   const migrationNote = dossier?.migration?.migration_note ?? "";
 
-  const basePrompt = `
-Infer a polygon-based species distribution map.
+  const leafletsParsed = leafletsSchema.safeParse(dossier?.leaflets);
+  const leafletsV2 =
+    leafletsParsed.success && leafletsParsed.data.schema_version === "leaflets_v2"
+      ? leafletsParsed.data
+      : null;
 
-Species identity:
-- species_common_name: "${bird.name_hu}"
-- species_scientific_name: "${bird.name_latin ?? ""}"
+  const worldBounds: Bounds[] = leafletsV2
+    ? leafletsV2.world.present.flatMap((code) => getWorldRegionV2Def(code).bounds)
+    : [];
+
+  const hungaryBounds: Bounds[] = leafletsV2
+    ? leafletsV2.hungary.present.flatMap((code) => getHungaryRegionV2Def(code).bounds)
+    : [];
+
+  const globalRepo = await loadRegionCatalogFromRepo("globalRegions");
+  const hungaryRepo = await loadRegionCatalogFromRepo("hungaryRegions");
+
+  const globalMeta = globalRepo
+    ? globalRepo.map((r) => ({
+        region_id: r.region_id,
+        name: r.name,
+        scope: r.scope,
+        type: r.type,
+        source: r.source,
+        bbox: r.bbox,
+      }))
+    : await listDistributionRegionCatalogMeta("globalRegions");
+
+  if (globalMeta.length === 0) {
+    throw new Error(
+      "Region catalog is missing/empty: globalRegions. Add data/distribution-region-catalog/v1/globalRegions.json (or import into distribution_region_catalog_items) before generation."
+    );
+  }
+
+  const hungaryMeta = hungaryRepo
+    ? hungaryRepo.map((r) => ({
+        region_id: r.region_id,
+        name: r.name,
+        scope: r.scope,
+        type: r.type,
+        source: r.source,
+        bbox: r.bbox,
+      }))
+    : await listDistributionRegionCatalogMeta("hungaryRegions").catch(() => []);
+
+  const globalCandidates = worldBounds.length
+    ? globalMeta.filter((r) => worldBounds.some((b) => bboxIntersects(r.bbox, b)))
+    : globalMeta.filter((r) => r.type === "country");
+
+  const ecoCandidates = globalCandidates.filter((r) => r.type === "ecoregion");
+  const countryCandidates = globalCandidates.filter((r) => r.type === "country");
+
+  const hungaryCandidates = hungaryBounds.length
+    ? hungaryMeta.filter((r) => hungaryBounds.some((b) => bboxIntersects(r.bbox, b)))
+    : hungaryMeta;
+
+  const hungarySpa = hungaryCandidates.filter((r) => r.type === "spa");
+  const hungaryMicro = hungaryCandidates.filter((r) => r.type === "microregion");
+
+  const candidatesBlock = [
+    `Candidate region_ids (pick ONLY from these; do NOT invent IDs):`,
+    ecoCandidates.length
+      ? `GLOBAL_ECOREGIONS (priority):\n${buildCandidateLines(ecoCandidates)}`
+      : `GLOBAL_ECOREGIONS (priority): (none provided)`,
+    countryCandidates.length
+      ? `GLOBAL_COUNTRIES (fallback):\n${buildCandidateLines(countryCandidates)}`
+      : `GLOBAL_COUNTRIES (fallback): (none provided)`,
+    hungarySpa.length
+      ? `HUNGARY_NATURA_SPA (HU map helper only, preferred):\n${buildCandidateLines(hungarySpa)}`
+      : `HUNGARY_NATURA_SPA (HU map helper only, preferred): (none provided)`,
+    hungaryMicro.length
+      ? `HUNGARY_MICROREGIONS (HU coverage fallback):\n${buildCandidateLines(hungaryMicro)}`
+      : `HUNGARY_MICROREGIONS (HU coverage fallback): (none provided)`,
+  ].join("\n\n");
+
+  const basePrompt = `
+  Infer a region-based species distribution map (selection-only).
+
+  Species identity:
+  - species_common_name: "${bird.name_hu}"
+  - species_scientific_name: "${bird.name_latin ?? ""}"
 
 Helpful dossier hints (do not invent beyond these; they are only hints):
 - distribution_regions: ${JSON.stringify(distributionRegions)}
 - distribution_note: ${JSON.stringify(distributionNote)}
 - migration_note: ${JSON.stringify(migrationNote)}
 
-Statuses (fixed enum):
-- resident: year-round presence
-- breeding: breeding area
-- wintering: wintering area
-- passage: migration corridor / passage area
+  Statuses (fixed enum):
+  - resident: year-round presence
+  - breeding: breeding area
+  - wintering: wintering area
+  - passage: migration corridor / passage area
 
-Output JSON schema (strict):
-{
-  "species_common_name": "...",
-  "species_scientific_name": "...",
-  "summary": "...",
-  "references": ["..."],
-  "ranges": [
-    {
-      "status": "resident|breeding|wintering|passage",
-      "confidence": 0.0,
-      "note": "optional",
-      "geometry": { "type": "Polygon|MultiPolygon", "coordinates": [...] }
-    }
-  ]
-}
+  Output JSON schema (strict):
+  {
+    "species_common_name": "...",
+    "species_scientific_name": "...",
+    "summary": "...",
+    "references": ["..."],
+    "ranges": [
+      {
+        "status": "resident|breeding|wintering|passage",
+        "confidence": 0.0,
+        "note": "optional",
+        "region_ids": ["eco_123", "country_hu"]
+      }
+    ]
+  }
 
-Geometry rules:
-- GeoJSON uses lon/lat numeric coordinates (longitude first).
-- Each Polygon ring must be closed (first==last) and have at least 4 points.
-- It is acceptable in v1 to approximate with coarse rectangles/polygons (do not try to trace coastlines).
-- Keep coordinate values within valid ranges; avoid self-intersections by keeping shapes simple.
+  Selection rules:
+  - Prefer GLOBAL_ECOREGIONS when confident (more precise).
+  - If unsure, use GLOBAL_COUNTRIES as a coarse fallback.
+  - For Hungary detail, prefer HUNGARY_NATURA_SPA; use HUNGARY_MICROREGIONS only to fill gaps/ensure full HU coverage.
+  - Do NOT output polygon coordinates.
+  - Do NOT invent region_ids.
 
-Quality rules:
-- Always include at least 1 range entry.
-- If you cannot justify a status confidently, omit that status instead of guessing.
-- confidence is informational only (0..1).
+  Quality rules:
+  - Always include at least 1 range entry.
+  - If you cannot justify a status confidently, omit that status instead of guessing.
+  - confidence is informational only (0..1).
 
-Output JSON only.
-`.trim();
+  ${candidatesBlock}
+
+  Output JSON only.
+  `.trim();
 
   const runCompletion = async (prompt: string) => {
     const messages: OpenAIChatMessage[] = [
@@ -138,7 +275,56 @@ Output JSON only.
     }
 
     try {
-      const parsed = parseDistributionMapPayloadV1(extracted.payload);
+      const selection = selectionPayloadSchemaV1.parse(extracted.payload) as SelectionPayloadV1;
+      const allRegionIds = selection.ranges.flatMap((r) => r.region_ids);
+
+      const geometryById: Record<string, unknown> = {};
+      (globalRepo ?? []).forEach((r) => {
+        geometryById[r.region_id] = r.geometry;
+      });
+      (hungaryRepo ?? []).forEach((r) => {
+        geometryById[r.region_id] = r.geometry;
+      });
+
+      const missingFromRepo = allRegionIds.filter((id) => !geometryById[id]);
+      if (missingFromRepo.length) {
+        const fromDb = await getDistributionRegionGeometriesById(missingFromRepo);
+        Object.assign(geometryById, fromDb);
+      }
+
+      const missing = Array.from(
+        new Set(allRegionIds.filter((id) => !geometryById[id]))
+      ).slice(0, 24);
+      if (missing.length) {
+        repairHint = [
+          "Your previous JSON referenced unknown region_ids.",
+          "Fix it by removing/replacing ONLY those region_ids.",
+          `Unknown region_ids: ${missing.join(", ")}`,
+          "Do NOT output polygon coordinates. Output JSON only.",
+        ].join("\n");
+        continue;
+      }
+
+      const expandedRanges = selection.ranges.map((r) => {
+        const geoms = r.region_ids.map((id) => geometrySchema.parse(geometryById[id]) as DistributionGeometry);
+        const merged = mergeAsMultiPolygon(geoms);
+        return {
+          status: r.status as DistributionStatus,
+          confidence: r.confidence,
+          note: r.note ?? null,
+          geometry: merged,
+        };
+      });
+
+      const expandedPayload: BirdDistributionMapPayloadV1 = {
+        species_common_name: selection.species_common_name,
+        species_scientific_name: selection.species_scientific_name,
+        summary: selection.summary,
+        references: selection.references,
+        ranges: expandedRanges,
+      };
+
+      const parsed = parseDistributionMapPayloadV1(expandedPayload);
       const generatedAt = new Date().toISOString();
       const concatPrompt = `${SYSTEM_PROMPT}\n\n${prompt}`;
       return {
@@ -159,4 +345,3 @@ Output JSON only.
 
   throw new Error("Unable to generate a valid distribution map payload.");
 }
-

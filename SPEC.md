@@ -16,6 +16,11 @@ Ez a rendszer a Szárnyfeszítő tartalomgyártási motorja.
 
 ## 2. Scope Lock
 
+**D24/D26 note (2026-03-08):** Bird distribution maps are catalog-driven. The AI must NOT generate polygon coordinates.
+Instead, the system uses a server-side region catalog (ecoregions prioritized, fallback countries; HU Natura 2000 SPA for
+the Hungary viewport), and the AI only selects `region_ids[]` per status layer. The server expands region IDs to GeoJSON
+and persists `bird_distribution_maps.ranges[]`.
+
 ### IN (MVP-ben benne van)
 
 - Single-admin belépés

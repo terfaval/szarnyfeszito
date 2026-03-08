@@ -8,6 +8,7 @@ import { upsertScienceDossierDraft } from "@/lib/scienceDossierService";
 import { generateScienceDossierV1 } from "@/lib/imageAccuracyGeneration";
 import { getLatestContentBlockForBird } from "@/lib/contentService";
 import { updateBird } from "@/lib/birdService";
+import { BIRD_STATUS_VALUES } from "@/types/bird";
 
 export const metadata = {
   title: "Image accuracy handoff",
@@ -27,7 +28,10 @@ export default async function ImageAccuracyPage({
     redirect("/admin/birds");
   }
 
-  if (bird.status !== "text_approved" && bird.status !== "images_generated") {
+  const statusIndex = BIRD_STATUS_VALUES.indexOf(bird.status);
+  const textApprovedIndex = BIRD_STATUS_VALUES.indexOf("text_approved");
+
+  if (textApprovedIndex === -1 || statusIndex < textApprovedIndex) {
     redirect(`/admin/birds/${bird.id}`);
   }
 

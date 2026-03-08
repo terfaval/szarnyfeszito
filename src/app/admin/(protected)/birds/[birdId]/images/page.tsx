@@ -44,8 +44,6 @@ export default async function BirdImagesPage({
         birdId={bird.id}
         images={imagesWithPreview}
         birdStatus={bird.status}
-        scienceDossierStatus={bird.science_dossier_status}
-        visualBriefStatus={bird.visual_brief_status}
       />
     </Card>
   );

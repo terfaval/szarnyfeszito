@@ -31,7 +31,7 @@ export default async function BirdEditorLayout({
     text: { href: `/admin/birds/${bird.id}/text`, enabled: true },
     imageAccuracy: {
       href: `/admin/birds/${bird.id}/image-accuracy`,
-      enabled: bird.status === "text_approved",
+      enabled: hasReachedTextApproved,
     },
     images: {
       href: `/admin/birds/${bird.id}/images`,
@@ -58,4 +58,3 @@ export default async function BirdEditorLayout({
     </section>
   );
 }
-
