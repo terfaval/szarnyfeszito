@@ -7,7 +7,7 @@ import type {
   DistributionStatus,
   GeoJSONMultiPolygon,
 } from "@/types/distributionMap";
-import { AI_MODEL_TEXT } from "@/lib/config";
+import { AI_MODEL_TEXT, DISTRIBUTION_REGION_CATALOG_SOURCE } from "@/lib/config";
 import { callOpenAIChatCompletion, OpenAIChatMessage } from "@/lib/openaiClient";
 import { extractJsonPayload, AIJsonParseError } from "@/lib/aiUtils";
 import { leafletsSchema } from "@/lib/leafletsSchema";
@@ -123,36 +123,45 @@ export async function generateBirdDistributionMapV1(args: {
     ? leafletsV2.hungary.present.flatMap((code) => getHungaryRegionV2Def(code).bounds)
     : [];
 
-  const globalRepo = await loadRegionCatalogFromRepo("globalRegions");
-  const hungaryRepo = await loadRegionCatalogFromRepo("hungaryRegions");
+  const allowRepo = DISTRIBUTION_REGION_CATALOG_SOURCE !== "supabase";
+  const allowSupabase = DISTRIBUTION_REGION_CATALOG_SOURCE !== "repo";
 
-  const globalMeta = globalRepo
-    ? globalRepo.map((r) => ({
-        region_id: r.region_id,
-        name: r.name,
-        scope: r.scope,
-        type: r.type,
-        source: r.source,
-        bbox: r.bbox,
-      }))
-    : await listDistributionRegionCatalogMeta("globalRegions");
+  const globalRepo = allowRepo ? await loadRegionCatalogFromRepo("globalRegions") : null;
+  const hungaryRepo = allowRepo ? await loadRegionCatalogFromRepo("hungaryRegions") : null;
+
+  const globalMeta =
+    globalRepo && globalRepo.length
+      ? globalRepo.map((r) => ({
+          region_id: r.region_id,
+          name: r.name,
+          scope: r.scope,
+          type: r.type,
+          source: r.source,
+          bbox: r.bbox,
+        }))
+      : allowSupabase
+        ? await listDistributionRegionCatalogMeta("globalRegions")
+        : [];
 
   if (globalMeta.length === 0) {
     throw new Error(
-      "Region catalog is missing/empty: globalRegions. Add data/distribution-region-catalog/v1/globalRegions.json (or import into distribution_region_catalog_items) before generation."
+      "Region catalog is missing/empty: globalRegions. Import into distribution_region_catalog_items (or place repo catalogs and set DISTRIBUTION_REGION_CATALOG_SOURCE=repo/auto)."
     );
   }
 
-  const hungaryMeta = hungaryRepo
-    ? hungaryRepo.map((r) => ({
-        region_id: r.region_id,
-        name: r.name,
-        scope: r.scope,
-        type: r.type,
-        source: r.source,
-        bbox: r.bbox,
-      }))
-    : await listDistributionRegionCatalogMeta("hungaryRegions").catch(() => []);
+  const hungaryMeta =
+    hungaryRepo && hungaryRepo.length
+      ? hungaryRepo.map((r) => ({
+          region_id: r.region_id,
+          name: r.name,
+          scope: r.scope,
+          type: r.type,
+          source: r.source,
+          bbox: r.bbox,
+        }))
+      : allowSupabase
+        ? await listDistributionRegionCatalogMeta("hungaryRegions").catch(() => [])
+        : [];
 
   const globalCandidates = worldBounds.length
     ? globalMeta.filter((r) => worldBounds.some((b) => bboxIntersects(r.bbox, b)))
@@ -279,15 +288,19 @@ Helpful dossier hints (do not invent beyond these; they are only hints):
       const allRegionIds = selection.ranges.flatMap((r) => r.region_ids);
 
       const geometryById: Record<string, unknown> = {};
-      (globalRepo ?? []).forEach((r) => {
-        geometryById[r.region_id] = r.geometry;
-      });
-      (hungaryRepo ?? []).forEach((r) => {
-        geometryById[r.region_id] = r.geometry;
-      });
+      if (globalRepo && globalRepo.length) {
+        globalRepo.forEach((r) => {
+          geometryById[r.region_id] = r.geometry;
+        });
+      }
+      if (hungaryRepo && hungaryRepo.length) {
+        hungaryRepo.forEach((r) => {
+          geometryById[r.region_id] = r.geometry;
+        });
+      }
 
       const missingFromRepo = allRegionIds.filter((id) => !geometryById[id]);
-      if (missingFromRepo.length) {
+      if (allowSupabase && missingFromRepo.length) {
         const fromDb = await getDistributionRegionGeometriesById(missingFromRepo);
         Object.assign(geometryById, fromDb);
       }

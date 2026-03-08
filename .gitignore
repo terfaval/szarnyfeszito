@@ -43,3 +43,6 @@ next-env.d.ts
 
 # local tooling (do not commit)
 /TICKETS/leaflet shapefile builder/
+
+# D26 distribution region catalogs (large; stored in Supabase by default)
+/data/distribution-region-catalog/v1/*.json

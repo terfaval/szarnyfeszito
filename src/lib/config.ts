@@ -14,6 +14,18 @@ function optionalEnv(name: string, fallback: string | null = null): string | nul
   return fallback;
 }
 
+function enumEnv<T extends readonly string[]>(
+  name: string,
+  allowed: T,
+  fallback: T[number]
+): T[number] {
+  const raw = optionalEnv(name, fallback) ?? fallback;
+  if ((allowed as readonly string[]).includes(raw)) {
+    return raw as T[number];
+  }
+  throw new Error(`Environment variable ${name} must be one of: ${allowed.join(", ")}.`);
+}
+
 export const OPENAI_API_KEY = requiredEnv("OPENAI_API_KEY");
 export const AI_MODEL_TEXT = requiredEnv("AI_MODEL_TEXT");
 export const AI_MODEL_IMAGE = requiredEnv("AI_MODEL_IMAGE");
@@ -41,6 +53,16 @@ export const IMAGE_QUALITY = optionalEnv("IMAGE_QUALITY", "auto") ?? "auto";
 // - approved: use only if approved records exist (no auto-generation)
 export const IMAGE_ACCURACY_INPUTS =
   optionalEnv("IMAGE_ACCURACY_INPUTS", "off") ?? "off";
+
+// D26 distribution region catalog source:
+// - supabase: read from distribution_region_catalog_items only (recommended for large catalogs)
+// - repo: read from data/distribution-region-catalog only
+// - auto: repo first, fallback to supabase
+export const DISTRIBUTION_REGION_CATALOG_SOURCE = enumEnv(
+  "DISTRIBUTION_REGION_CATALOG_SOURCE",
+  ["supabase", "repo", "auto"] as const,
+  "supabase"
+);
 export const NODE_ENV = process.env.NODE_ENV?.trim() || "development";
 export const IS_PRODUCTION = NODE_ENV === "production";
 export const APP_URL = optionalEnv("NEXT_PUBLIC_APP_URL") ?? "http://localhost:3000";

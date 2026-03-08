@@ -7,12 +7,15 @@ The server then expands those IDs into GeoJSON geometries deterministically.
 
 ## Where the catalogs live
 
-Place generated catalog files here:
+Recommended (for large catalogs): store the catalogs in **Supabase** (`distribution_region_catalog_items`) and keep the
+generated JSON files out of git.
+
+Optional (small/local/dev): you can place repo catalogs here:
 
 - `data/distribution-region-catalog/v1/globalRegions.json`
 - `data/distribution-region-catalog/v1/hungaryRegions.json`
 
-These files are intended to be stored in the repo so the server can read them and feed the candidate region list to the AI.
+Catalog source selection is controlled by `DISTRIBUTION_REGION_CATALOG_SOURCE` (default: `supabase`).
 
 ## How to build the JSON catalogs (manual Python run)
 
@@ -45,7 +48,7 @@ If you also have HU admin / microregion polygons to ensure full country coverage
 
 - `python "TICKETS/leaflet shapefile builder/build_region_catalogs.py" --ecoregions ... --countries ... --natura ... --hu-microregions hu_kisterseg.shp --outdir "./out"`
 
-Then move/copy:
+If you do want repo catalogs, then move/copy:
 
 - `out/globalRegions.json` -> `data/distribution-region-catalog/v1/globalRegions.json`
 - `out/hungaryRegions.json` -> `data/distribution-region-catalog/v1/hungaryRegions.json`
@@ -58,4 +61,3 @@ If you want the catalogs in Supabase as well, run the import script:
 - `node scripts/import-region-catalog.mjs data/distribution-region-catalog/v1/hungaryRegions.json`
 
 This upserts into `distribution_region_catalog_items`.
-
