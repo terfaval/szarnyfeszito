@@ -5,16 +5,16 @@ import {
   ImageSpec,
   ImageVariant,
 } from "@/types/image";
-import { createHash } from "crypto";
+import { createHash, randomUUID } from "crypto";
 import { supabaseServerClient } from "@/lib/supabaseServerClient";
 import { getBirdById, updateBird } from "@/lib/birdService";
 import {
-  AI_MODEL_IMAGE,
   IMAGE_ACCURACY_INPUTS,
   IMAGE_STYLE_CONFIG_ID_ICONIC,
   IMAGE_STYLE_CONFIG_ID_SCIENTIFIC,
   SUPABASE_IMAGE_BUCKET,
 } from "@/lib/config";
+import { AI_MODEL_IMAGE } from "@/lib/aiConfig";
 import { getImageProvider } from "@/lib/imageProvider";
 import { getLatestContentBlockForBird } from "@/lib/contentService";
 import { generateScienceDossierV1, generateVisualBriefV1 } from "@/lib/imageAccuracyGeneration";
@@ -40,8 +40,6 @@ const OPTIONAL_SPECS: ImageSpec[] = [
 type BuiltImageSpec = {
   styleFamily: ImageSpec["style_family"];
   variant: ImageSpec["variant"];
-  storageObjectPath: string;
-  storagePath: string;
   styleConfigId: string;
   seed: number | null;
   promptPayload: Record<string, unknown>;
@@ -62,8 +60,13 @@ export type ImageGenerationResult = {
   error_message?: string;
 };
 
-function buildCanonicalObjectPath(bird: Bird, spec: { styleFamily: string; variant: string }) {
-  return `birds/${bird.slug}/${spec.styleFamily}/${spec.variant}.png`;
+function buildVersionedObjectPath(args: {
+  bird: Bird;
+  styleFamily: string;
+  variant: string;
+  imageId: string;
+}) {
+  return `birds/${args.bird.slug}/${args.styleFamily}/${args.variant}/${args.imageId}.png`;
 }
 
 async function uploadPngToStorage(args: {
@@ -82,6 +85,32 @@ async function uploadPngToStorage(args: {
   if (error) {
     throw error;
   }
+}
+
+function parsePngDimensions(buffer: Buffer): { widthPx: number | null; heightPx: number | null } {
+  if (!buffer || buffer.length < 24) {
+    return { widthPx: null, heightPx: null };
+  }
+
+  // PNG signature (8 bytes) + IHDR chunk length (4) + type "IHDR" (4) + width (4) + height (4)
+  const pngSignature = "89504e470d0a1a0a";
+  const signatureHex = buffer.subarray(0, 8).toString("hex");
+  if (signatureHex !== pngSignature) {
+    return { widthPx: null, heightPx: null };
+  }
+
+  const ihdrType = buffer.subarray(12, 16).toString("ascii");
+  if (ihdrType !== "IHDR") {
+    return { widthPx: null, heightPx: null };
+  }
+
+  const widthPx = buffer.readUInt32BE(16);
+  const heightPx = buffer.readUInt32BE(20);
+  if (!Number.isFinite(widthPx) || !Number.isFinite(heightPx) || widthPx <= 0 || heightPx <= 0) {
+    return { widthPx: null, heightPx: null };
+  }
+
+  return { widthPx, heightPx };
 }
 
 function sha256Hex(value: unknown) {
@@ -219,16 +248,9 @@ export async function generateImagesForBird(
           ? IMAGE_STYLE_CONFIG_ID_SCIENTIFIC
           : IMAGE_STYLE_CONFIG_ID_ICONIC;
 
-      const storageObjectPath = buildCanonicalObjectPath(bird, {
-        styleFamily: spec.style_family,
-        variant: spec.variant,
-      });
-
       return {
         styleFamily: spec.style_family,
         variant: spec.variant,
-        storageObjectPath,
-        storagePath: `${SUPABASE_IMAGE_BUCKET}/${storageObjectPath}`,
         styleConfigId,
         seed: deterministicSeed({
           birdId: bird.id,
@@ -262,11 +284,19 @@ export async function generateImagesForBird(
   const specs = buildSpecs();
 
   const generateOne = async (spec: BuiltImageSpec): Promise<ImageGenerationResult> => {
+    const imageId = randomUUID();
+    const storageObjectPath = buildVersionedObjectPath({
+      bird,
+      styleFamily: spec.styleFamily,
+      variant: spec.variant,
+      imageId,
+    });
+    const storagePath = `${SUPABASE_IMAGE_BUCKET}/${storageObjectPath}`;
+
     const prompt_hash = sha256Hex(spec.promptPayload);
     const spec_hash = sha256Hex({
       styleFamily: spec.styleFamily,
       variant: spec.variant,
-      storagePath: spec.storagePath,
       styleConfigId: spec.styleConfigId,
       seed: spec.seed,
       prompt_hash,
@@ -280,7 +310,8 @@ export async function generateImagesForBird(
         style_family: spec.styleFamily,
         required: spec.isRequired,
         seed: spec.seed,
-        storage_path: spec.storagePath,
+        storage_path: storagePath,
+        image_id: imageId,
         started_at: startedAt,
       });
 
@@ -303,22 +334,37 @@ export async function generateImagesForBird(
       }
 
       await uploadPngToStorage({
-        objectPath: spec.storageObjectPath,
+        objectPath: storageObjectPath,
         buffer: generated.buffer,
       });
 
       const now = new Date().toISOString();
       const providerModel = generated.providerModel ?? null;
 
+      const { error: unsetError } = await supabaseServerClient
+        .from("images")
+        .update({ is_current: false, updated_at: now })
+        .eq("entity_type", "bird")
+        .eq("entity_id", bird.id)
+        .eq("style_family", spec.styleFamily)
+        .eq("variant", spec.variant)
+        .eq("is_current", true);
+
+      if (unsetError) {
+        throw unsetError;
+      }
+
       const { data, error } = await supabaseServerClient
         .from("images")
-        .upsert(
+        .insert(
           {
+            id: imageId,
             entity_type: "bird",
             entity_id: bird.id,
             style_family: spec.styleFamily,
             variant: spec.variant,
-            storage_path: spec.storagePath,
+            storage_path: storagePath,
+            is_current: true,
             review_status: "draft",
             review_comment: null,
             version: `${providerModel ?? AI_MODEL_IMAGE}:${spec.variant}`,
@@ -332,7 +378,6 @@ export async function generateImagesForBird(
             created_by: "script",
             updated_at: now,
           },
-          { onConflict: "entity_type,entity_id,variant" }
         )
         .select("storage_path, provider_model, width_px, height_px, seed")
         .single();
@@ -409,6 +454,7 @@ export async function listImagesForBird(birdId: string): Promise<ImageRecord[]> 
     .select("*")
     .eq("entity_type", "bird")
     .eq("entity_id", birdId)
+    .eq("is_current", true)
     .order("variant", { ascending: true });
 
   if (error) {
@@ -441,12 +487,103 @@ export async function getSignedImageUrl(storagePath: string) {
   return data.signedUrl;
 }
 
+export async function uploadManualBirdImageVariant(args: {
+  birdId: string;
+  styleFamily: ImageSpec["style_family"];
+  variant: ImageVariant;
+  pngBuffer: Buffer;
+  createdBy: string;
+}): Promise<ImageRecord> {
+  const bird = await getBirdById(args.birdId);
+
+  if (!bird) {
+    throw new Error("Bird not found.");
+  }
+
+  if (!args.pngBuffer || args.pngBuffer.length === 0) {
+    throw new Error("Uploaded file is empty.");
+  }
+
+  const signatureHex = args.pngBuffer.subarray(0, 8).toString("hex");
+  if (signatureHex !== "89504e470d0a1a0a") {
+    throw new Error("Only PNG uploads are supported.");
+  }
+
+  const imageId = randomUUID();
+  const objectPath = buildVersionedObjectPath({
+    bird,
+    styleFamily: args.styleFamily,
+    variant: args.variant,
+    imageId,
+  });
+  const storagePath = `${SUPABASE_IMAGE_BUCKET}/${objectPath}`;
+
+  await uploadPngToStorage({ objectPath, buffer: args.pngBuffer });
+
+  const now = new Date().toISOString();
+  const { widthPx, heightPx } = parsePngDimensions(args.pngBuffer);
+  const styleConfigId =
+    args.styleFamily === "scientific"
+      ? IMAGE_STYLE_CONFIG_ID_SCIENTIFIC
+      : IMAGE_STYLE_CONFIG_ID_ICONIC;
+
+  const { error: unsetError } = await supabaseServerClient
+    .from("images")
+    .update({ is_current: false, updated_at: now })
+    .eq("entity_type", "bird")
+    .eq("entity_id", bird.id)
+    .eq("style_family", args.styleFamily)
+    .eq("variant", args.variant)
+    .eq("is_current", true);
+
+  if (unsetError) {
+    throw unsetError;
+  }
+
+  const { data, error } = await supabaseServerClient
+    .from("images")
+    .insert({
+      id: imageId,
+      entity_type: "bird",
+      entity_id: bird.id,
+      style_family: args.styleFamily,
+      variant: args.variant,
+      storage_path: storagePath,
+      is_current: true,
+      review_status: "draft",
+      review_comment: null,
+      version: `manual_upload:${args.styleFamily}:${args.variant}`,
+      style_config_id: styleConfigId,
+      seed: null,
+      width_px: widthPx,
+      height_px: heightPx,
+      provider_model: null,
+      spec_hash: sha256Hex({
+        source: "manual_upload",
+        style_family: args.styleFamily,
+        variant: args.variant,
+      }),
+      prompt_hash: null,
+      created_by: args.createdBy,
+      updated_at: now,
+    })
+    .select("*")
+    .single();
+
+  if (error || !data) {
+    throw error ?? new Error("Unable to save uploaded image.");
+  }
+
+  return data as ImageRecord;
+}
+
 async function advanceBirdIfImagesApproved(birdId: string) {
   const { data, error } = await supabaseServerClient
     .from("images")
     .select("review_status, variant")
     .eq("entity_type", "bird")
-    .eq("entity_id", birdId);
+    .eq("entity_id", birdId)
+    .eq("is_current", true);
 
   if (error) {
     throw error;
@@ -505,6 +642,35 @@ export async function updateImageReviewStatus(
   await advanceBirdIfImagesApproved(data.entity_id);
 
   return data;
+}
+
+export async function approveCurrentImagesForBird(args: {
+  birdId: string;
+  scope: "required" | "all";
+}): Promise<{ updated: number }> {
+  const now = new Date().toISOString();
+  const variants = args.scope === "required" ? REQUIRED_IMAGE_VARIANTS : null;
+
+  let query = supabaseServerClient
+    .from("images")
+    .update({ review_status: "approved", updated_at: now })
+    .eq("entity_type", "bird")
+    .eq("entity_id", args.birdId)
+    .eq("is_current", true);
+
+  if (variants) {
+    query = query.in("variant", variants);
+  }
+
+  const { data, error } = await query.select("id");
+
+  if (error) {
+    throw error;
+  }
+
+  await advanceBirdIfImagesApproved(args.birdId);
+
+  return { updated: (data ?? []).length };
 }
 
 export async function requestImageReview(

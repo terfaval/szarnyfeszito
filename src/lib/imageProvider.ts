@@ -1,10 +1,9 @@
 import {
-  AI_MODEL_IMAGE,
   IMAGE_PROVIDER,
   IMAGE_QUALITY,
   IMAGE_SIZE,
-  OPENAI_API_KEY,
 } from "@/lib/config";
+import { AI_MODEL_IMAGE, OPENAI_API_KEY } from "@/lib/aiConfig";
 import type { ImageStyleFamily, ImageVariant } from "@/types/image";
 
 export type GenerateImageInput = {

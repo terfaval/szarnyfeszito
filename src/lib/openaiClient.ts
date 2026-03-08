@@ -1,4 +1,4 @@
-import { OPENAI_API_KEY } from "@/lib/config";
+import { OPENAI_API_KEY } from "@/lib/aiConfig";
 
 export type OpenAIChatMessage = {
   role: "system" | "user" | "assistant";

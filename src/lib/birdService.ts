@@ -18,7 +18,7 @@ export async function listBirds(options: ListBirdsOptions = {}): Promise<Bird[]>
   let query = supabaseServerClient
     .from("birds")
     .select(
-      "id,slug,name_hu,name_latin,status,science_dossier_status,visual_brief_status,size_category,visibility_category,classification_status,created_at,updated_at"
+      "id,slug,name_hu,name_latin,status,published_at,published_revision,science_dossier_status,visual_brief_status,size_category,visibility_category,classification_status,created_at,updated_at"
     )
     .order("updated_at", { ascending: false })
     .limit(100);
@@ -45,7 +45,7 @@ export async function listBirdsMissingClassification(): Promise<Bird[]> {
   const { data, error } = await supabaseServerClient
     .from("birds")
     .select(
-      "id,slug,name_hu,name_latin,status,science_dossier_status,visual_brief_status,size_category,visibility_category,classification_status,created_at,updated_at"
+      "id,slug,name_hu,name_latin,status,published_at,published_revision,science_dossier_status,visual_brief_status,size_category,visibility_category,classification_status,created_at,updated_at"
     )
     .or("size_category.is.null,visibility_category.is.null")
     .order("updated_at", { ascending: false })
@@ -62,7 +62,7 @@ export async function getBirdById(id: string): Promise<Bird | null> {
   const { data, error } = await supabaseServerClient
     .from("birds")
     .select(
-      "id,slug,name_hu,name_latin,status,science_dossier_status,visual_brief_status,size_category,visibility_category,classification_status,created_at,updated_at"
+      "id,slug,name_hu,name_latin,status,published_at,published_revision,science_dossier_status,visual_brief_status,size_category,visibility_category,classification_status,created_at,updated_at"
     )
     .eq("id", id)
     .maybeSingle();
@@ -78,7 +78,7 @@ export async function getBirdBySlug(slug: string): Promise<Bird | null> {
   const { data, error } = await supabaseServerClient
     .from("birds")
     .select(
-      "id,slug,name_hu,name_latin,status,science_dossier_status,visual_brief_status,size_category,visibility_category,classification_status,created_at,updated_at"
+      "id,slug,name_hu,name_latin,status,published_at,published_revision,science_dossier_status,visual_brief_status,size_category,visibility_category,classification_status,created_at,updated_at"
     )
     .eq("slug", slug)
     .maybeSingle();

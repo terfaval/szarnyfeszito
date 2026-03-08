@@ -1,7 +1,7 @@
 import { randomUUID } from "crypto";
 import type { Bird } from "@/types/bird";
 import type { BirdDossier, BirdDossierLeafletsV2 } from "@/types/dossier";
-import { AI_MODEL_TEXT } from "@/lib/config";
+import { AI_MODEL_TEXT } from "@/lib/aiConfig";
 import { callOpenAIChatCompletion, OpenAIChatMessage } from "@/lib/openaiClient";
 import { extractJsonPayload, AIJsonParseError } from "@/lib/aiUtils";
 import { ZodError } from "zod";

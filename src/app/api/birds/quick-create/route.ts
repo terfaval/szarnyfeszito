@@ -8,7 +8,7 @@ import {
 import { generateAndPersistDossierForBird } from "@/lib/dossierService";
 import { formatDossierValidationErrors } from "@/lib/dossierSchema";
 import { generateUniqueBirdSlug } from "@/lib/slug";
-import { AI_MODEL_TEXT } from "@/lib/config";
+import { AI_MODEL_TEXT } from "@/lib/aiConfig";
 import { AISchemaMismatchError, AIJsonParseError } from "@/lib/aiUtils";
 
 export async function POST(request: Request) {

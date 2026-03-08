@@ -1,7 +1,7 @@
 import { randomUUID } from "crypto";
 import { ZodError } from "zod";
 import { callOpenAIChatCompletion, type OpenAIChatMessage } from "@/lib/openaiClient";
-import { AI_MODEL_TEXT } from "@/lib/config";
+import { AI_MODEL_TEXT } from "@/lib/aiConfig";
 import { extractJsonPayload, AIJsonParseError, AISchemaMismatchError } from "@/lib/aiUtils";
 import {
   parseBirdClassificationPayloadV2,
@@ -188,4 +188,3 @@ export async function generateBirdClassificationSuggestion(args: {
     throw error;
   }
 }
-

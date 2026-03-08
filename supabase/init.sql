@@ -40,15 +40,17 @@ create type image_style_family as enum ('scientific', 'iconic');
    'fixed_pose_icon_v1'
  );
 
-create table if not exists birds (
-  id uuid primary key default gen_random_uuid(),
-  slug text not null unique,
-  name_hu text not null,
-  name_latin text,
-  status bird_status not null default 'draft',
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
-);
+ create table if not exists birds (
+   id uuid primary key default gen_random_uuid(),
+   slug text not null unique,
+   name_hu text not null,
+   name_latin text,
+   status bird_status not null default 'draft',
+   published_at timestamptz,
+   published_revision integer not null default 0,
+   created_at timestamptz not null default now(),
+   updated_at timestamptz not null default now()
+ );
 
 create table if not exists content_blocks (
   id uuid primary key default gen_random_uuid(),
@@ -74,6 +76,7 @@ create table if not exists content_blocks (
    style_family image_style_family not null,
    variant image_variant not null,
    storage_path text not null,
+   is_current boolean not null default true,
    review_status review_status not null default 'draft',
    version text,
    style_config_id text,

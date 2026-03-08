@@ -16,6 +16,7 @@ export type ImageRecord = {
   style_family: ImageStyleFamily;
   variant: ImageVariant;
   storage_path: string;
+  is_current?: boolean;
   review_status: ImageReviewStatus;
   version: string;
   style_config_id?: string | null;

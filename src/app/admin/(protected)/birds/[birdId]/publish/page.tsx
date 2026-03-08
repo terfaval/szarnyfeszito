@@ -64,7 +64,13 @@ export default async function BirdPublishPage({
         description="All gates must be green before the publish CTA becomes available."
         items={gateItems}
       />
-      <BirdPublishAction birdId={bird.id} status={bird.status} gateReady={gateReady} />
+      <BirdPublishAction
+        birdId={bird.id}
+        status={bird.status}
+        gateReady={gateReady}
+        publishedAt={bird.published_at}
+        publishedRevision={bird.published_revision}
+      />
       <p className={styles.gateHelpText}>
         {bird.status === "published"
           ? "This bird is already published. Confirm the story on the dashboard."
@@ -75,4 +81,3 @@ export default async function BirdPublishPage({
     </Card>
   );
 }
-

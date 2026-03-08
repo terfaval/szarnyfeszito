@@ -10,7 +10,7 @@ import {
   AIQualityGateError,
   extractJsonPayload,
 } from "@/lib/aiUtils";
-import { AI_MODEL_TEXT } from "@/lib/config";
+import { AI_MODEL_TEXT } from "@/lib/aiConfig";
 import { parseBirdDossier, formatDossierValidationErrors } from "@/lib/dossierSchema";
 import { hashPrompt } from "@/lib/promptHash";
 import type { BirdDossier } from "@/types/dossier";

@@ -10,14 +10,22 @@ type BirdPublishActionProps = {
   birdId: string;
   status: BirdStatus;
   gateReady: boolean;
+  publishedAt?: string | null;
+  publishedRevision?: number;
 };
 
-export function BirdPublishAction({ birdId, status, gateReady }: BirdPublishActionProps) {
+export function BirdPublishAction({
+  birdId,
+  status,
+  gateReady,
+  publishedAt,
+  publishedRevision,
+}: BirdPublishActionProps) {
   const router = useRouter();
   const [publishing, setPublishing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const canPublish = gateReady && status === "images_approved";
+  const canPublish = gateReady && (status === "images_approved" || status === "published");
   const isAlreadyPublished = status === "published";
 
   const handlePublish = async () => {
@@ -50,11 +58,23 @@ export function BirdPublishAction({ birdId, status, gateReady }: BirdPublishActi
   };
 
   if (!gateReady || isAlreadyPublished) {
-    return null;
+    if (!gateReady) {
+      return null;
+    }
   }
 
   return (
     <div className="space-y-2">
+      {publishedAt && (
+        <p className="admin-note-small">
+          Last published{" "}
+          {new Date(publishedAt).toLocaleString(undefined, {
+            dateStyle: "medium",
+            timeStyle: "short",
+          })}
+          {typeof publishedRevision === "number" ? ` · rev ${publishedRevision}` : ""}
+        </p>
+      )}
       <Button
         type="button"
         variant="accent"
@@ -63,7 +83,7 @@ export function BirdPublishAction({ birdId, status, gateReady }: BirdPublishActi
         onClick={handlePublish}
       >
         <Icon name="generate" size={16} />
-        {publishing ? "Publishing..." : "Publish bird"}
+        {publishing ? "Publishing..." : isAlreadyPublished ? "Republish bird" : "Publish bird"}
       </Button>
       {error && (
         <p className="admin-message admin-message--error" aria-live="assertive">

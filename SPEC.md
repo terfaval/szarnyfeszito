@@ -450,12 +450,17 @@ images is canonical for generated assets with:
 - Preconditions:
   - bird.status == text_approved OR images_generated
 - Steps:
-  - ensure prompt inputs exist (Science Dossier + Visual Brief; draft OK)
+  - prompt inputs:
+    - default: use Field-Guide dossier only
+    - optional: Science Dossier + Visual Brief can be included via `IMAGE_ACCURACY_INPUTS` (off|auto|approved)
   - buildImageSpec(bird, visualBrief, scienceDossier)
   - generate required variants first (main_habitat + fixed_pose_icon_v1)
   - generate optional variants best-effort (flight_clean, nesting_clean)
   - upload to storage
-  - upsert images rows with review_status=draft
+  - create a new image row per variant and mark it current:
+    - images are versioned; exactly one current image exists per (entity_id, style_family, variant)
+    - regeneration/upload creates a new row, flips previous current to non-current
+  - reset images.review_status=draft on overwrite/regeneration
   - set bird.status = images_generated ONLY IF required variants succeeded
 
 ---

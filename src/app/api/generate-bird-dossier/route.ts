@@ -4,7 +4,7 @@ import { getAdminUserFromCookies } from "@/lib/auth";
 import { formatDossierValidationErrors } from "@/lib/dossierSchema";
 import { getBirdById } from "@/lib/birdService";
 import { generateAndPersistDossierForBird } from "@/lib/dossierService";
-import { AI_MODEL_TEXT } from "@/lib/config";
+import { AI_MODEL_TEXT } from "@/lib/aiConfig";
 import { AISchemaMismatchError, AIJsonParseError } from "@/lib/aiUtils";
 
 export async function POST(request: NextRequest) {

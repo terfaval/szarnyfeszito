@@ -1,34 +1,4 @@
-function requiredEnv(name: string): string {
-  const value = process.env[name]?.trim();
-  if (!value) {
-    throw new Error(`Environment variable ${name} is required but missing or empty.`);
-  }
-  return value;
-}
-
-function optionalEnv(name: string, fallback: string | null = null): string | null {
-  const value = process.env[name]?.trim();
-  if (value) {
-    return value;
-  }
-  return fallback;
-}
-
-function enumEnv<T extends readonly string[]>(
-  name: string,
-  allowed: T,
-  fallback: T[number]
-): T[number] {
-  const raw = optionalEnv(name, fallback) ?? fallback;
-  if ((allowed as readonly string[]).includes(raw)) {
-    return raw as T[number];
-  }
-  throw new Error(`Environment variable ${name} must be one of: ${allowed.join(", ")}.`);
-}
-
-export const OPENAI_API_KEY = requiredEnv("OPENAI_API_KEY");
-export const AI_MODEL_TEXT = requiredEnv("AI_MODEL_TEXT");
-export const AI_MODEL_IMAGE = requiredEnv("AI_MODEL_IMAGE");
+import { enumEnv, optionalEnv, requiredEnv } from "@/lib/env";
 export const SUPABASE_URL = requiredEnv("SUPABASE_URL");
 export const SUPABASE_SERVICE_ROLE_KEY = requiredEnv("SUPABASE_SERVICE_ROLE_KEY");
 export const ADMIN_EMAIL = optionalEnv("ADMIN_EMAIL", "") ?? "";

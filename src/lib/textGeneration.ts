@@ -2,7 +2,7 @@ import { Bird } from "@/types/bird";
 import { FeatureBlock, GeneratedContent } from "@/types/content";
 import { callOpenAIChatCompletion } from "@/lib/openaiClient";
 import { extractJsonPayload } from "@/lib/aiUtils";
-import { AI_MODEL_TEXT } from "@/lib/config";
+import { AI_MODEL_TEXT } from "@/lib/aiConfig";
 
 const SYSTEM_PROMPT =
   "You are writing structured Szarnyfeszito bird narratives for the Admin dashboard. Respond only with valid JSON that includes the keys short, long, feature_block, did_you_know, and ethics_tip. The feature_block value must be an array of objects with heading and content string fields. Do not add commentary outside the JSON.";

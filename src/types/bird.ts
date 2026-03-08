@@ -25,6 +25,8 @@ export type Bird = {
   name_hu: string;
   name_latin?: string | null;
   status: BirdStatus;
+  published_at?: string | null;
+  published_revision?: number;
   science_dossier_status: BirdSubStatus;
   visual_brief_status: BirdSubStatus;
   size_category: BirdSizeCategory | null;
@@ -46,6 +48,8 @@ export type BirdUpdateInput = {
   name_hu?: string;
   name_latin?: string;
   status?: BirdStatus;
+  published_at?: string | null;
+  published_revision?: number;
   science_dossier_status?: BirdSubStatus;
   visual_brief_status?: BirdSubStatus;
   size_category?: BirdSizeCategory | null;

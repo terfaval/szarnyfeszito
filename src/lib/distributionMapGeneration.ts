@@ -7,7 +7,8 @@ import type {
   DistributionStatus,
   GeoJSONMultiPolygon,
 } from "@/types/distributionMap";
-import { AI_MODEL_TEXT, DISTRIBUTION_REGION_CATALOG_SOURCE } from "@/lib/config";
+import { DISTRIBUTION_REGION_CATALOG_SOURCE } from "@/lib/config";
+import { AI_MODEL_TEXT } from "@/lib/aiConfig";
 import { callOpenAIChatCompletion, OpenAIChatMessage } from "@/lib/openaiClient";
 import { extractJsonPayload, AIJsonParseError } from "@/lib/aiUtils";
 import { leafletsSchema } from "@/lib/leafletsSchema";

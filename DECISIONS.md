@@ -2,6 +2,33 @@
 
 ---
 
+## D27 — Post-publish revisions + image versioning v1
+
+**Status:** Accepted  
+**Date:** 2026-03-08  
+**Scope:** Studio Bird pipeline only. Explorer out of scope.
+
+### Context
+Birds can be published once text + required images are approved. In practice we need:
+- A controlled way to update a published bird ("republish") with an explicit timestamp.
+- A safe way to upload/replace images without losing the previous asset (auditability and Studio-only rollback).
+
+### Decision
+1) **Introduce image versioning in `images`.**
+   - Multiple image rows may exist per `(entity_type, entity_id, variant)`.
+   - Exactly one row is marked `is_current=true` for each variant.
+   - Regeneration or manual upload creates a new row and flips the previous current row to `is_current=false`.
+2) **Add batch image approvals.**
+   - Studio provides "Approve required" (main_habitat + fixed_pose_icon_v1) and "Approve all" for current variants.
+3) **Allow controlled republish.**
+   - Publishing records `published_at`.
+   - Republish is an explicit action available only when publish gates are green again.
+   - Republish updates `published_at` and increments `published_revision`.
+
+### Consequences
+- Studio keeps a canonical "current" image set while retaining historical assets/rows.
+- Published birds can be revised without silent overwrites; changes always require explicit republish when gates pass.
+
 ## D26 â€” Distribution maps: region-catalog-based generation v1
 
 **Status:** Accepted  

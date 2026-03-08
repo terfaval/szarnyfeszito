@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminUserFromCookies } from "@/lib/auth";
-import { updateBird } from "@/lib/birdService";
+import { getBirdById, updateBird } from "@/lib/birdService";
+import { supabaseServerClient } from "@/lib/supabaseServerClient";
 
 export async function PATCH(
   request: NextRequest,
@@ -17,12 +18,73 @@ export async function PATCH(
   const params = await context.params;
   const body = await request.json().catch(() => ({}));
 
+  const existing = await getBirdById(params.id);
+
+  if (!existing) {
+    return NextResponse.json({ error: "Bird not found." }, { status: 404 });
+  }
+
+  const requestedStatus = typeof body.status === "string" ? body.status : undefined;
+
+  if (existing.status === "published" && requestedStatus && requestedStatus !== "published") {
+    return NextResponse.json(
+      { error: "Published birds cannot be moved back to an earlier status." },
+      { status: 400 }
+    );
+  }
+
+  if (requestedStatus === "published") {
+    if (existing.status !== "images_approved" && existing.status !== "published") {
+      return NextResponse.json(
+        { error: "Bird must reach images_approved before publishing." },
+        { status: 400 }
+      );
+    }
+
+    const requiredVariants = ["main_habitat", "fixed_pose_icon_v1"] as const;
+
+    const { data, error } = await supabaseServerClient
+      .from("images")
+      .select("variant, review_status")
+      .eq("entity_type", "bird")
+      .eq("entity_id", params.id)
+      .eq("is_current", true)
+      .in("variant", [...requiredVariants]);
+
+    if (error) {
+      return NextResponse.json(
+        { error: (error as Error)?.message ?? "Unable to validate publish gate." },
+        { status: 400 }
+      );
+    }
+
+    const approvedByVariant = new Map<string, boolean>();
+    (data ?? []).forEach((row) => {
+      approvedByVariant.set(row.variant, row.review_status === "approved");
+    });
+
+    const gateOk = requiredVariants.every((variant) => approvedByVariant.get(variant) === true);
+
+    if (!gateOk) {
+      return NextResponse.json(
+        { error: "Publish gate locked: required images must be approved." },
+        { status: 400 }
+      );
+    }
+  }
+
   const payload = {
     id: params.id,
     slug: body.slug,
     name_hu: body.name_hu,
     name_latin: body.name_latin,
-    status: body.status,
+    status: requestedStatus,
+    published_at:
+      requestedStatus === "published" ? new Date().toISOString() : undefined,
+    published_revision:
+      requestedStatus === "published"
+        ? (existing.published_revision ?? 0) + 1
+        : undefined,
   };
 
   try {

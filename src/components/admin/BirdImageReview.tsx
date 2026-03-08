@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/ui/components/Button";
 import { Card } from "@/ui/components/Card";
@@ -17,6 +17,7 @@ const VARIANT_LABELS: Partial<Record<ImageRecord["variant"], string>> = {
   main_habitat: "Scientific · Main Habitat",
   standing_clean: "Scientific · Standing",
   flight_clean: "Scientific · Flight",
+  nesting_clean: "Scientific · Nesting",
   fixed_pose_icon_v1: "Iconic · Fixed Pose",
 };
 
@@ -57,6 +58,10 @@ export default function BirdImageReview({
   const router = useRouter();
   const [images, setImages] = useState(initialImages);
   const [loadingId, setLoadingId] = useState<string | null>(null);
+  const [batchApproving, setBatchApproving] = useState<"required" | "all" | null>(
+    null
+  );
+  const [uploadingId, setUploadingId] = useState<string | null>(null);
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [requestOverlay, setRequestOverlay] = useState<{
@@ -69,6 +74,10 @@ export default function BirdImageReview({
   const [requestStatusMessage, setRequestStatusMessage] = useState<string | null>(
     null
   );
+
+  useEffect(() => {
+    setImages(initialImages);
+  }, [initialImages]);
 
   const allApproved =
     images.length > 0 && images.every((image) => image.review_status === "approved");
@@ -102,13 +111,82 @@ export default function BirdImageReview({
         throw new Error(payload?.error ?? "Unable to generate images.");
       }
 
-      setRequestStatusMessage("Images generated. Refreshingâ€¦");
       setRequestStatusMessage("Images generated. Refreshing...");
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to generate images.");
     } finally {
       setGenerating(false);
+    }
+  };
+
+  const handleBatchApprove = async (scope: "required" | "all") => {
+    if (batchApproving || loadingId || uploadingId) {
+      return;
+    }
+
+    setBatchApproving(scope);
+    setError(null);
+    setRequestStatusMessage(null);
+
+    try {
+      const response = await fetch(`/api/birds/${birdId}/images/approve-batch`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ scope }),
+      });
+
+      const payload = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        throw new Error(payload?.error ?? "Unable to approve images.");
+      }
+
+      setRequestStatusMessage(
+        scope === "required"
+          ? "Required images approved. Refreshing..."
+          : "All images approved. Refreshing..."
+      );
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to approve images.");
+    } finally {
+      setBatchApproving(null);
+    }
+  };
+
+  const handleUpload = async (image: BirdImageWithPreview, file: File | null) => {
+    if (!file || uploadingId || generating) {
+      return;
+    }
+
+    setUploadingId(image.id);
+    setError(null);
+    setRequestStatusMessage(null);
+
+    try {
+      const form = new FormData();
+      form.set("style_family", image.style_family);
+      form.set("variant", image.variant);
+      form.set("file", file);
+
+      const response = await fetch(`/api/birds/${birdId}/images/upload`, {
+        method: "POST",
+        body: form,
+      });
+
+      const payload = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        throw new Error(payload?.error ?? "Unable to upload image.");
+      }
+
+      setRequestStatusMessage("Image uploaded. Refreshing...");
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to upload image.");
+    } finally {
+      setUploadingId(null);
     }
   };
 
@@ -240,6 +318,26 @@ export default function BirdImageReview({
               {generating ? "Generatingâ€¦" : generateLabel}
             </Button>
 
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => handleBatchApprove("required")}
+              disabled={images.length === 0 || batchApproving !== null}
+              className="whitespace-nowrap"
+            >
+              {batchApproving === "required" ? "Approving…" : "Approve required"}
+            </Button>
+
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => handleBatchApprove("all")}
+              disabled={images.length === 0 || batchApproving !== null}
+              className="whitespace-nowrap"
+            >
+              {batchApproving === "all" ? "Approving…" : "Approve all"}
+            </Button>
+
             {allApproved && (
               <span className={styles.headerBadge}>
                 <Icon name="accept" size={14} />
@@ -308,6 +406,30 @@ export default function BirdImageReview({
                             Download
                           </a>
                         )}
+                        <input
+                          id={`upload-${image.id}`}
+                          type="file"
+                          accept="image/png"
+                          className="sr-only"
+                          onChange={(event) => {
+                            const picked = event.currentTarget.files?.[0] ?? null;
+                            void handleUpload(image, picked);
+                            event.currentTarget.value = "";
+                          }}
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          disabled={uploadingId === image.id}
+                          onClick={() => {
+                            const input = document.getElementById(
+                              `upload-${image.id}`
+                            ) as HTMLInputElement | null;
+                            input?.click();
+                          }}
+                        >
+                          {uploadingId === image.id ? "Uploading…" : "Upload"}
+                        </Button>
                         <Button
                           type="button"
                           variant="ghost"
@@ -325,7 +447,7 @@ export default function BirdImageReview({
                       </span>
                       <span className="text-xs admin-text-muted">
                         Generated{" "}
-                        {new Date(image.updated_at).toLocaleString(undefined, {
+                        {new Date(image.created_at).toLocaleString(undefined, {
                           dateStyle: "medium",
                           timeStyle: "short",
                         })}
