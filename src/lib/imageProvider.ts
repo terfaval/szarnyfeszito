@@ -1,6 +1,7 @@
 import {
   AI_MODEL_IMAGE,
   IMAGE_PROVIDER,
+  IMAGE_QUALITY,
   IMAGE_SIZE,
   OPENAI_API_KEY,
 } from "@/lib/config";
@@ -111,6 +112,15 @@ export class OpenAIImageProvider implements ImageProvider {
     const prompt = buildOpenAIPrompt(input);
     const { width, height } = parseSizePx(IMAGE_SIZE);
 
+    const background =
+      input.styleFamily === "iconic" ? "transparent" : "opaque";
+
+    const quality = (IMAGE_QUALITY ?? "auto").toLowerCase();
+    const qualityParam =
+      quality === "low" || quality === "medium" || quality === "high"
+        ? quality
+        : undefined;
+
     const response = await fetch("https://api.openai.com/v1/images/generations", {
       method: "POST",
       headers: {
@@ -120,8 +130,11 @@ export class OpenAIImageProvider implements ImageProvider {
       body: JSON.stringify({
         model: AI_MODEL_IMAGE,
         prompt,
+        n: 1,
         size: IMAGE_SIZE,
-        response_format: "b64_json",
+        background,
+        output_format: "png",
+        ...(qualityParam ? { quality: qualityParam } : {}),
       }),
     });
 
