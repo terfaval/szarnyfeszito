@@ -1,6 +1,8 @@
 import BirdPublishAction from "@/components/admin/BirdPublishAction";
+import BirdTextReview from "@/components/admin/BirdTextReview";
 import { getBirdById, getBirdBySlug, isUuid } from "@/lib/birdService";
-import { listImagesForBird } from "@/lib/imageService";
+import { getLatestContentBlockForBird } from "@/lib/contentService";
+import { getSignedImageUrl, listImagesForBird } from "@/lib/imageService";
 import { GateChecklist } from "@/ui/components/GateChecklist";
 import { Card } from "@/ui/components/Card";
 import { BIRD_STATUS_VALUES } from "@/types/bird";
@@ -33,6 +35,14 @@ export default async function BirdPublishPage({
   }
 
   const images = await listImagesForBird(bird.id);
+  const imagesWithPreview = await Promise.all(
+    images.map(async (image) => ({
+      variant: image.variant,
+      previewUrl: await getSignedImageUrl(image.storage_path),
+    }))
+  );
+
+  const contentBlock = await getLatestContentBlockForBird(bird.id);
 
   const statusIndex = BIRD_STATUS_VALUES.indexOf(bird.status);
   const textApprovedIndex = BIRD_STATUS_VALUES.indexOf("text_approved");
@@ -78,6 +88,13 @@ export default async function BirdPublishPage({
           ? "Publish gate unlocked - the CTA above is now available."
           : "Publish gate locked until every checklist item turns green."}
       </p>
+
+      <BirdTextReview
+        birdId={bird.id}
+        contentBlock={contentBlock}
+        mode="publish"
+        images={imagesWithPreview}
+      />
     </Card>
   );
 }
