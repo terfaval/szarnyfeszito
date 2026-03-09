@@ -102,6 +102,14 @@ The shared workflow mirrors the Bird status stream in `SPEC.md`:
 - `prefers-reduced-motion` rules in `app/globals.css` turn off transitions for cards and pills.
 - Utility classes like `.stack` allow vertical stacking beneath 720px without rewriting component markup.
 
+## Mobile principles (Studio)
+
+- Assume touch-first: interactive targets should be easy to hit (aim for ~44px tap height where practical).
+- Avoid hover-only affordances; every primary action must be reachable without hover.
+- Prevent horizontal overflow on <= 420px: long labels wrap, menus collapse, panels scroll vertically.
+- Prefer disclosure over density on small screens (e.g. nav collapses into a menu; filters stack).
+- For every UI change: verify at two widths (<= 420px and desktop) before calling the change done (see D29).
+
 ## Build & QA
 
 1. Run `npm run lint` after each batch to keep IDE-generated tokens clean.

@@ -25,7 +25,7 @@
   --background: var(--bg);
   --foreground: var(--text);
   --shell-main-max: 1120px;
-  --shell-side-pad: 24px;
+  --shell-side-pad: clamp(16px, 4vw, 24px);
   --font-display: "Rubik", "Segoe UI", system-ui, sans-serif;
   --font-body: "Roboto", "Source Serif Pro", "Times New Roman", serif;
   --color-background: var(--background);
@@ -78,6 +78,12 @@ h5,
   background-size: cover;
   background-repeat: no-repeat;
   background-position: center;
+}
+
+@media (max-width: 720px) {
+  :root {
+    --page-bg-image: url("/backgrounds/mobile_default.png");
+  }
 }
 
 @media (prefers-color-scheme: dark) {
@@ -157,7 +163,7 @@ svg {
   gap: 1.5rem;
   width: min(100%, var(--shell-main-max));
   margin: 0 auto;
-  padding-block: 2.5rem;
+  padding-block: clamp(1.25rem, 4vw, 2.5rem);
   padding-inline: var(--shell-side-pad, 24px);
 }
 
@@ -166,7 +172,7 @@ svg {
   border: 1px solid var(--line);
   border-radius: 16px;
   box-shadow: var(--shadow);
-  padding: 1.5rem;
+  padding: clamp(1rem, 3vw, 1.5rem);
 }
 
 .admin-card {
@@ -174,7 +180,7 @@ svg {
   border: 1px solid var(--line);
   background: var(--panel);
   box-shadow: var(--shadow);
-  padding: 1.5rem;
+  padding: clamp(1rem, 3vw, 1.5rem);
   display: flex;
   flex-direction: column;
   gap: 1rem;
@@ -288,7 +294,7 @@ svg {
   border-radius: 18px;
   border: 1px solid var(--line);
   background: transparent;
-  padding: 0.9rem 1rem;
+  padding: clamp(0.75rem, 2.5vw, 0.9rem) clamp(0.75rem, 3vw, 1rem);
   box-shadow: 0 30px 40px rgba(5, 118, 141, 0.12);
   color: var(--brand-warm);
 }
@@ -328,11 +334,55 @@ svg {
   filter: none;
 }
 
+.admin-topbar__menu-button {
+  border-radius: 9999px;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--brand-ink);
+  font-size: 0.75rem;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  font-weight: 600;
+  padding: 0.35rem 0.85rem;
+  cursor: pointer;
+  transition: border-color 0.2s ease, color 0.2s ease;
+}
+
+.admin-topbar__menu-button:hover,
+.admin-topbar__menu-button:focus-visible {
+  color: var(--brand-warm);
+  border-color: var(--line);
+}
+
 .admin-topbar__nav {
+  display: none;
+  width: 100%;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(var(--brand-accent-rgb), 0.15);
+}
+
+.admin-topbar__nav--open {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-  align-items: center;
+}
+
+@media (min-width: 720px) {
+  .admin-topbar__menu-button {
+    display: none;
+  }
+
+  .admin-topbar__nav {
+    display: flex;
+    width: auto;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    align-items: center;
+    padding-top: 0;
+    border-top: 0;
+  }
 }
 
 .admin-nav-link {

@@ -2,6 +2,28 @@
 
 ---
 
+## D29 — Continuous mobile UX iteration + paired checks (Studio)
+
+**Status:** Accepted  
+**Date:** 2026-03-09  
+**Scope:** Studio admin surfaces (mobile + desktop). Explorer out of scope.
+
+### Context
+Even though the MVP is Studio-only, admin work often happens on smaller screens (narrow laptop windows, tablets, phones).
+If we only validate desktop layouts, UI regressions slip in unnoticed and accumulate into costly cleanups.
+
+### Decision
+1) **Mobile is a first-class surface for Studio.**
+   - Every Studio UI change must be verified on a narrow viewport (<= 420px) in addition to desktop.
+2) **F3 builds must include a paired F4 check for mobile.**
+   - For UI work, "done" includes a quick manual smoke on both widths (no pixel-perfect requirement, but no overflow, no hidden CTAs).
+3) **Mobile guardrails live in `UI_DESIGN_STOCK.md`.**
+   - If a new pattern is introduced (e.g. disclosure navigation, sticky actions), document the rule before spreading it.
+
+### Consequences
+- Small, continuous adjustments replace periodic large rewrites.
+- UI regressions are caught at the change that introduced them (cheaper to fix).
+
 ## D27 — Post-publish revisions + image versioning v1
 
 **Status:** Accepted  
