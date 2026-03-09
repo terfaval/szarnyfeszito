@@ -52,6 +52,24 @@ Bird retains the full state machine—draft → text_generated → text_approved
 
 ---
 
+### chef_recipes (D30)
+
+- id (uuid)
+- title (text)
+- short_description (text)
+- servings (int, default 2)
+- cook_time_minutes (int)
+- recipe_json (jsonb, strict contract v1)
+- review_status (draft/reviewed/approved) — v1-ben draft/approved használat
+- last_review_note (text)
+- generation_meta (jsonb)
+- created_at
+- updated_at
+
+Admin-only, service-role access (RLS policy service_role). A `recipe_json` a kanonikus recept payload, amit a Studio UI megjelenít és a servings skálázásához használ.
+
+---
+
 ## 2. Enum státuszok
 
 Bird.status:

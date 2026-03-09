@@ -516,3 +516,24 @@ Indok: ez teszi lehetővé a szigorú validálást, a generációk verifikálás
 - A Studio text review felületen a main_habitat kép alá bekerül egy célzott “Regenerate traits” gomb, ami csak az `identification` blokkot generálja újra (server-side AI), a többi dossier mezőt érintetlenül hagyva.
 
 Indok: a korábbi fix “Csőr/Tollazat/Hang/Mozgás” címek túlságosan sablonosak voltak, és a felismerés szempontjából fontos, fajspecifikus kulcsjegyek kevésbé emelkedtek ki.
+
+---
+
+## D29 – Studio UI mobil ellenőrzés (<= 420px)
+
+- A Studio admin felületnek mobil nézeten is használhatónak kell maradnia (<= 420px).
+- Minden UI-t érintő változtatásnál kötelező legalább egy gyors manuális ellenőrzés mobil szélességen (F4 evidence részeként dokumentálva).
+
+Indok: az admin felületet terepen/telefonról is használjuk; a regressziók tipikusan layout/touch problémákból jönnek.
+
+---
+
+## D30 – Chef receptek: Admin-only, iteratív generálás + Accept
+
+- Új Admin-only modul: `/admin/chef` (Studio guard alatt), Explorer nem látja.
+- Két input alapján (recept név + rövid leírás) server-side AI generál szigorúan validált JSON recept payloadot (v1), alapértelmezett `servings = 2` mellett.
+- A recept payload strukturált hozzávalókat tartalmaz (`amount` number|null + `unit` string|null), hogy a UI képes legyen a servings érték változtatásakor kliens oldalon skálázni.
+- Állapot: `draft` → “Accept” → `approved`. Review note esetén regenerálás történik (vissza `draft`), majd új Accept-tel ismét `approved`.
+- A mentés “A” mód: az aktuális recept payload felülírható a következő regeneráláskor, de a rekord tartalmazza a legutóbbi review note-ot és a generálás metaadatait (model + generated_at).
+
+Indok: minimál, gyors admin workflow, de determinisztikus contracttal és kontrollált iterációval.

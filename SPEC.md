@@ -245,6 +245,18 @@ Tabs:
 
 ---
 
+### 7.6 Chef receptek (Admin)
+
+- Az admin felületen külön menüpont: `/admin/chef`.
+- Új recept generálásakor két mezőt kérünk: recept név és rövid leírás (szabad szöveg). A generálás **server-side AI** hívással történik (D2/D3), és a válasz szigorúan validált JSON contract (v1).
+- A generált recept canonical payloadja tartalmazza: `cook_time_minutes`, `servings` (alap: 2), `ingredients[]` (strukturált mennyiség), `steps[]` (lépéses folyamat).
+- A recept adatlapon a servings értéke könnyen módosítható, és a UI kliens oldalon újraszámolja a hozzávalók mennyiségét (`amount` mező skálázása; ha `amount` null, nem skálázunk).
+- Alul “Accept” gombbal a recept rögzíthető (review_status: `approved`). A lista alapértelmezetten csak az approved recepteket mutatja: név + elkészítési idő pill + top 5 hozzávaló.
+- A recept adatlapon van külön “review note” mező: a jegyzet mentése után a rendszer regenerálja a receptet (review_status: `draft`), majd “Accept”-tel ismét jóváhagyható. Mentés felülírható (A), de minden művelet auditálható metadatával (model + időbélyeg).
+- Explorer nem fogyaszt Chef tartalmat (Admin-only).
+
+---
+
 ## 8. Publish Gate Checklist
 
 Publish előtt:
