@@ -1,7 +1,7 @@
 import { randomUUID } from "crypto";
 import { ZodError } from "zod";
 import { callOpenAIChatCompletion, type OpenAIChatMessage } from "@/lib/openaiClient";
-import { AI_MODEL_CHEF } from "@/lib/aiConfig";
+import { AI_MODEL_CHEF, AI_MODEL_TEXT } from "@/lib/aiConfig";
 import { extractJsonPayload, AIJsonParseError, AISchemaMismatchError } from "@/lib/aiUtils";
 import { hashPrompt } from "@/lib/promptHash";
 import { chefRecipeSchemaV1, type ChefRecipeV1 } from "@/lib/chefRecipeSchema";
@@ -48,6 +48,7 @@ export async function generateChefRecipeV1(args: {
   prompt_hash: string;
 }> {
   const requestId = randomUUID();
+  const modelId = AI_MODEL_CHEF ?? AI_MODEL_TEXT;
 
   const userPayload = {
     title: args.title,
@@ -66,7 +67,7 @@ export async function generateChefRecipeV1(args: {
   ];
 
   const completion = await callOpenAIChatCompletion({
-    model: AI_MODEL_CHEF,
+    model: modelId,
     temperature: 0.2,
     max_tokens: 900,
     messages,
@@ -79,7 +80,7 @@ export async function generateChefRecipeV1(args: {
   if (!parsedResult.success) {
     throw new AIJsonParseError(
       requestId,
-      AI_MODEL_CHEF,
+      modelId,
       parsedResult.error.reason,
       parsedResult.error.raw_head,
       parsedResult.error.raw_tail,
@@ -99,7 +100,7 @@ export async function generateChefRecipeV1(args: {
     }
     return {
       payload,
-      model: AI_MODEL_CHEF,
+      model: modelId,
       request_id: requestId,
       finish_reason: finishReason,
       prompt_hash: promptHash,

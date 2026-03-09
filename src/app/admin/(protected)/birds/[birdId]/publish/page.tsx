@@ -35,8 +35,9 @@ export default async function BirdPublishPage({
   }
 
   const images = await listImagesForBird(bird.id);
+  const approvedImages = images.filter((image) => image.review_status === "approved");
   const imagesWithPreview = await Promise.all(
-    images.map(async (image) => ({
+    approvedImages.map(async (image) => ({
       variant: image.variant,
       previewUrl: await getSignedImageUrl(image.storage_path),
     }))

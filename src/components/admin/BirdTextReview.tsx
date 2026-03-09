@@ -781,6 +781,81 @@ export default function BirdTextReview({
               </div>
             </header>
 
+            <div className={styles.layerStack}>
+              <div className={styles.backgroundLayer}>
+                {mainHabitatPreviewUrl ? (
+                  <img
+                    src={mainHabitatPreviewUrl}
+                    alt="Scientific main habitat illustration"
+                    className={styles.fullBodyImage}
+                  />
+                ) : (
+                  <div className={styles.fullBodyPlaceholder}>
+                    <p>Scientific (main_habitat)</p>
+                  </div>
+                )}
+              </div>
+              <div className={styles.overlayLayer}>
+                {dossier.identification.key_features.map((feature, index) => (
+                  <article
+                    key={`${feature.title}-${index}`}
+                    className={`${styles.overlayItem} ${styles.reviewable}`}
+                  >
+                    <div className={styles.overlayHeading}>
+                      <h3 className={styles.overlayTitle}>{feature.title}</h3>
+                      {!isPublishMode && (
+                        <div
+                          className={`${styles.reviewButtons} ${styles.overlayButtons}`}
+                        >
+                          <button
+                            type="button"
+                            className={styles.iconButton}
+                            onClick={() => beginEditing("long", editableContent.long)}
+                            aria-label="Manual edit identification text"
+                          >
+                            <Icon name="edit" size={16} />
+                          </button>
+                          <button
+                            type="button"
+                            className={styles.iconButton}
+                            onClick={() => openOverlay("identification")}
+                            aria-label="Request review note for identification"
+                          >
+                            <Icon name="generate" size={16} />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                    <p className={styles.overlayDescription}>
+                      {feature.description}
+                    </p>
+                  </article>
+                ))}
+              </div>
+            </div>
+
+            <div className="mt-3 flex flex-col items-end gap-2">
+              <Button
+                type="button"
+                onClick={handleRegenerateTraits}
+                disabled={!contentBlock || regeneratingTraits || regenerating || approving}
+                variant="ghost"
+              >
+                <Icon name="generate" size={16} />
+                {regeneratingTraits ? "Regenerating traits…" : "Regenerate traits"}
+              </Button>
+              {isPublishMode && statusMessage && (
+                <p className="admin-message admin-message--success" aria-live="polite">
+                  {statusMessage}
+                </p>
+              )}
+              {isPublishMode && error && (
+                <p className="admin-message admin-message--error" aria-live="assertive">
+                  {error}
+                </p>
+              )}
+            </div>
+
             <div className={styles.regionRow}>
               <div className={styles.mapColumn}>
                 <div className={styles.mapHeader}>
@@ -882,81 +957,6 @@ export default function BirdTextReview({
                   </div>
                 )}
               </div>
-            </div>
-
-            <div className={styles.layerStack}>
-              <div className={styles.backgroundLayer}>
-                {mainHabitatPreviewUrl ? (
-                  <img
-                    src={mainHabitatPreviewUrl}
-                    alt="Scientific main habitat illustration"
-                    className={styles.fullBodyImage}
-                  />
-                ) : (
-                  <div className={styles.fullBodyPlaceholder}>
-                    <p>Scientific (main_habitat)</p>
-                  </div>
-                )}
-              </div>
-              <div className={styles.overlayLayer}>
-                {dossier.identification.key_features.map((feature, index) => (
-                  <article
-                    key={`${feature.title}-${index}`}
-                    className={`${styles.overlayItem} ${styles.reviewable}`}
-                  >
-                    <div className={styles.overlayHeading}>
-                      <h3 className={styles.overlayTitle}>{feature.title}</h3>
-                      {!isPublishMode && (
-                        <div
-                          className={`${styles.reviewButtons} ${styles.overlayButtons}`}
-                        >
-                          <button
-                            type="button"
-                            className={styles.iconButton}
-                            onClick={() => beginEditing("long", editableContent.long)}
-                            aria-label="Manual edit identification text"
-                          >
-                            <Icon name="edit" size={16} />
-                          </button>
-                          <button
-                            type="button"
-                            className={styles.iconButton}
-                            onClick={() => openOverlay("identification")}
-                            aria-label="Request review note for identification"
-                          >
-                            <Icon name="generate" size={16} />
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                    <p className={styles.overlayDescription}>
-                      {feature.description}
-                    </p>
-                  </article>
-                ))}
-              </div>
-            </div>
-
-            <div className="mt-3 flex flex-col items-end gap-2">
-              <Button
-                type="button"
-                onClick={handleRegenerateTraits}
-                disabled={!contentBlock || regeneratingTraits || regenerating || approving}
-                variant="ghost"
-              >
-                <Icon name="generate" size={16} />
-                {regeneratingTraits ? "Regenerating traits…" : "Regenerate traits"}
-              </Button>
-              {isPublishMode && statusMessage && (
-                <p className="admin-message admin-message--success" aria-live="polite">
-                  {statusMessage}
-                </p>
-              )}
-              {isPublishMode && error && (
-                <p className="admin-message admin-message--error" aria-live="assertive">
-                  {error}
-                </p>
-              )}
             </div>
 
             <div className={styles.taxonomyParagraphRow}>

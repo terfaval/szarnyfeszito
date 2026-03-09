@@ -231,6 +231,27 @@ export async function generateImagesForBird(
         }
       : null;
 
+  const { data: currentImages, error: currentImagesError } = await supabaseServerClient
+    .from("images")
+    .select("variant, review_comment, review_status")
+    .eq("entity_type", "bird")
+    .eq("entity_id", bird.id)
+    .eq("is_current", true);
+
+  if (currentImagesError) {
+    throw currentImagesError;
+  }
+
+  const reviewNoteByVariant = new Map<ImageVariant, string>();
+  (currentImages ?? []).forEach((row) => {
+    const variant = row.variant as ImageVariant | undefined;
+    const note =
+      typeof row.review_comment === "string" ? row.review_comment.trim() : "";
+    if (variant && note) {
+      reviewNoteByVariant.set(variant, note);
+    }
+  });
+
   const accuracyMode = (IMAGE_ACCURACY_INPUTS ?? "off").toLowerCase();
   const scienceDossier =
     accuracyMode === "auto"
@@ -260,6 +281,8 @@ export async function generateImagesForBird(
           ? IMAGE_STYLE_CONFIG_ID_SCIENTIFIC
           : IMAGE_STYLE_CONFIG_ID_ICONIC;
 
+      const reviewNote = reviewNoteByVariant.get(spec.variant) ?? null;
+
       return {
         styleFamily: spec.style_family,
         variant: spec.variant,
@@ -277,6 +300,7 @@ export async function generateImagesForBird(
             name_latin: bird.name_latin ?? null,
           },
           field_guide_dossier: dossierForImages,
+          review_note: reviewNote,
           ...(useScienceDossier ? { science_dossier: scienceDossier?.payload ?? null } : {}),
           ...(useVisualBrief ? { visual_brief: visualBrief?.payload ?? null } : {}),
           style_family: spec.style_family,
