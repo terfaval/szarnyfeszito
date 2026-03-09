@@ -691,6 +691,7 @@ svg {
   height: 100%;
   object-fit: cover;
   display: block;
+  opacity: 0.75;
 }
 
 .admin-bird-habitat-fallback {
@@ -704,11 +705,11 @@ svg {
   left: 50%;
   top: 50%;
   transform: translate(-50%, -50%);
-  width: 40px;
-  height: 40px;
+  width: 52px;
+  height: 52px;
   border-radius: 9999px;
   border: 1px solid rgba(255, 255, 255, 0.14);
-  background: rgba(0, 0, 0, 0.15);
+  background: transparent;
   object-fit: cover;
 }
 

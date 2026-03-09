@@ -937,25 +937,27 @@ export default function BirdTextReview({
               </div>
             </div>
 
-            {!isPublishMode && (
-              <div className="mt-3 flex justify-end">
-                <Button
-                  type="button"
-                  onClick={handleRegenerateTraits}
-                  disabled={
-                    !contentBlock ||
-                    regeneratingTraits ||
-                    regenerating ||
-                    approving ||
-                    isApproved
-                  }
-                  variant="ghost"
-                >
-                  <Icon name="generate" size={16} />
-                  {regeneratingTraits ? "Regenerating traits…" : "Regenerate traits"}
-                </Button>
-              </div>
-            )}
+            <div className="mt-3 flex flex-col items-end gap-2">
+              <Button
+                type="button"
+                onClick={handleRegenerateTraits}
+                disabled={!contentBlock || regeneratingTraits || regenerating || approving}
+                variant="ghost"
+              >
+                <Icon name="generate" size={16} />
+                {regeneratingTraits ? "Regenerating traits…" : "Regenerate traits"}
+              </Button>
+              {isPublishMode && statusMessage && (
+                <p className="admin-message admin-message--success" aria-live="polite">
+                  {statusMessage}
+                </p>
+              )}
+              {isPublishMode && error && (
+                <p className="admin-message admin-message--error" aria-live="assertive">
+                  {error}
+                </p>
+              )}
+            </div>
 
             <div className={styles.taxonomyParagraphRow}>
               <article className={styles.taxonomyColumn}>
