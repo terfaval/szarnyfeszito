@@ -461,30 +461,74 @@ export async function listImagesForBird(birdId: string): Promise<ImageRecord[]> 
     throw error;
   }
 
-  return data ?? [];
+  const current = (data ?? []) as ImageRecord[];
+  if (current.length > 0) {
+    return current;
+  }
+
+  // Fallback for older rows where `is_current` was not set reliably yet.
+  const { data: allData, error: allError } = await supabaseServerClient
+    .from("images")
+    .select("*")
+    .eq("entity_type", "bird")
+    .eq("entity_id", birdId)
+    .order("variant", { ascending: true })
+    .order("created_at", { ascending: false });
+
+  if (allError) {
+    throw allError;
+  }
+
+  const byVariant = new Map<ImageVariant, ImageRecord>();
+  ((allData ?? []) as ImageRecord[]).forEach((image) => {
+    if (!byVariant.has(image.variant)) {
+      byVariant.set(image.variant, image);
+    }
+  });
+
+  return Array.from(byVariant.values()).sort((a, b) =>
+    a.variant.localeCompare(b.variant)
+  );
 }
 
 function extractBucketPath(storagePath: string) {
-  const [bucket, ...rest] = storagePath.split("/");
+  const normalized = storagePath.replace(/^\/+/, "");
+  const [bucket, ...rest] = normalized.split("/");
   return { bucket, path: rest.join("/") };
 }
 
 export async function getSignedImageUrl(storagePath: string) {
-  const { bucket, path } = extractBucketPath(storagePath);
+  const normalized = storagePath.replace(/^\/+/, "");
+  const { bucket, path } = extractBucketPath(normalized);
 
-  if (!bucket || !path) {
-    return null;
+  const attempts: Array<{ bucket: string; path: string }> = [];
+  if (bucket && path) {
+    attempts.push({ bucket, path });
   }
 
-  const { data, error } = await supabaseServerClient.storage
-    .from(bucket)
-    .createSignedUrl(path, 60 * 5);
-
-  if (error || !data?.signedUrl) {
-    return null;
+  // If the stored path is missing the bucket prefix (legacy), retry with configured bucket.
+  if (normalized) {
+    const legacyPath = normalized.startsWith(`${SUPABASE_IMAGE_BUCKET}/`)
+      ? normalized.slice(SUPABASE_IMAGE_BUCKET.length + 1)
+      : normalized;
+    attempts.push({ bucket: SUPABASE_IMAGE_BUCKET, path: legacyPath });
   }
 
-  return data.signedUrl;
+  for (const attempt of attempts) {
+    if (!attempt.bucket || !attempt.path) {
+      continue;
+    }
+
+    const { data, error } = await supabaseServerClient.storage
+      .from(attempt.bucket)
+      .createSignedUrl(attempt.path, 60 * 5);
+
+    if (!error && data?.signedUrl) {
+      return data.signedUrl;
+    }
+  }
+
+  return null;
 }
 
 export async function uploadManualBirdImageVariant(args: {
