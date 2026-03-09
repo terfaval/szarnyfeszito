@@ -294,41 +294,37 @@ export default function BirdListShell({ birds }: BirdListShellProps) {
           filteredBirds.map((bird) => (
             <Link key={bird.id} href={`/admin/birds/${bird.id}`} className="admin-list-link">
               <div className="admin-list-details">
-                <div className="admin-list-title-row">
-                  {bird.habitatIconSrc || bird.iconicPreviewUrl ? (
-                    <div
-                      className={`admin-bird-badge ${
-                        bird.iconicPreviewUrl && !bird.habitatIconSrc
-                          ? "admin-bird-badge--iconic-only"
-                          : ""
-                      }`}
-                    >
-                      {bird.habitatIconSrc ? (
-                        <img
-                          src={bird.habitatIconSrc}
-                          alt="Habitat icon"
-                          className="admin-bird-badge__habitat"
-                        />
-                      ) : null}
-                      {bird.iconicPreviewUrl ? (
-                        <img
-                          src={bird.iconicPreviewUrl}
-                          alt="Iconic bird illustration"
-                          className="admin-bird-badge__iconic"
-                        />
-                      ) : null}
-                    </div>
-                  ) : null}
-                  <p className="admin-list-title">{bird.name_hu}</p>
+                <div className="admin-bird-list-grid">
+                  <div className="admin-bird-icon-cell" aria-hidden="true">
+                    {bird.habitatIconSrc ? (
+                      <img
+                        src={bird.habitatIconSrc}
+                        alt=""
+                        className="admin-bird-habitat-icon"
+                      />
+                    ) : (
+                      <div className="admin-bird-habitat-fallback" />
+                    )}
+                    {bird.iconicPreviewUrl ? (
+                      <img
+                        src={bird.iconicPreviewUrl}
+                        alt=""
+                        className="admin-bird-iconic-centered"
+                      />
+                    ) : null}
+                  </div>
+                  <div className="admin-bird-text-cell">
+                    <p className="admin-list-title">{bird.name_hu}</p>
+                    <p className="admin-list-meta">{bird.slug}</p>
+                    <p className="admin-list-date">
+                      Updated{" "}
+                      {new Intl.DateTimeFormat(undefined, {
+                        dateStyle: "medium",
+                        timeStyle: "short",
+                      }).format(new Date(bird.updated_at))}
+                    </p>
+                  </div>
                 </div>
-                <p className="admin-list-meta">{bird.slug}</p>
-                <p className="admin-list-date">
-                  Updated{" "}
-                  {new Intl.DateTimeFormat(undefined, {
-                    dateStyle: "medium",
-                    timeStyle: "short",
-                  }).format(new Date(bird.updated_at))}
-                </p>
               </div>
               <div className="admin-inline-actions">
                 <StatusPill status={bird.status} />

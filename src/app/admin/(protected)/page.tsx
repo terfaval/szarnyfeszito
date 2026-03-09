@@ -1,11 +1,34 @@
 import Link from "next/link";
 import { listBirds } from "@/lib/birdService";
+import { listLatestDossierBlocksForBirds } from "@/lib/contentService";
+import { getSignedImageUrl, listCurrentIconicImagesForBirds } from "@/lib/imageService";
 import { BirdStatus, BIRD_STATUS_VALUES } from "@/types/bird";
 import { Card } from "@/ui/components/Card";
 import { StatusPill } from "@/ui/components/StatusPill";
 
 export const metadata = {
   title: "Szárnyfeszítő admin dashboard",
+};
+
+const habitatIconForClass = (habitatClass: unknown) => {
+  if (typeof habitatClass !== "string") {
+    return null;
+  }
+
+  switch (habitatClass.trim().toLowerCase()) {
+    case "erdő":
+      return "/BIRDS/ICONS/BACKGROUND/ICON_FOREST.svg";
+    case "vízpart":
+      return "/BIRDS/ICONS/BACKGROUND/ICON_WATER.svg";
+    case "puszta":
+      return "/BIRDS/ICONS/BACKGROUND/ICON_GRASSLAND.svg";
+    case "hegy":
+      return "/BIRDS/ICONS/BACKGROUND/ICON_MOUNTAIN.svg";
+    case "város":
+      return "/BIRDS/ICONS/BACKGROUND/ICON_CITY.svg";
+    default:
+      return null;
+  }
 };
 
 export default async function AdminPage() {
@@ -23,6 +46,27 @@ export default async function AdminPage() {
   );
 
   const recentBirds = birds.slice(0, 3);
+  const recentBirdIds = recentBirds.map((bird) => bird.id);
+
+  const dossierByBirdId = await listLatestDossierBlocksForBirds(recentBirdIds);
+  const habitatIconByBirdId = new Map<string, string>();
+  for (const [birdId, dossier] of dossierByBirdId.entries()) {
+    const iconSrc = habitatIconForClass(dossier?.pill_meta?.habitat_class);
+    if (iconSrc) {
+      habitatIconByBirdId.set(birdId, iconSrc);
+    }
+  }
+
+  const iconicImages = await listCurrentIconicImagesForBirds(recentBirdIds);
+  const iconicPreviewByBirdId = new Map<string, string>();
+  await Promise.all(
+    iconicImages.map(async (image) => {
+      const signedUrl = await getSignedImageUrl(image.storage_path);
+      if (signedUrl) {
+        iconicPreviewByBirdId.set(image.entity_id, signedUrl);
+      }
+    })
+  );
 
   return (
     <section className="admin-stack">
@@ -110,15 +154,37 @@ export default async function AdminPage() {
               className="admin-list-link"
             >
               <div className="admin-list-details">
-                <p className="admin-list-title">{bird.name_hu}</p>
-                <p className="admin-list-meta">{bird.slug}</p>
-                <p className="admin-list-date">
-                  Updated{" "}
-                  {new Intl.DateTimeFormat(undefined, {
-                    dateStyle: "medium",
-                    timeStyle: "short",
-                  }).format(new Date(bird.updated_at))}
-                </p>
+                <div className="admin-bird-list-grid">
+                  <div className="admin-bird-icon-cell" aria-hidden="true">
+                    {habitatIconByBirdId.get(bird.id) ? (
+                      <img
+                        src={habitatIconByBirdId.get(bird.id)!}
+                        alt=""
+                        className="admin-bird-habitat-icon"
+                      />
+                    ) : (
+                      <div className="admin-bird-habitat-fallback" />
+                    )}
+                    {iconicPreviewByBirdId.get(bird.id) ? (
+                      <img
+                        src={iconicPreviewByBirdId.get(bird.id)!}
+                        alt=""
+                        className="admin-bird-iconic-centered"
+                      />
+                    ) : null}
+                  </div>
+                  <div className="admin-bird-text-cell">
+                    <p className="admin-list-title">{bird.name_hu}</p>
+                    <p className="admin-list-meta">{bird.slug}</p>
+                    <p className="admin-list-date">
+                      Updated{" "}
+                      {new Intl.DateTimeFormat(undefined, {
+                        dateStyle: "medium",
+                        timeStyle: "short",
+                      }).format(new Date(bird.updated_at))}
+                    </p>
+                  </div>
+                </div>
               </div>
               <div className="admin-inline-actions">
                 <StatusPill status={bird.status} />

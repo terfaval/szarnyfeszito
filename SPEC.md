@@ -75,6 +75,7 @@ Kiegészítő meta (D18):
 - A kategóriák nem publish-gate feltételek (nem blokkolják a publish-t), kizárólag admin taxonómia / registry célokra szolgálnak.
 - Ha bármelyik hiányzik, a madár bekerül a “Classification queue” listába, ahol AI-javaslat generálható és/vagy kézzel jóváhagyható.
 - A Studio `/admin/birds` listaelemei a (ha elérhető) dossier `blocks_json.pill_meta.habitat_class` alapján megjelenítik a habitat ikont, és ha van current `fixed_pose_icon_v1` (iconic) asset, akkor overlay-ként azt is (placeholder nélkül).
+- A Studio `/admin` dashboard “Recent birds” listája ugyanazt a kétoszlopos (ikon + szöveg) megjelenítést használja.
 - `visibility_category` jelentése Magyarországra értendő (D20). Kategóriák:
   - `common_hu`: általában gyakori Magyarországon (releváns évszakban/élőhelyen)
   - `localized_hu`: előfordul Magyarországon, de inkább helyi / foltszerű
