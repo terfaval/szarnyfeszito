@@ -74,6 +74,7 @@ Kiegészítő meta (D18):
 - A Studio `/admin/birds` oldalon a madarak szűrhetők/rendezhetők `size_category` (méret) és `visibility_category` (észlelhetőség) alapján.
 - A kategóriák nem publish-gate feltételek (nem blokkolják a publish-t), kizárólag admin taxonómia / registry célokra szolgálnak.
 - Ha bármelyik hiányzik, a madár bekerül a “Classification queue” listába, ahol AI-javaslat generálható és/vagy kézzel jóváhagyható.
+- A Studio `/admin/birds` listaelemei a (ha elérhető) dossier `blocks_json.pill_meta.habitat_class` alapján megjelenítik a habitat ikont, és ha van current `fixed_pose_icon_v1` (iconic) asset, akkor overlay-ként azt is (placeholder nélkül).
 - `visibility_category` jelentése Magyarországra értendő (D20). Kategóriák:
   - `common_hu`: általában gyakori Magyarországon (releváns évszakban/élőhelyen)
   - `localized_hu`: előfordul Magyarországon, de inkább helyi / foltszerű
@@ -138,13 +139,16 @@ Flow:
 
 Struktúra (`blocks_json`):
 
-- Field-Guide Dossier `schema_version: "v2.2"` (lásd D12)
+- Field-Guide Dossier `schema_version: "v2.3"` (lásd D12, D28)
 - `signature_trait`
 - `header` (name_hu, name_latin, subtitle, short_summary)
 - `pill_meta` (habitat_class, region_teaser, size_cm, wingspan_cm, diet_short, lifespan_years)
 - `short_options` (pontos három rövid opció / tagline)
 - `long_paragraphs` (pontos két bekezdés)
-- `identification` (key_features: Csőr/Tollazat/Hang/Mozgás + identification_paragraph)
+- `identification` (key_features: 4 item, mindegyikhez `axis` (csor/tollazat/hang/mozgas) + dinamikus `title` + hosszabb `description`, + identification_paragraph) (lásd D28)
+
+Megjegyzés:
+- A Studio text review felületen a main_habitat kép alá kerül egy "Regenerate traits" gomb, ami csak az `identification` blokkot generálja újra (a többi dossier rész változatlan marad).
 - `distribution` (taxonomy + iucn_status + distribution_regions + distribution_note)
 - `nesting`
 - `migration`

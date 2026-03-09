@@ -46,7 +46,7 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 ## Dossier generation API
 
 - The admin-only route `POST /api/generate-bird-dossier` replaces the older `generate-text` endpoint with the Field-Guide D1 workflow. Provide `bird_id` in the JSON body and the route will call `AI_MODEL_TEXT` (configured through `src/lib/config.ts`) to generate the dossier.
-- Responses are validated against the v2.2 dossier schema (`schema_version`, `signature_trait`, `header`, `pill_meta`, `short_options`, `long_paragraphs`, `identification`, `distribution`, `nesting`, `migration`, `fun_fact`, `ethics_tip`, `typical_places`). Validation failures return `422` along with `issues` and the model name so the admin can triage missing fields.
+- Responses are validated against the v2.3 dossier schema (`schema_version`, `signature_trait`, `header`, `pill_meta`, `short_options`, `long_paragraphs`, `identification`, `distribution`, `nesting`, `migration`, `fun_fact`, `ethics_tip`, `typical_places`). Validation failures return `422` along with `issues` and the model name so the admin can triage missing fields.
 - On success, the API creates a `content_blocks` row with `blocks_json` holding the dossier, `generation_meta` capturing `model`, `prompt_hash`, and `generated_at`, all saved with `review_status=draft`, then flips the bird’s `status` to `text_generated`.
 - The response also surfaces the stored `generation_meta`, making it easy to correlate UI data with the exact prompt hash for future auditing.
 - Existing helpers such as `POST /api/birds/:id/text-review` still finalize the current draft as approved before images can be generated, so the pipeline remains state-machine driven.

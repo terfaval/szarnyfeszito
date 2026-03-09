@@ -224,6 +224,7 @@ export default function BirdTextReview({
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [regenerating, setRegenerating] = useState(false);
+  const [regeneratingTraits, setRegeneratingTraits] = useState(false);
   const [overlayTarget, setOverlayTarget] = useState<TextReviewSection | null>(
     null
   );
@@ -505,6 +506,46 @@ export default function BirdTextReview({
       );
     } finally {
       setRegenerating(false);
+    }
+  };
+
+  const handleRegenerateTraits = async () => {
+    if (!contentBlock) {
+      setError("Generate the dossier before regenerating traits.");
+      return;
+    }
+
+    setRegeneratingTraits(true);
+    setError(null);
+    setStatusMessage(null);
+
+    try {
+      const response = await fetch(
+        `/api/birds/${birdId}/text-review/regenerate-identification`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+
+      const payload = await response.json().catch(() => null);
+
+      if (!response.ok || !payload?.data?.content_block) {
+        throw new Error(
+          payload?.error ?? "Unable to regenerate identification traits."
+        );
+      }
+
+      setContentBlock(payload.data.content_block);
+      setStatusMessage("Regenerated identification traits.");
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Unable to regenerate identification traits right now."
+      );
+    } finally {
+      setRegeneratingTraits(false);
     }
   };
 
@@ -895,6 +936,26 @@ export default function BirdTextReview({
                 ))}
               </div>
             </div>
+
+            {!isPublishMode && (
+              <div className="mt-3 flex justify-end">
+                <Button
+                  type="button"
+                  onClick={handleRegenerateTraits}
+                  disabled={
+                    !contentBlock ||
+                    regeneratingTraits ||
+                    regenerating ||
+                    approving ||
+                    isApproved
+                  }
+                  variant="ghost"
+                >
+                  <Icon name="generate" size={16} />
+                  {regeneratingTraits ? "Regenerating traits…" : "Regenerate traits"}
+                </Button>
+              </div>
+            )}
 
             <div className={styles.taxonomyParagraphRow}>
               <article className={styles.taxonomyColumn}>

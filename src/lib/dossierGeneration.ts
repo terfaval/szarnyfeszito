@@ -1,4 +1,4 @@
-import { randomUUID } from "crypto";
+﻿import { randomUUID } from "crypto";
 import type { Bird } from "@/types/bird";
 import {
   callOpenAIChatCompletion,
@@ -11,9 +11,13 @@ import {
   extractJsonPayload,
 } from "@/lib/aiUtils";
 import { AI_MODEL_TEXT } from "@/lib/aiConfig";
-import { parseBirdDossier, formatDossierValidationErrors } from "@/lib/dossierSchema";
+import {
+  parseBirdDossier,
+  parseBirdIdentificationBlockV23,
+  formatDossierValidationErrors,
+} from "@/lib/dossierSchema";
 import { hashPrompt } from "@/lib/promptHash";
-import type { BirdDossier } from "@/types/dossier";
+import type { BirdDossier, BirdDossierIdentification } from "@/types/dossier";
 import { normalizeHungarianName } from "@/lib/stringUtils";
 import { ZodError } from "zod";
 import {
@@ -22,7 +26,7 @@ import {
   runQualityGates,
 } from "@/lib/dossierQualityGates";
 
-const SCHEMA_VERSION = "v2.2";
+const SCHEMA_VERSION = "v2.3";
 const MAX_TOKENS = 1800;
 
 const SHORT_OPTION_TRIM_MIN = 70;
@@ -85,7 +89,7 @@ const normalizeShortOptionsPayload = (payload: Record<string, unknown>) => {
 };
 
 const extractAnchorKeywords = (signature: string): string[] => {
-  const stopwords = ["és", "vagy", "mint", "az", "egy", "ami", "ahol"];
+  const stopwords = ["Ă©s", "vagy", "mint", "az", "egy", "ami", "ahol"];
   return signature
     .toLowerCase()
     .split(/\W+/)
@@ -125,7 +129,7 @@ const validateSignatureSpecificity = (signature: string): string[] => {
   const s = signature.toLowerCase();
   const reasons: string[] = [];
 
-  const generic = ["különleges", "jellegzetes", "lenyűgöző", "látványos", "figyelemfelkeltő"];
+  const generic = ["kĂĽlĂ¶nleges", "jellegzetes", "lenyĹ±gĂ¶zĹ‘", "lĂˇtvĂˇnyos", "figyelemfelkeltĹ‘"];
   const genericHits = generic.filter((w) => s.includes(w)).length;
 
   const concrete = [
@@ -135,13 +139,13 @@ const validateSignatureSpecificity = (signature: string): string[] => {
     "v-alak",
     "vonul",
     "csapat",
-    "mocsár",
-    "nádas",
+    "mocsĂˇr",
+    "nĂˇdas",
     "puszta",
-    "rét",
-    "repül",
+    "rĂ©t",
+    "repĂĽl",
     "nyak",
-    "láb",
+    "lĂˇb",
   ];
   const hasConcrete = concrete.some((w) => s.includes(w));
 
@@ -182,60 +186,59 @@ export type DossierGenerationResult = {
 
 // ---------- strict template ----------
 const JSON_TEMPLATE = `{
-  "schema_version": "v2.2",
-  "signature_trait": "Ä‚ËĂ˘â€šÂ¬Ă‚Â¦",
+  "schema_version": "v2.3",
+  "signature_trait": "Ă„â€šĂ‹ÂÄ‚ËĂ˘â‚¬ĹˇĂ‚Â¬Ä‚â€šĂ‚Â¦",
   "header": {
-    "name_hu": "Ă˘â‚¬Â¦",
-    "name_latin": "Ă˘â‚¬Â¦",
-    "subtitle": "Ă˘â‚¬Â¦",
-    "short_summary": "Ă˘â‚¬Â¦"
+    "name_hu": "Ä‚ËĂ˘â€šÂ¬Ă‚Â¦",
+    "name_latin": "Ä‚ËĂ˘â€šÂ¬Ă‚Â¦",
+    "subtitle": "Ä‚ËĂ˘â€šÂ¬Ă‚Â¦",
+    "short_summary": "Ä‚ËĂ˘â€šÂ¬Ă‚Â¦"
   },
   "pill_meta": {
-    "region_teaser": "Ă˘â‚¬Â¦",
+    "region_teaser": "Ä‚ËĂ˘â€šÂ¬Ă‚Â¦",
     "size_cm": { "min": null, "max": null },
     "wingspan_cm": { "min": null, "max": null },
-    "diet_short": "Ă˘â‚¬Â¦",
+    "diet_short": "Ä‚ËĂ˘â€šÂ¬Ă‚Â¦",
     "lifespan_years": { "min": null, "max": null }
   },
-  "short_options": ["Ă˘â‚¬Â¦", "Ă˘â‚¬Â¦", "Ă˘â‚¬Â¦"],
-  "long_paragraphs": ["Ă˘â‚¬Â¦", "Ă˘â‚¬Â¦"],
+  "short_options": ["Ä‚ËĂ˘â€šÂ¬Ă‚Â¦", "Ä‚ËĂ˘â€šÂ¬Ă‚Â¦", "Ä‚ËĂ˘â€šÂ¬Ă‚Â¦"],
+  "long_paragraphs": ["Ä‚ËĂ˘â€šÂ¬Ă‚Â¦", "Ä‚ËĂ˘â€šÂ¬Ă‚Â¦"],
   "identification": {
     "key_features": [
-      { "title": "Ă˘â‚¬Â¦", "description": "Ă˘â‚¬Â¦" },
-      { "title": "Ă˘â‚¬Â¦", "description": "Ă˘â‚¬Â¦" },
-      { "title": "Ă˘â‚¬Â¦", "description": "Ă˘â‚¬Â¦" },
-      { "title": "Ă˘â‚¬Â¦", "description": "Ă˘â‚¬Â¦" }
+      { "axis": "csor", "title": "...", "description": "..." },
+      { "axis": "tollazat", "title": "...", "description": "..." },
+      { "axis": "hang", "title": "...", "description": "..." },
+      { "axis": "mozgas", "title": "...", "description": "..." }
     ],
-    "identification_paragraph": "Ă˘â‚¬Â¦"
+    "identification_paragraph": "Ä‚ËĂ˘â€šÂ¬Ă‚Â¦"
   },
   "distribution": {
     "taxonomy": { "order": null, "family": null, "genus": null, "species": null },
     "iucn_status": null,
-    "distribution_regions": ["Ă˘â‚¬Â¦"],
-    "distribution_note": "Ă˘â‚¬Â¦"
+    "distribution_regions": ["Ä‚ËĂ˘â€šÂ¬Ă‚Â¦"],
+    "distribution_note": "Ä‚ËĂ˘â€šÂ¬Ă‚Â¦"
   },
   "nesting": {
     "nesting_type": null,
     "nest_site": null,
     "breeding_season": null,
     "clutch_or_chicks_count": null,
-    "nesting_note": "Ă˘â‚¬Â¦"
+    "nesting_note": "Ä‚ËĂ˘â€šÂ¬Ă‚Â¦"
   },
   "migration": {
     "is_migratory": null,
     "timing": null,
     "route": null,
-    "migration_note": "Ă˘â‚¬Â¦"
+    "migration_note": "Ä‚ËĂ˘â€šÂ¬Ă‚Â¦"
   },
-  "fun_fact": "Ă˘â‚¬Â¦",
-  "ethics_tip": "Ă˘â‚¬Â¦",
-  "typical_places": ["Ă˘â‚¬Â¦"]
+  "fun_fact": "Ä‚ËĂ˘â€šÂ¬Ă‚Â¦",
+  "ethics_tip": "Ä‚ËĂ˘â€šÂ¬Ă‚Â¦",
+  "typical_places": ["Ä‚ËĂ˘â€šÂ¬Ă‚Â¦"]
 }`;
 
 // Prefer an ASCII placeholder template to avoid mojibake confusing the model output.
-// Keep enum-like literals (e.g. key_features.title) aligned with the Zod schema until encoding cleanup lands.
-const JSON_TEMPLATE_V2_2 = `{
-  "schema_version": "v2.2",
+const JSON_TEMPLATE_V2_3 = `{
+  "schema_version": "v2.3",
   "signature_trait": "...",
   "header": {
     "name_hu": "...",
@@ -244,7 +247,7 @@ const JSON_TEMPLATE_V2_2 = `{
     "short_summary": "..."
   },
   "pill_meta": {
-    "habitat_class": "erdő",
+    "habitat_class": "erdĹ‘",
     "region_teaser": "...",
     "size_cm": { "min": null, "max": null },
     "wingspan_cm": { "min": null, "max": null },
@@ -255,10 +258,10 @@ const JSON_TEMPLATE_V2_2 = `{
   "long_paragraphs": ["...", "..."],
   "identification": {
     "key_features": [
-      { "title": "CsĹ‘r", "description": "..." },
+      { "title": "CsÄąâ€r", "description": "..." },
       { "title": "Tollazat", "description": "..." },
       { "title": "Hang", "description": "..." },
-      { "title": "MozgĂˇs", "description": "..." }
+      { "title": "MozgÄ‚Ë‡s", "description": "..." }
     ],
     "identification_paragraph": "..."
   },
@@ -302,18 +305,18 @@ const SYSTEM_PROMPT = `
 Return ONLY a single JSON object. No markdown, no commentary, no code fences.
 
 You MUST output EXACTLY the following object shape (fill values, keep keys/types):
-${JSON_TEMPLATE_V2_2}
+${JSON_TEMPLATE_V2_3}
 
 HARD RULES:
   - Top-level keys must be present: header, pill_meta, short_options, long_paragraphs, identification, distribution, nesting, migration, fun_fact, did_you_know, ethics_tip, typical_places, leaflets.
-- pill_meta.habitat_class must be exactly one of: erdő, vízpart, puszta, hegy, város (pick the strongest).
+- pill_meta.habitat_class must be exactly one of: erdĹ‘, vĂ­zpart, puszta, hegy, vĂˇros (pick the strongest).
 - distribution/nesting/migration MUST be objects (never strings).
 - Use null for nullable fields when unknown; when you do provide numbers keep ranges conservative and avoid false precision (no spans < ~2 units unless null).
 - Identity lock: header.name_hu must equal the normalized Hungarian name provided as input, and header.name_latin must match the provided Latin name exactly.
 - short_options: exactly 3 strings, 90-170 chars, each a complete sentence ending in punctuation; across the 3 sentences cover at least two different axes (morphology/plumage/beak/sound/movement/habitat/behavior); no trailing conjunctions, no shared openings, no reliance on sensory suffix templates.
-- short_summary: 1-2 sentences can lean Durrell/Adams but must include at least one concrete observable detail; avoid being reduced to “különleges madár” or “lenyűgöző faj” without detail.
-- long_paragraphs: exactly two paragraphs; Paragraph 1 is a concrete field encounter scene, Paragraph 2 is context (habitat/migration/behavior) without repeating Paragraph 1; at most one witty sentence per paragraph; otherwise stay concrete, avoid hearsay/record phrases (“a helyiek szerint”, “gyakran nevezik”, “rekord”, etc.), and do not invent digits or citations.
-- identification.key_features: four entries with distinct titles; each description must be field-usable (concrete, non-generic).
+- short_summary: 1-2 sentences can lean Durrell/Adams but must include at least one concrete observable detail; avoid being reduced to â€śkĂĽlĂ¶nleges madĂˇrâ€ť or â€ślenyĹ±gĂ¶zĹ‘ fajâ€ť without detail.
+- long_paragraphs: exactly two paragraphs; Paragraph 1 is a concrete field encounter scene, Paragraph 2 is context (habitat/migration/behavior) without repeating Paragraph 1; at most one witty sentence per paragraph; otherwise stay concrete, avoid hearsay/record phrases (â€śa helyiek szerintâ€ť, â€śgyakran nevezikâ€ť, â€śrekordâ€ť, etc.), and do not invent digits or citations.
+- identification.key_features: exactly 4 entries in this axis order: csor, tollazat, hang, mozgas. Each title must be a short, species-specific heading; each description must be field-usable (concrete, non-generic).
 - Output JSON only.
 `.trim();
 
@@ -408,13 +411,13 @@ export async function generateBirdDossier(
   
   Content expectations (Hungarian):
   - Identity lock: use the provided names exactly; do not substitute another species.
-  - pill_meta.habitat_class: pick 1 from (erdő/vízpart/puszta/hegy/város) as the strongest fit for this bird.
+  - pill_meta.habitat_class: pick 1 from (erdĹ‘/vĂ­zpart/puszta/hegy/vĂˇros) as the strongest fit for this bird.
   - short_options: exactly 3 sentences, 90-170 chars, end punctuation; across the 3 sentences cover at least two different axes (morphology/plumage/beak/sound/movement/habitat/behavior) but do not force axis keywords.
   - short_summary: 1-2 sentences can lean Durrell/Adams but must include at least one concrete observable detail and avoid generic phrases.
   - long_paragraphs: exactly two paragraphs; Paragraph 1 is a concrete field encounter scene, Paragraph 2 is context (habitat/migration/behavior) without repeating Paragraph 1; at most one witty sentence per paragraph; avoid hearsay/records; do not invent digits or citations.
-  - identification: deliver four field-usable cues (Csőr, Tollazat, Hang, Mozgás) with concrete, non-generic descriptions.
-  - Structured facts: use null when unknown or offer conservative ranges (≥2 units wide) within plausible caps.
-  - distribution/nesting/migration each needs short categorical fields + 2â€“3 sentence note.
+  - identification: deliver exactly four key_features in axis order (csor/tollazat/hang/mozgas). Each item must have a short, species-specific title plus a longer, concrete description useful for real identification.
+  - Structured facts: use null when unknown or offer conservative ranges (â‰Ą2 units wide) within plausible caps.
+  - distribution/nesting/migration each needs short categorical fields + 2Ă˘â‚¬â€ś3 sentence note.
   - Do not invent impossible claims.
   
   Output JSON only, matching the template exactly.
@@ -432,7 +435,7 @@ so that they consistently center around this signature_trait.
 Do not switch dominant focus mid-text.
 
 pill_meta.habitat_class:
-- Pick from the fixed set (erdő/vízpart/puszta/hegy/város) as the strongest fit.
+- Pick from the fixed set (erdĹ‘/vĂ­zpart/puszta/hegy/vĂˇros) as the strongest fit.
 
 short_options:
 - exactly 3 standalone sentences
@@ -449,17 +452,17 @@ long_paragraphs:
 - at most one light witty sentence per paragraph
 
 identification.key_features:
-- exactly 4 items
-- axis-diverse
-- practical for real identification
+- exactly 4 items, in this order: csor, tollazat, hang, mozgas
+- each item MUST include axis plus a short, species-specific title (not just "Csőr"/"Tollazat"/etc.)
+- each description must be practical for real identification (concrete, non-generic)
 
 Avoid generic filler phrases like:
-"különleges megjelenés",
-"könnyen felismerhető",
-"gyakran megtalálható".
+"kĂĽlĂ¶nleges megjelenĂ©s",
+"kĂ¶nnyen felismerhetĹ‘",
+"gyakran megtalĂˇlhatĂł".
 
 signature_trait MUST contain at least one concrete observable: sound OR silhouette OR habitat OR movement.
-Do not use generic adjectives-only signatures like 'jellegzetes' / 'lenyűgöző' without concrete anchors.
+Do not use generic adjectives-only signatures like 'jellegzetes' / 'lenyĹ±gĂ¶zĹ‘' without concrete anchors.
 
 If uncertain about numeric ranges, use null.
 Avoid overly narrow ranges (false precision).
@@ -680,4 +683,159 @@ Avoid overly narrow ranges (false precision).
   }
 
   throw new Error("Unable to generate dossier.");
+}
+
+export type IdentificationRegenerationResult = {
+  dossier: BirdDossier;
+  identification: BirdDossierIdentification;
+  model: string;
+  prompt: string;
+  prompt_hash: string;
+  generated_at: string;
+};
+
+export async function regenerateBirdIdentification(args: {
+  bird: Bird;
+  dossier: BirdDossier;
+  reviewComment?: string;
+}): Promise<IdentificationRegenerationResult> {
+  const reviewComment = args.reviewComment?.trim().replace(/"/g, '\\"') ?? "";
+  const reviewHint = reviewComment
+    ? `Review note: "${reviewComment}". Apply it only if it affects identification traits.`
+    : "";
+
+  const IDENTIFICATION_TEMPLATE_V2_3 = `{
+  "identification": {
+    "key_features": [
+      { "axis": "csor", "title": "...", "description": "..." },
+      { "axis": "tollazat", "title": "...", "description": "..." },
+      { "axis": "hang", "title": "...", "description": "..." },
+      { "axis": "mozgas", "title": "...", "description": "..." }
+    ],
+    "identification_paragraph": "..."
+  }
+}`;
+
+  const IDENTIFICATION_SYSTEM_PROMPT = `
+Return ONLY a single JSON object. No markdown, no commentary, no code fences.
+
+You MUST output EXACTLY the following object shape (fill values, keep keys/types):
+${IDENTIFICATION_TEMPLATE_V2_3}
+
+HARD RULES:
+- language: title/description/paragraph must be Hungarian (axis tokens stay as specified).
+- key_features: exactly 4 entries, in this axis order: csor, tollazat, hang, mozgas.
+- title: short, species-specific heading (2–6 words), no trailing punctuation, do NOT use "Csőr"/"Tollazat"/"Hang"/"Mozgás" as the whole title.
+- description: 1–2 sentences, concrete field cues, avoid generic filler; minimum ~40 characters.
+- Do not invent numbers or citations.
+`.trim();
+
+  const baseUserPrompt = `
+Regenerate ONLY the identification block for this bird.
+
+Identity lock:
+- name_hu: "${args.bird.name_hu}"
+- name_latin: "${args.bird.name_latin ?? "unknown"}"
+
+Keep it consistent with the dossier's dominant signature_trait, but make each key_feature practically useful in the field.
+
+signature_trait: "${args.dossier.signature_trait}"
+short_summary: "${args.dossier.header.short_summary}"
+
+Existing identification (for reference; do not copy verbatim):
+${args.dossier.identification.key_features
+  .map((f) => `- ${f.title}: ${f.description}`)
+  .join("\n")}
+
+${reviewHint}
+`.trim();
+
+  const runCompletion = async (prompt: string): Promise<CompletionResult> => {
+    const messages: OpenAIChatMessage[] = [
+      { role: "system", content: IDENTIFICATION_SYSTEM_PROMPT },
+      { role: "user", content: prompt },
+    ];
+
+    const completion = await callOpenAIChatCompletion({
+      model: AI_MODEL_TEXT,
+      temperature: 0.45,
+      max_tokens: 700,
+      messages,
+      response_format: { type: "json_object" },
+    });
+
+    const modelName = completion.model ?? AI_MODEL_TEXT;
+    const requestId = randomUUID();
+    const finishReason = completion.choices?.[0]?.finish_reason ?? "unknown";
+    const message = completion.choices?.[0]?.message?.content ?? "";
+
+    if (!message) throw new Error("OpenAI response did not include a message.");
+
+    return { message, modelName, requestId, finishReason };
+  };
+
+  let lastRawJson = "";
+  let lastModel = AI_MODEL_TEXT;
+  let lastMessage = "";
+
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    const prompt =
+      attempt === 1
+        ? baseUserPrompt
+        : `${baseUserPrompt}\n\nREPAIR: fix schema/key/type mismatches; keep the same object shape; output JSON only.`;
+
+    const response = await runCompletion(prompt);
+    lastModel = response.modelName;
+    lastMessage = response.message;
+
+    const extracted = extractJsonPayload(response.message);
+    if (!extracted.success) {
+      throw new AIJsonParseError(
+        response.requestId,
+        response.modelName,
+        extracted.error.reason,
+        extracted.error.raw_head,
+        extracted.error.raw_tail,
+        response.finishReason
+      );
+    }
+
+    lastRawJson = extracted.raw;
+
+    const unwrapped = unwrapCommonContainers(extracted.payload);
+
+    try {
+      const identification = parseBirdIdentificationBlockV23(unwrapped);
+      const updated: BirdDossier = {
+        ...(args.dossier as BirdDossier),
+        schema_version: "v2.3",
+        identification,
+      };
+      runQualityGates(updated, args.bird);
+
+      const concatPrompt = `${IDENTIFICATION_SYSTEM_PROMPT}\n\n${prompt}`;
+      const generatedAt = new Date().toISOString();
+
+      return {
+        dossier: updated,
+        identification,
+        prompt: concatPrompt,
+        prompt_hash: hashPrompt(concatPrompt),
+        model: lastModel ?? AI_MODEL_TEXT,
+        generated_at: generatedAt,
+      };
+    } catch (error) {
+      if (attempt === 2) {
+        if (error instanceof ZodError) {
+          const issues = formatDossierValidationErrors(error)
+            .slice(0, 12)
+            .map((issue) => `${issue.path}: ${issue.message}`);
+          throw new AISchemaMismatchError(issues, lastRawJson || lastMessage);
+        }
+        throw error;
+      }
+    }
+  }
+
+  throw new Error("Unable to regenerate identification block.");
 }

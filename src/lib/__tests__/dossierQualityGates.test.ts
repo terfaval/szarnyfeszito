@@ -23,7 +23,7 @@ const baseBird: Bird = {
 };
 
 const baseDossier: BirdDossier = {
-  schema_version: "v2.2",
+  schema_version: "v2.3",
   signature_trait:
     "A nádas peremén elejtett hangja mögött a tollazat árnyéka narancssárgán villan fel.",
   header: {
@@ -52,10 +52,26 @@ const baseDossier: BirdDossier = {
   ],
   identification: {
     key_features: [
-      { title: "Csőr", description: "Rövid csőrét ügyesen használja a sekély vízből szedegetett lárvákra." },
-      { title: "Tollazat", description: "Tollazata sűrű és pöttyös, mintha a nád ritmusát követné." },
-      { title: "Hang", description: "Hangja tompa csipogás, inkább rövid kiáltásokat ismétel." },
-      { title: "Mozgás", description: "Mozgása lebegő, szárnycsapásai rövidek, könnyedek." },
+      {
+        axis: "csor",
+        title: "Rövid, hajlott csőr",
+        description: "Rövid csőrét ügyesen használja a sekély vízből szedegetett lárvákra.",
+      },
+      {
+        axis: "tollazat",
+        title: "Pöttyös tollazat",
+        description: "Tollazata sűrű és pöttyös, mintha a nád ritmusát követné.",
+      },
+      {
+        axis: "hang",
+        title: "Tompa csipogás",
+        description: "Hangja tompa csipogás, inkább rövid kiáltásokat ismétel.",
+      },
+      {
+        axis: "mozgas",
+        title: "Lebegő mozgás",
+        description: "Mozgása lebegő, szárnycsapásai rövidek, könnyedek.",
+      },
     ],
     identification_paragraph:
       "A négy kulcsfontosságú jellemző együttesen biztosítja, hogy gyorsan felismerhető legyen a nádasokban.",
@@ -123,7 +139,8 @@ describe("dossierQualityGates", () => {
 
   it("rejects duplicate identification titles", () => {
     const dossier = cloneDossier();
-    dossier.identification.key_features[1].title = "Csőr";
+    dossier.identification.key_features[1].title =
+      dossier.identification.key_features[0].title;
     expect(() => runQualityGates(dossier, baseBird)).toThrow(QualityGateError);
   });
 

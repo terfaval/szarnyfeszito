@@ -191,7 +191,19 @@ export function runQualityGates(dossier: BirdDossier, bird: Bird) {
         `Gate E: identification.key_features description for "${title}" reads generic; add concrete field cues.`
       );
     }
-    identificationAxes.add(title);
+    const axis =
+      "axis" in feature && typeof feature.axis === "string"
+        ? feature.axis
+        : normalizeText(title) === "csőr"
+          ? "csor"
+          : normalizeText(title) === "tollazat"
+            ? "tollazat"
+            : normalizeText(title) === "hang"
+              ? "hang"
+              : normalizeText(title) === "mozgás"
+                ? "mozgas"
+                : title;
+    identificationAxes.add(axis);
   });
   if (identificationAxes.size < 3) {
     issues.push("Gate E: identification must cover at least three different axes.");

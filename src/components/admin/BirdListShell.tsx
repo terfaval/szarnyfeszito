@@ -15,7 +15,12 @@ import {
 } from "@/types/bird";
 
 type BirdListShellProps = {
-  birds: Bird[];
+  birds: Array<
+    Bird & {
+      habitatIconSrc?: string | null;
+      iconicPreviewUrl?: string | null;
+    }
+  >;
 };
 
 const SIZE_ORDER: Record<BirdSizeCategory, number> = {
@@ -289,9 +294,34 @@ export default function BirdListShell({ birds }: BirdListShellProps) {
           filteredBirds.map((bird) => (
             <Link key={bird.id} href={`/admin/birds/${bird.id}`} className="admin-list-link">
               <div className="admin-list-details">
-                <p className="admin-list-title">{bird.name_hu}</p>
+                <div className="admin-list-title-row">
+                  {bird.habitatIconSrc || bird.iconicPreviewUrl ? (
+                    <div
+                      className={`admin-bird-badge ${
+                        bird.iconicPreviewUrl && !bird.habitatIconSrc
+                          ? "admin-bird-badge--iconic-only"
+                          : ""
+                      }`}
+                    >
+                      {bird.habitatIconSrc ? (
+                        <img
+                          src={bird.habitatIconSrc}
+                          alt="Habitat icon"
+                          className="admin-bird-badge__habitat"
+                        />
+                      ) : null}
+                      {bird.iconicPreviewUrl ? (
+                        <img
+                          src={bird.iconicPreviewUrl}
+                          alt="Iconic bird illustration"
+                          className="admin-bird-badge__iconic"
+                        />
+                      ) : null}
+                    </div>
+                  ) : null}
+                  <p className="admin-list-title">{bird.name_hu}</p>
+                </div>
                 <p className="admin-list-meta">{bird.slug}</p>
-                <p className="text-xs admin-text-muted">{bird.name_latin ?? "No Latin name yet"}</p>
                 <p className="admin-list-date">
                   Updated{" "}
                   {new Intl.DateTimeFormat(undefined, {

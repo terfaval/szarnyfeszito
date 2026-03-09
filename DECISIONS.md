@@ -483,3 +483,14 @@ Indok: ez teszi lehetővé a szigorú validálást, a generációk verifikálás
 - A generalized `activity_logs` table persists daily entries with `(date, activity_type)` uniqueness; columns include `category`, `label`, `exercise_id`, `duration_minutes`, `distance_km`, `intensity`, `notes`, and optional `metadata`. Logs are upserted via the authenticated `/api/activity-logs` GET/POST endpoints.
 - The frontend consumes static metadata lists (yoga library, ACL routines, strength workouts, running defaults) plus live logs to build dropdowns and card selectors; each saved row is treated as the canonical payload for rendering the weekly selector, dropdown states, and monthly grid so semantics stay centralized in Studio.
 - Indok: this keeps the expanded journaling surface within the Studio guardrails, reuses the existing auth/API flow, and keeps Explorer-free until the feature is finalized while producing a structured activity contract for future Explorer consumers.
+
+---
+
+## D28 – Identification key_features: dinamikus cím + axis mező (v2.3)
+
+- A `blocks_json.identification.key_features` 4 eleme továbbra is a négy azonosítási tengelyt fedi le (csőr / tollazat / hang / mozgás), de a panelcím mostantól **dinamikus, madár-specifikus** rövid cím (`title`), amit egy hosszabb, konkrét azonosítási leírás (`description`) követ.
+- A tengelyek stabil jelöléséhez a key_feature kap egy kötelező `axis` mezőt (`csor|tollazat|hang|mozgas`), így a UI szabadabban fogalmazhat címeket anélkül, hogy elveszne a 4-pontos struktúra.
+- A dossier schema verzió `v2.3`-ra lép; a parser továbbra is elfogadja a `v2.2`-t is (backward compatible).
+- A Studio text review felületen a main_habitat kép alá bekerül egy célzott “Regenerate traits” gomb, ami csak az `identification` blokkot generálja újra (server-side AI), a többi dossier mezőt érintetlenül hagyva.
+
+Indok: a korábbi fix “Csőr/Tollazat/Hang/Mozgás” címek túlságosan sablonosak voltak, és a felismerés szempontjából fontos, fajspecifikus kulcsjegyek kevésbé emelkedtek ki.

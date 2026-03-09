@@ -21,10 +21,22 @@ export type BirdDossierPillMeta = {
   lifespan_years: BirdDossierSizeRange;
 };
 
-export type BirdDossierIdentificationKeyFeature = {
+export type BirdDossierIdentificationAxis = "csor" | "tollazat" | "hang" | "mozgas";
+
+export type BirdDossierIdentificationKeyFeatureV22 = {
+  title: "Csőr" | "Tollazat" | "Hang" | "Mozgás";
+  description: string;
+};
+
+export type BirdDossierIdentificationKeyFeatureV23 = {
+  axis: BirdDossierIdentificationAxis;
   title: string;
   description: string;
 };
+
+export type BirdDossierIdentificationKeyFeature =
+  | BirdDossierIdentificationKeyFeatureV22
+  | BirdDossierIdentificationKeyFeatureV23;
 
 export type BirdDossierIdentification = {
   key_features: BirdDossierIdentificationKeyFeature[];
@@ -137,8 +149,10 @@ export type BirdDossierLeafletsV2 = {
 
 export type BirdDossierLeaflets = BirdDossierLeafletsV1 | BirdDossierLeafletsV2;
 
+export type BirdDossierSchemaVersion = "v2.2" | "v2.3";
+
 export type BirdDossierV2 = {
-  schema_version: "v2.2";
+  schema_version: BirdDossierSchemaVersion;
   signature_trait: string;
   header: BirdDossierHeader;
   pill_meta: BirdDossierPillMeta;

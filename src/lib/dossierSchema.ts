@@ -115,11 +115,69 @@ const iucnSchema = z.preprocess(
     lifespan_years: measurementSchema,
   });
 
-// Force the four recognition axes for illustration support.
-const keyFeatureSchema = z.object({
-  title: z.enum(["Csőr", "Tollazat", "Hang", "Mozgás"]),
-  description: trimmedString(),
-});
+const identificationAxisSchema = z.enum(["csor", "tollazat", "hang", "mozgas"]);
+
+// v2.2: fixed recognition axes (legacy, still accepted for existing rows)
+const keyFeatureSchemaV22 = z
+  .object({
+    title: z.enum(["Csőr", "Tollazat", "Hang", "Mozgás"]),
+    description: trimmedString(),
+  })
+  .strict();
+
+const identificationSchemaV22 = z
+  .object({
+    key_features: z.tuple([
+      keyFeatureSchemaV22,
+      keyFeatureSchemaV22,
+      keyFeatureSchemaV22,
+      keyFeatureSchemaV22,
+    ]),
+    identification_paragraph: trimmedString(),
+  })
+  .strict();
+
+// v2.3: dynamic titles + stable axis field
+const keyFeatureSchemaV23 = z
+  .object({
+    axis: identificationAxisSchema,
+    title: trimmedString().max(80, "Keep identification titles concise (≤80 chars)."),
+    description: trimmedString(),
+  })
+  .strict();
+
+const IDENTIFICATION_AXIS_ORDER = ["csor", "tollazat", "hang", "mozgas"] as const;
+
+const identificationSchemaV23 = z
+  .object({
+    key_features: z
+      .array(keyFeatureSchemaV23)
+      .length(4, "Exactly four identification key features are required."),
+    identification_paragraph: trimmedString(),
+  })
+  .strict()
+  .superRefine((value, ctx) => {
+    const axes = value.key_features.map((feature) => feature.axis);
+
+    if (new Set(axes).size !== axes.length) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["key_features"],
+        message: "identification.key_features axis values must be unique.",
+      });
+    }
+
+    IDENTIFICATION_AXIS_ORDER.forEach((axis, index) => {
+      const found = axes[index];
+      if (found !== axis) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["key_features", index, "axis"],
+          message: `Expected axis order: ${IDENTIFICATION_AXIS_ORDER.join(", ")}.`,
+        });
+      }
+    });
+  });
 
 const taxonomySchema = z.object({
   order: nullableTrimmedString(),
@@ -128,10 +186,11 @@ const taxonomySchema = z.object({
   species: nullableTrimmedString(),
 });
 
-const identificationSchema = z.object({
-  key_features: z.tuple([keyFeatureSchema, keyFeatureSchema, keyFeatureSchema, keyFeatureSchema]),
-  identification_paragraph: trimmedString(),
-});
+export const birdIdentificationBlockSchemaV23 = z
+  .object({
+    identification: identificationSchemaV23,
+  })
+  .strict();
 
 const distributionSchema = z.object({
   taxonomy: taxonomySchema,
@@ -161,7 +220,7 @@ const longParagraphsSchema = z
   .array(trimmedString())
   .length(2, "Exactly two long paragraphs are required for stability.");
 
-export const birdDossierSchema = z
+const birdDossierSchemaV22 = z
   .object({
     schema_version: z.literal("v2.2"),
     signature_trait: z.string().min(12).max(200),
@@ -169,7 +228,7 @@ export const birdDossierSchema = z
     pill_meta: pillMetaSchema,
     short_options: shortOptionsSchema,
     long_paragraphs: longParagraphsSchema,
-    identification: identificationSchema,
+    identification: identificationSchemaV22,
     distribution: distributionSchema,
     nesting: nestingSchema,
     migration: migrationSchema,
@@ -181,10 +240,39 @@ export const birdDossierSchema = z
   })
   .strict();
 
+const birdDossierSchemaV23 = z
+  .object({
+    schema_version: z.literal("v2.3"),
+    signature_trait: z.string().min(12).max(200),
+    header: headerSchema,
+    pill_meta: pillMetaSchema,
+    short_options: shortOptionsSchema,
+    long_paragraphs: longParagraphsSchema,
+    identification: identificationSchemaV23,
+    distribution: distributionSchema,
+    nesting: nestingSchema,
+    migration: migrationSchema,
+    fun_fact: trimmedString(),
+    did_you_know: trimmedString(),
+    ethics_tip: trimmedString(),
+    typical_places: z.array(trimmedString()).min(1, "Include at least one typical place."),
+    leaflets: leafletsSchema,
+  })
+  .strict();
+
+export const birdDossierSchema = z.discriminatedUnion("schema_version", [
+  birdDossierSchemaV22,
+  birdDossierSchemaV23,
+]);
+
 export type BirdDossierSchema = z.infer<typeof birdDossierSchema>;
 
 export function parseBirdDossier(payload: unknown): BirdDossier {
   return birdDossierSchema.parse(payload);
+}
+
+export function parseBirdIdentificationBlockV23(payload: unknown) {
+  return birdIdentificationBlockSchemaV23.parse(payload).identification;
 }
 
 export function formatDossierValidationErrors(error: z.ZodError) {

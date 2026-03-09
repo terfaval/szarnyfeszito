@@ -4,7 +4,7 @@ import {
   getLatestContentBlockForBird,
   updateContentBlock,
 } from "@/lib/contentService";
-import { generateBirdDossier } from "@/lib/dossierGeneration";
+import { generateBirdDossier, regenerateBirdIdentification } from "@/lib/dossierGeneration";
 import { getBirdById, updateBird } from "@/lib/birdService";
 
 export async function approveBirdText(
@@ -81,6 +81,47 @@ export async function regenerateBirdTextForReview(birdId: string) {
 
   const reviewComment = block.generation_meta?.review_comment?.trim();
   const generationResult = await generateBirdDossier(bird, {
+    reviewComment,
+  });
+
+  const updatedMeta: GenerationMeta = {
+    model: generationResult.model,
+    prompt_hash: generationResult.prompt_hash,
+    generated_at: generationResult.generated_at,
+    review_comment: block.generation_meta?.review_comment,
+    review_requested_at: block.generation_meta?.review_requested_at,
+  };
+
+  const updatedBlock = await updateContentBlock(block.id, {
+    blocks_json: generationResult.dossier,
+    generation_meta: updatedMeta,
+    review_status: "draft",
+  });
+
+  return updatedBlock;
+}
+
+export async function regenerateBirdIdentificationForReview(birdId: string) {
+  const block = await getLatestContentBlockForBird(birdId);
+
+  if (!block) {
+    throw new Error("No generated content block found for this bird.");
+  }
+
+  if (!block.blocks_json) {
+    throw new Error("No dossier JSON found for this bird.");
+  }
+
+  const bird = await getBirdById(birdId);
+
+  if (!bird) {
+    throw new Error("Bird not found.");
+  }
+
+  const reviewComment = block.generation_meta?.review_comment?.trim();
+  const generationResult = await regenerateBirdIdentification({
+    bird,
+    dossier: block.blocks_json,
     reviewComment,
   });
 
