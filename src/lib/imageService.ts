@@ -46,6 +46,18 @@ type BuiltImageSpec = {
   isRequired: boolean;
 };
 
+const LEGACY_IMAGE_FILES: Array<{
+  styleFamily: ImageSpec["style_family"];
+  variant: ImageVariant;
+  filename: string;
+}> = [
+  { styleFamily: "scientific", variant: "main_habitat", filename: "main_habitat.png" },
+  { styleFamily: "scientific", variant: "flight_clean", filename: "flight_clean.png" },
+  { styleFamily: "scientific", variant: "nesting_clean", filename: "nesting_clean.png" },
+  { styleFamily: "scientific", variant: "standing_clean", filename: "standing_clean.png" },
+  { styleFamily: "iconic", variant: "fixed_pose_icon_v1", filename: "fixed_pose_icon_v1.png" },
+];
+
 export type ImageGenerationResult = {
   variant: ImageVariant;
   style_family: ImageSpec["style_family"];
@@ -466,6 +478,11 @@ export async function listImagesForBird(birdId: string): Promise<ImageRecord[]> 
     return current;
   }
 
+  const legacyImported = await importLegacyStorageImagesForBird(birdId);
+  if (legacyImported.length > 0) {
+    return legacyImported;
+  }
+
   // Fallback for older rows where `is_current` was not set reliably yet.
   const { data: allData, error: allError } = await supabaseServerClient
     .from("images")
@@ -489,6 +506,85 @@ export async function listImagesForBird(birdId: string): Promise<ImageRecord[]> 
   return Array.from(byVariant.values()).sort((a, b) =>
     a.variant.localeCompare(b.variant)
   );
+}
+
+async function importLegacyStorageImagesForBird(birdId: string): Promise<ImageRecord[]> {
+  const bird = await getBirdById(birdId);
+  if (!bird?.slug) {
+    return [];
+  }
+
+  const scientificPath = `birds/${bird.slug}/scientific`;
+  const iconicPath = `birds/${bird.slug}/iconic`;
+
+  const [{ data: scientificFiles, error: scientificError }, { data: iconicFiles, error: iconicError }] =
+    await Promise.all([
+      supabaseServerClient.storage.from(SUPABASE_IMAGE_BUCKET).list(scientificPath, {
+        limit: 200,
+        offset: 0,
+      }),
+      supabaseServerClient.storage.from(SUPABASE_IMAGE_BUCKET).list(iconicPath, {
+        limit: 200,
+        offset: 0,
+      }),
+    ]);
+
+  if (scientificError || iconicError) {
+    return [];
+  }
+
+  const scientificNames = new Set((scientificFiles ?? []).map((file) => file.name));
+  const iconicNames = new Set((iconicFiles ?? []).map((file) => file.name));
+
+  const now = new Date().toISOString();
+  const toInsert = LEGACY_IMAGE_FILES.filter((spec) => {
+    const names = spec.styleFamily === "scientific" ? scientificNames : iconicNames;
+    return names.has(spec.filename);
+  }).map((spec) => {
+    const folder = spec.styleFamily === "scientific" ? scientificPath : iconicPath;
+    const storagePath = `${SUPABASE_IMAGE_BUCKET}/${folder}/${spec.filename}`;
+
+    return {
+      id: randomUUID(),
+      entity_type: "bird" as const,
+      entity_id: birdId,
+      style_family: spec.styleFamily,
+      variant: spec.variant,
+      storage_path: storagePath,
+      is_current: true,
+      review_status: "draft" as const,
+      review_comment: null,
+      version: `legacy_import:${spec.styleFamily}:${spec.variant}`,
+      style_config_id: null,
+      seed: null,
+      width_px: null,
+      height_px: null,
+      provider_model: null,
+      spec_hash: sha256Hex({
+        source: "legacy_import",
+        style_family: spec.styleFamily,
+        variant: spec.variant,
+      }),
+      prompt_hash: null,
+      created_by: "legacy_import",
+      updated_at: now,
+    };
+  });
+
+  if (toInsert.length === 0) {
+    return [];
+  }
+
+  const { data: inserted, error: insertError } = await supabaseServerClient
+    .from("images")
+    .insert(toInsert)
+    .select("*");
+
+  if (insertError) {
+    return [];
+  }
+
+  return (inserted ?? []) as ImageRecord[];
 }
 
 function extractBucketPath(storagePath: string) {
