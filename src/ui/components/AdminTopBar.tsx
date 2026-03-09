@@ -9,10 +9,10 @@ import LogoutButton from "@/components/LogoutButton";
 const NAV_LINKS = [
   { label: "Dashboard", href: "/admin" },
   { label: "Birds", href: "/admin/birds" },
-  { label: "Chef", href: "/admin/chef" },
-  { label: "Yoga", href: "/admin/yoga" },
   { label: "Places", href: "/admin/places" },
   { label: "Phenomena", href: "/admin/phenomena" },
+  { label: "Yoga", href: "/admin/yoga" },
+  { label: "Chef", href: "/admin/chef" },
 ];
 
 export type AdminTopBarProps = {
