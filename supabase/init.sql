@@ -89,6 +89,7 @@ create table if not exists places (
   slug text not null unique,
   name text not null,
   place_type place_type not null,
+  place_types place_type[] not null default '{}'::place_type[],
   status place_status not null default 'draft',
   region_landscape text,
   county text,
@@ -127,6 +128,24 @@ create table if not exists places (
     location_precision <> 'hidden' or location is null
   )
 );
+
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_constraint
+    where conname = 'places_place_type_in_place_types'
+  ) then
+    begin
+      alter table places
+        add constraint places_place_type_in_place_types
+        check (array_position(place_types, place_type) is not null);
+    exception
+      when duplicate_object then null;
+      when duplicate_table then null;
+    end;
+  end if;
+end $$;
 
 create index if not exists places_status_idx on places (status);
 create index if not exists places_place_type_idx on places (place_type);

@@ -93,6 +93,7 @@ Core mezők:
 - name
 - region_landscape
 - place_type
+- place_types (optional; always includes place_type)
 - status
 
 KiegĂ©szĂ­tĹ‘ mezĹ‘k (D31):

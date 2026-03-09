@@ -553,6 +553,14 @@ Indok: a Place entitások hamar publikus UI elemek lesznek, ezért most kell a s
 
 ---
 
+## D33 – Place: name-only quick-create + optional multi-type (primary + extras)
+
+- A Place továbbra is rendelkezik egy elsődleges `place_type` mezővel (priority type), de opcionálisan tárolhat több kategóriát is: `place_types` (enum array), amely **mindig tartalmazza** az elsődleges típust.
+- A Studio `/admin/places` Quick Create minimális inputja csak a `name`. A hiányzó meta (type/region/county/city + beginner/practical) AI-draftként készül el; bizonytalanság esetén az AI `null`-t ad vissza, és a szerkesztő felelőssége a validálás.
+- Indok: gyorsabb indulás egy valós, named location alapján, miközben megmarad az editorial kontroll és a publish gate nem enged át hiányos vagy nem approved tartalmat.
+
+---
+
 ## D32 – Approved képek lockolása regen alatt (Bird images)
 
 - A képgenerálás engedélyezett `bird.status = images_approved` állapotban is (nem published), hogy a hiányzó vagy még nem jóváhagyott variánsok pótolhatók legyenek.

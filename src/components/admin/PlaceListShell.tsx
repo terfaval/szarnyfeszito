@@ -78,7 +78,7 @@ export default function PlaceListShell({ places }: PlaceListShellProps) {
         </p>
       </header>
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
+      <div className="grid gap-6">
         <Card className="space-y-4 text-sm">
           <div className="grid gap-4 md:grid-cols-2">
             <Input

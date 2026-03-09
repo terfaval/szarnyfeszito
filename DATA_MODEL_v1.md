@@ -126,6 +126,7 @@ Hidden location nem kerülhet publikus térképre.
 - slug (text, unique)
 - name (text)
 - place_type (enum) — lake | river | fishpond | reservoir | marsh | reedbed | salt_lake | forest_edge | grassland | farmland | mountain_area | urban_park | urban_waterfront | protected_area
+- place_types (enum array) — optional multi-type; must include place_type
 - status (enum) — draft | reviewed | published
 - region_landscape (text, nullable draft-ban)
 - county (text, nullable draft-ban)

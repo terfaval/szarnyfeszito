@@ -3,11 +3,10 @@ import { ZodError } from "zod";
 import { getAdminUserFromCookies } from "@/lib/auth";
 import { createPlace, deletePlaceById, updatePlace } from "@/lib/placeService";
 import { generateUniquePlaceSlug } from "@/lib/slug";
-import { generatePlaceUiVariantsV1 } from "@/lib/placeGeneration";
+import { generatePlaceDraftFromNameV1 } from "@/lib/placeGeneration";
 import { createPlaceUiVariantsBlock } from "@/lib/placeContentService";
 import { AIJsonParseError, AISchemaMismatchError } from "@/lib/aiUtils";
 import { AI_MODEL_TEXT } from "@/lib/aiConfig";
-import { PLACE_TYPE_VALUES, type PlaceType } from "@/types/place";
 
 export async function POST(request: Request) {
   const user = await getAdminUserFromCookies();
@@ -18,28 +17,9 @@ export async function POST(request: Request) {
   const body = await request.json().catch(() => ({}));
 
   const name = typeof body?.name === "string" ? body.name.trim() : "";
-  const placeType = typeof body?.place_type === "string" ? body.place_type.trim() : "";
-  const regionLandscape =
-    typeof body?.region_landscape === "string" ? body.region_landscape.trim() : "";
-  const county = typeof body?.county === "string" ? body.county.trim() : "";
-  const nearestCity =
-    typeof body?.nearest_city === "string" ? body.nearest_city.trim() : "";
-  const adminDescription =
-    typeof body?.generation_input === "string" ? body.generation_input.trim() : "";
 
   if (!name) {
     return NextResponse.json({ error: "name is required." }, { status: 400 });
-  }
-
-  if (!placeType) {
-    return NextResponse.json({ error: "place_type is required." }, { status: 400 });
-  }
-
-  if (!PLACE_TYPE_VALUES.includes(placeType as PlaceType)) {
-    return NextResponse.json(
-      { error: `place_type must be one of: ${PLACE_TYPE_VALUES.join(", ")}` },
-      { status: 400 }
-    );
   }
 
   let slug: string;
@@ -50,61 +30,65 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: message }, { status: 400 });
   }
 
-  const place = await createPlace({
-    slug,
-    name,
-    place_type: placeType as PlaceType,
-    region_landscape: regionLandscape || null,
-    county: county || null,
-    nearest_city: nearestCity || null,
-    generation_input: adminDescription || null,
-  });
+  let place: Awaited<ReturnType<typeof createPlace>> | null = null;
 
   const cleanupPlace = async () => {
     try {
-      await deletePlaceById(place.id);
+      if (place) {
+        await deletePlaceById(place.id);
+      }
     } catch (cleanupError) {
       console.error("Failed to delete place after generation failure", cleanupError);
     }
   };
 
   try {
-    const generationResult = await generatePlaceUiVariantsV1({
-      place_name: place.name,
-      place_type: place.place_type,
-      region_landscape: place.region_landscape,
-      county: place.county,
-      nearest_city: place.nearest_city,
-      admin_description: place.generation_input,
-      location_precision: place.location_precision,
-      sensitivity_level: place.sensitivity_level,
-      existing_payload: null,
-      review_note: null,
+    const draftResult = await generatePlaceDraftFromNameV1({ place_name: name });
+    const placeMeta = draftResult.payload.place;
+    const placeTypes = Array.from(
+      new Set([placeMeta.place_type_primary, ...(placeMeta.place_types ?? [])])
+    );
+
+    place = await createPlace({
+      slug,
+      name,
+      place_type: placeMeta.place_type_primary,
+      place_types: placeTypes,
+      region_landscape: placeMeta.region_landscape,
+      county: placeMeta.county,
+      district: placeMeta.district,
+      nearest_city: placeMeta.nearest_city,
+      distance_from_nearest_city_km: placeMeta.distance_from_nearest_city_km,
+      settlement: placeMeta.settlement,
+      generation_input: placeMeta.generation_input,
+    });
+
+    // Apply ethics + practical notes (kept separate from core create payload).
+    place = await updatePlace({
+      id: place.id,
+      location_precision: placeMeta.location_precision,
+      sensitivity_level: placeMeta.sensitivity_level,
+      is_beginner_friendly: placeMeta.is_beginner_friendly,
+      access_note: placeMeta.access_note,
+      parking_note: placeMeta.parking_note,
+      best_visit_note: placeMeta.best_visit_note,
     });
 
     const generationMeta = {
-      model: generationResult.model,
-      prompt_hash: generationResult.prompt_hash,
+      model: draftResult.model,
+      prompt_hash: draftResult.prompt_hash,
       generated_at: new Date().toISOString(),
     };
 
     const contentBlock = await createPlaceUiVariantsBlock({
-      place_id: place.id,
-      payload: generationResult.payload,
+      place_id: place!.id,
+      payload: draftResult.payload.content,
       generation_meta: generationMeta,
       review_status: "draft",
     });
 
-    const updatedPlace = await updatePlace({
-      id: place.id,
-      region_landscape: regionLandscape || null,
-      county: county || null,
-      nearest_city: nearestCity || null,
-      generation_input: adminDescription || null,
-    });
-
     return NextResponse.json(
-      { data: { place: updatedPlace, content_block: contentBlock, generation_meta: generationMeta } },
+      { data: { place, content_block: contentBlock, generation_meta: generationMeta } },
       { status: 201 }
     );
   } catch (error) {

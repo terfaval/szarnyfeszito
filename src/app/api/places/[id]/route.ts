@@ -8,6 +8,23 @@ function asString(value: unknown) {
   return typeof value === "string" ? value.trim() : "";
 }
 
+function normalizePlaceTypes(input: unknown): PlaceType[] | null {
+  if (!Array.isArray(input)) {
+    return null;
+  }
+
+  const unique = Array.from(
+    new Set(
+      input
+        .filter((value): value is string => typeof value === "string")
+        .map((value) => value.trim())
+        .filter(Boolean)
+    )
+  ).filter((value): value is PlaceType => PLACE_TYPE_VALUES.includes(value as PlaceType));
+
+  return unique;
+}
+
 export async function PATCH(request: Request, ctx: { params: Promise<{ id: string }> }) {
   const user = await getAdminUserFromCookies();
   if (!user) {
@@ -25,6 +42,7 @@ export async function PATCH(request: Request, ctx: { params: Promise<{ id: strin
   const requestedStatusRaw = asString(body?.status);
   const requestedStatus = requestedStatusRaw || undefined;
   const requestedPlaceType = asString(body?.place_type) || "";
+  const requestedPlaceTypes = normalizePlaceTypes(body?.place_types);
 
   if (requestedStatus && !PLACE_STATUS_VALUES.includes(requestedStatus as PlaceStatus)) {
     return NextResponse.json(
@@ -36,6 +54,13 @@ export async function PATCH(request: Request, ctx: { params: Promise<{ id: strin
   if (requestedPlaceType && !PLACE_TYPE_VALUES.includes(requestedPlaceType as PlaceType)) {
     return NextResponse.json(
       { error: `place_type must be one of: ${PLACE_TYPE_VALUES.join(", ")}` },
+      { status: 400 }
+    );
+  }
+
+  if (requestedPlaceTypes && requestedPlaceTypes.length === 0) {
+    return NextResponse.json(
+      { error: `place_types must contain valid values: ${PLACE_TYPE_VALUES.join(", ")}` },
       { status: 400 }
     );
   }
@@ -97,6 +122,15 @@ export async function PATCH(request: Request, ctx: { params: Promise<{ id: strin
     slug: typeof body?.slug === "string" ? body.slug : undefined,
     name: typeof body?.name === "string" ? body.name : undefined,
     place_type: requestedPlaceType ? (requestedPlaceType as PlaceType) : undefined,
+    place_types:
+      requestedPlaceTypes
+        ? Array.from(
+            new Set([
+              ...(requestedPlaceTypes ?? []),
+              (requestedPlaceType ? (requestedPlaceType as PlaceType) : existing.place_type),
+            ])
+          )
+        : undefined,
     status: requestedStatus ? (requestedStatus as PlaceStatus) : undefined,
     region_landscape: typeof body?.region_landscape === "string" ? body.region_landscape : undefined,
     county: typeof body?.county === "string" ? body.county : undefined,

@@ -18,7 +18,7 @@ type ListPlacesOptions = {
 };
 
 const PLACE_SELECT =
-  "id,slug,name,place_type,status,region_landscape,county,district,nearest_city,distance_from_nearest_city_km,settlement,location_precision,sensitivity_level,is_beginner_friendly,access_note,parking_note,best_visit_note,notable_units_json,generation_input,published_at,published_revision,created_at,updated_at";
+  "id,slug,name,place_type,place_types,status,region_landscape,county,district,nearest_city,distance_from_nearest_city_km,settlement,location_precision,sensitivity_level,is_beginner_friendly,access_note,parking_note,best_visit_note,notable_units_json,generation_input,published_at,published_revision,created_at,updated_at";
 
 export async function listPlaces(options: ListPlacesOptions = {}): Promise<Place[]> {
   const { search, status, place_type, county, region_landscape } = options;
@@ -79,6 +79,7 @@ export async function createPlace(input: {
   slug: string;
   name: string;
   place_type: PlaceType;
+  place_types?: PlaceType[] | null;
   region_landscape?: string | null;
   county?: string | null;
   district?: string | null;
@@ -91,6 +92,10 @@ export async function createPlace(input: {
     slug: input.slug.trim(),
     name: normalizeHungarianName(input.name),
     place_type: input.place_type,
+    place_types:
+      input.place_types && input.place_types.length > 0
+        ? Array.from(new Set(input.place_types))
+        : [input.place_type],
     status: "draft" as const,
     region_landscape: input.region_landscape?.trim() || null,
     county: input.county?.trim() || null,
@@ -122,6 +127,7 @@ export async function updatePlace(input: {
   slug?: string;
   name?: string;
   place_type?: PlaceType;
+  place_types?: PlaceType[] | null;
   status?: PlaceStatus;
   region_landscape?: string | null;
   county?: string | null;
@@ -159,6 +165,18 @@ export async function updatePlace(input: {
 
   if (typeof mutablePayload.name === "string") {
     mutablePayload.name = normalizeHungarianName(mutablePayload.name);
+  }
+
+  if (Array.isArray(mutablePayload.place_types)) {
+    const unique = Array.from(
+      new Set(
+        (mutablePayload.place_types as unknown[])
+          .filter((value): value is string => typeof value === "string")
+          .map((value) => value.trim())
+          .filter(Boolean)
+      )
+    );
+    mutablePayload.place_types = unique;
   }
 
   if (typeof mutablePayload.region_landscape === "string") {

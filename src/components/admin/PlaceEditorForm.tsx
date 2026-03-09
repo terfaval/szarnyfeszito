@@ -34,6 +34,10 @@ export default function PlaceEditorForm({ place, marker }: PlaceEditorFormProps)
     slug: place.slug,
     name: place.name,
     place_type: place.place_type,
+    place_types:
+      place.place_types && place.place_types.length > 0
+        ? Array.from(new Set(place.place_types))
+        : [place.place_type],
     status: place.status,
     region_landscape: place.region_landscape ?? "",
     county: place.county ?? "",
@@ -96,6 +100,7 @@ export default function PlaceEditorForm({ place, marker }: PlaceEditorFormProps)
         slug: values.slug.trim(),
         name: values.name.trim(),
         place_type: values.place_type,
+        place_types: values.place_types,
         status: values.status,
         region_landscape: values.region_landscape.trim() || null,
         county: values.county.trim() || null,
@@ -183,6 +188,35 @@ export default function PlaceEditorForm({ place, marker }: PlaceEditorFormProps)
               </select>
             </div>
           </label>
+        </div>
+
+        <div className="space-y-2">
+          <p className="form-field__label">Additional place types</p>
+          <p className="admin-note-small">
+            Primary type is the dropdown above. Check any extra types if the place legitimately fits multiple categories.
+          </p>
+          <div className="grid gap-2 md:grid-cols-2">
+            {PLACE_TYPE_VALUES.map((value) => {
+              const checked = values.place_types.includes(value);
+              const isPrimary = value === values.place_type;
+              return (
+                <label key={value} className="flex items-center gap-3 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={checked}
+                    disabled={isPrimary}
+                    onChange={(event) => {
+                      const next = event.target.checked
+                        ? Array.from(new Set([...values.place_types, value]))
+                        : values.place_types.filter((t) => t !== value);
+                      setValues((p) => ({ ...p, place_types: next }));
+                    }}
+                  />
+                  {value}
+                </label>
+              );
+            })}
+          </div>
         </div>
       </section>
 
@@ -376,4 +410,3 @@ export default function PlaceEditorForm({ place, marker }: PlaceEditorFormProps)
     </form>
   );
 }
-

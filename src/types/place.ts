@@ -27,6 +27,7 @@ export type Place = {
   slug: string;
   name: string;
   place_type: PlaceType;
+  place_types: PlaceType[];
   status: PlaceStatus;
 
   region_landscape: string | null;
@@ -92,4 +93,3 @@ export type PlaceBirdLink = {
   created_at: string;
   updated_at: string;
 };
-

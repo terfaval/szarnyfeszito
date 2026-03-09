@@ -1,10 +1,13 @@
 import { randomUUID } from "crypto";
-import { ZodError } from "zod";
+import { z, ZodError } from "zod";
 import { callOpenAIChatCompletion, type OpenAIChatMessage } from "@/lib/openaiClient";
 import { AI_MODEL_TEXT } from "@/lib/aiConfig";
 import { extractJsonPayload, AIJsonParseError, AISchemaMismatchError } from "@/lib/aiUtils";
 import { hashPrompt } from "@/lib/promptHash";
 import { placeUiVariantsSchemaV1, type PlaceUiVariantsV1 } from "@/lib/placeContentSchema";
+import { PLACE_TYPE_VALUES, type PlaceType } from "@/types/place";
+
+const placeTypeEnum = PLACE_TYPE_VALUES as unknown as [PlaceType, ...PlaceType[]];
 
 const SYSTEM_PROMPT = `Te egy szerkesztői hangú, precíz helyszínleíró asszisztens vagy a Szárnyfeszítő projekthez.
 Csak és kizárólag érvényes JSON-t adj vissza (nincs magyarázat, nincs markdown, nincs extra szöveg).
@@ -122,3 +125,141 @@ export async function generatePlaceUiVariantsV1(args: {
   }
 }
 
+export type PlaceDraftMetaV1 = {
+  place_type_primary: PlaceType;
+  place_types: PlaceType[];
+  region_landscape: string | null;
+  county: string | null;
+  district: string | null;
+  nearest_city: string | null;
+  distance_from_nearest_city_km: number | null;
+  settlement: string | null;
+  is_beginner_friendly: boolean;
+  access_note: string | null;
+  parking_note: string | null;
+  best_visit_note: string | null;
+  generation_input: string | null;
+  location_precision: "exact" | "approximate" | "hidden";
+  sensitivity_level: "normal" | "sensitive";
+};
+
+const placeMetaSchemaV1 = z.object({
+  place_type_primary: z.enum(placeTypeEnum),
+  place_types: z.array(z.enum(placeTypeEnum)).min(1),
+  region_landscape: z.string().trim().min(1).nullable(),
+  county: z.string().trim().min(1).nullable(),
+  district: z.string().trim().min(1).nullable(),
+  nearest_city: z.string().trim().min(1).nullable(),
+  distance_from_nearest_city_km: z.number().int().nonnegative().nullable(),
+  settlement: z.string().trim().min(1).nullable(),
+  is_beginner_friendly: z.boolean(),
+  access_note: z.string().trim().min(1).nullable(),
+  parking_note: z.string().trim().min(1).nullable(),
+  best_visit_note: z.string().trim().min(1).nullable(),
+  generation_input: z.string().trim().min(1).nullable(),
+  location_precision: z.enum(["exact", "approximate", "hidden"]),
+  sensitivity_level: z.enum(["normal", "sensitive"]),
+});
+
+export const placeDraftFromNameSchemaV1 = z.object({
+  schema_version: z.literal("place_draft_from_name_v1"),
+  language: z.literal("hu"),
+  place: placeMetaSchemaV1,
+  content: placeUiVariantsSchemaV1,
+});
+
+export type PlaceDraftFromNameV1 = z.infer<typeof placeDraftFromNameSchemaV1>;
+
+const DRAFT_SYSTEM_PROMPT = `Te egy precíz szerkesztői asszisztens vagy a Szárnyfeszítő Place modulhoz.
+Csak és kizárólag érvényes JSON-t adj vissza (nincs magyarázat, nincs markdown, nincs extra szöveg).
+
+Feladat:
+- Egy magyarországi, jól ismert madármegfigyelő desztinációról kapsz egy nevet (pl. "Tatai Öreg-tó").
+- A hely legyen desztináció-szintű (nem megfigyelési pont).
+- A kért mezőkben adj valósághű, publikus információkat.
+- Ha valamiben nem vagy biztos, add vissza null-ként.
+
+Etika:
+- Ne adj meg pontos koordinátákat, rejtett mikro-helyeket, fészkekre utaló tippeket.
+- Alapértelmezés: location_precision="approximate", sensitivity_level="normal".
+
+Válasz JSON sémája:
+- schema_version: "place_draft_from_name_v1"
+- language: "hu"
+- place: {
+  place_type_primary: one of ${PLACE_TYPE_VALUES.join(" | ")}
+  place_types: array of the same enum (must include primary; can include extra if justified)
+  region_landscape: string|null
+  county: string|null
+  district: string|null
+  nearest_city: string|null
+  distance_from_nearest_city_km: int|null
+  settlement: string|null
+  is_beginner_friendly: boolean
+  access_note: string|null
+  parking_note: string|null
+  best_visit_note: string|null
+  generation_input: string|null (rövid admin leírás, 1-2 mondat)
+  location_precision: "exact"|"approximate"|"hidden"
+  sensitivity_level: "normal"|"sensitive"
+}
+- content: Place UI variants JSON (schema_version="place_ui_variants_v1", language="hu", variants: {...})`;
+
+export async function generatePlaceDraftFromNameV1(args: {
+  place_name: string;
+}): Promise<{
+  payload: PlaceDraftFromNameV1;
+  model: string;
+  request_id: string;
+  finish_reason: string;
+  prompt_hash: string;
+}> {
+  const requestId = randomUUID();
+  const modelId = AI_MODEL_TEXT;
+  const userMessage = JSON.stringify({ place_name: args.place_name }, null, 2);
+  const promptHash = hashPrompt(`${DRAFT_SYSTEM_PROMPT}\n\n${userMessage}`);
+
+  const messages: OpenAIChatMessage[] = [
+    { role: "system", content: DRAFT_SYSTEM_PROMPT },
+    { role: "user", content: userMessage },
+  ];
+
+  const completion = await callOpenAIChatCompletion({
+    model: modelId,
+    temperature: 0.2,
+    max_tokens: 1700,
+    messages,
+  });
+
+  const finishReason = completion.choices?.[0]?.finish_reason ?? "unknown";
+  const rawContent = completion.choices?.[0]?.message?.content ?? "";
+  const parsedResult = extractJsonPayload(rawContent);
+
+  if (!parsedResult.success) {
+    throw new AIJsonParseError(
+      requestId,
+      modelId,
+      parsedResult.error.reason,
+      parsedResult.error.raw_head,
+      parsedResult.error.raw_tail,
+      finishReason
+    );
+  }
+
+  const rawJson = parsedResult.raw;
+  try {
+    const payload = placeDraftFromNameSchemaV1.parse(parsedResult.payload);
+    return {
+      payload,
+      model: modelId,
+      request_id: requestId,
+      finish_reason: finishReason,
+      prompt_hash: promptHash,
+    };
+  } catch (error) {
+    if (error instanceof ZodError) {
+      throw new AISchemaMismatchError(zodIssuesToStrings(error), rawJson);
+    }
+    throw error;
+  }
+}

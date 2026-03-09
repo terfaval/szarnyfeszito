@@ -5,15 +5,9 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/ui/components/Button";
 import { Card } from "@/ui/components/Card";
 import { Input } from "@/ui/components/Input";
-import { PLACE_TYPE_VALUES, type PlaceType } from "@/types/place";
 
 const initialFormState = {
   name: "",
-  place_type: "lake" as PlaceType,
-  region_landscape: "",
-  county: "",
-  nearest_city: "",
-  generation_input: "",
 };
 
 export default function PlaceCreateForm() {
@@ -24,15 +18,7 @@ export default function PlaceCreateForm() {
   const [message, setMessage] = useState<string | null>(null);
 
   const isDisabled = useMemo(() => {
-    return (
-      creating ||
-      !formValues.name.trim() ||
-      !formValues.place_type ||
-      !formValues.region_landscape.trim() ||
-      !formValues.county.trim() ||
-      !formValues.nearest_city.trim() ||
-      !formValues.generation_input.trim()
-    );
+    return creating || !formValues.name.trim();
   }, [creating, formValues]);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -43,11 +29,6 @@ export default function PlaceCreateForm() {
 
     const payload = {
       name: formValues.name.trim(),
-      place_type: formValues.place_type,
-      region_landscape: formValues.region_landscape.trim(),
-      county: formValues.county.trim(),
-      nearest_city: formValues.nearest_city.trim(),
-      generation_input: formValues.generation_input.trim(),
     };
 
     const response = await fetch("/api/places/quick-create", {
@@ -83,7 +64,7 @@ export default function PlaceCreateForm() {
       <div className="space-y-2">
         <p className="admin-subheading">Quick create (named place)</p>
         <p className="admin-note-small">
-          Provide a real, named Hungarian birding destination. The system will generate a unique slug and draft UI variants.
+          Provide a real, named Hungarian birding destination. The system will generate a unique slug, draft metadata (type/region/county/city), and draft UI variants.
         </p>
       </div>
 
@@ -96,67 +77,8 @@ export default function PlaceCreateForm() {
           placeholder="Tatai Öreg-tó"
         />
 
-        <label className="form-field">
-          <span className="form-field__label">Place type</span>
-          <div className="form-field__row">
-            <select
-              className="input"
-              value={formValues.place_type}
-              onChange={(event) =>
-                setFormValues((p) => ({ ...p, place_type: event.target.value as PlaceType }))
-              }
-            >
-              {PLACE_TYPE_VALUES.map((value) => (
-                <option key={value} value={value}>
-                  {value}
-                </option>
-              ))}
-            </select>
-          </div>
-        </label>
-
-        <div className="grid gap-4 md:grid-cols-2">
-          <Input
-            label="Region / landscape (required)"
-            required
-            value={formValues.region_landscape}
-            onChange={(event) =>
-              setFormValues((p) => ({ ...p, region_landscape: event.target.value }))
-            }
-            placeholder="Fertő–Hanság"
-          />
-          <Input
-            label="County (required)"
-            required
-            value={formValues.county}
-            onChange={(event) => setFormValues((p) => ({ ...p, county: event.target.value }))}
-            placeholder="Győr-Moson-Sopron"
-          />
-        </div>
-
-        <Input
-          label="Nearest city (required)"
-          required
-          value={formValues.nearest_city}
-          onChange={(event) =>
-            setFormValues((p) => ({ ...p, nearest_city: event.target.value }))
-          }
-          placeholder="Sopron"
-        />
-
-        <Input
-          label="Short admin description (required)"
-          required
-          value={formValues.generation_input}
-          onChange={(event) =>
-            setFormValues((p) => ({ ...p, generation_input: event.target.value }))
-          }
-          placeholder="Large fishpond system near Fertő lake, important migration stopover."
-          helperText="Used as the AI prompt seed; keep it factual and public-safe."
-        />
-
         <Button type="submit" disabled={isDisabled} variant="accent" className="w-full justify-center">
-          {creating ? "Creating..." : "Create place + generate draft text"}
+          {creating ? "Creating..." : "Create place from name (AI draft)"}
         </Button>
 
         {error && (
@@ -173,4 +95,3 @@ export default function PlaceCreateForm() {
     </Card>
   );
 }
-
