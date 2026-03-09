@@ -560,6 +560,32 @@ Indok: a Place entitások hamar publikus UI elemek lesznek, ezért most kell a s
 - Indok: gyorsabb indulás egy valós, named location alapján, miközben megmarad az editorial kontroll és a publish gate nem enged át hiányos vagy nem approved tartalmat.
 
 ---
+## D34 – Place: UI variants output schema (place_ui_variants_v1)
+
+- A Place panel szöveges tartalma strukturált JSON-ként tárolódik a `content_blocks.blocks_json` mezőben, `schema_version="place_ui_variants_v1"` és `language="hu"` mellett.
+- Canonical UI variant blokkok a `variants` objektumban: `teaser`, `short`, `long`, `seasonal_snippet`, `ethics_tip`, `did_you_know`, `practical_tip`, `when_to_go`, `who_is_it_for`, `nearby_protection_context`, `notable_units`.
+- Kötelező mentési/publish feltételek (v1): `short`, `ethics_tip`, valamint a `seasonal_snippet.spring/summer/autumn/winter` mindegyike (nem üres).
+- Opcionális mezők lehetnek üres stringek; `notable_units` opcionális tömb `{ name, type?, note }` elemekkel (ha van elem, `name` + `note` kötelező).
+- Forward-compat: a payload enged extra kulcsokat (unknown catchall) a root és `variants` szinten; breaking változásnál schema verzió bump szükséges.
+
+Indok: konzisztens, UI-barát Place panel contract, ami egyszerre AI-kompatibilis és manuálisan szerkeszthető, miközben megőrzi a publish gating egyszerűségét.
+
+---
+
+## D35 – Place → Bird suggestion engine (editor-assist, non-publishing)
+
+- Cél: amikor egy Place létrejön / regenerálódik, a rendszer javasoljon 8–12 tipikusan megfigyelhető madárfajt a helyhez, **szerkesztői segítségként** (nem automatikus publikálás).
+- AI csak szerver oldalon fut; Explorerben nincs runtime generálás.
+- A javaslatok a `place_birds` táblába kerülnek `review_status="suggested"` állapotban (nem publikus).
+- A szerkesztő a Place Birds panelen:
+  - elfogadhatja (`review_status="approved"`) vagy törölheti a javaslatot,
+  - módosíthatja a gyakoriságot (place_frequency_band), szezonalitást, iconic flag-et, rank-et,
+  - meglévő Bird-hez linkelheti (bird_id), vagy pending névként hagyhatja (pending_bird_name_hu),
+  - manuálisan felvihet új kapcsolatot (alapból `review_status="approved"`).
+- Public API / Explorer csak `review_status="approved"` place_birds sorokat jelenít meg.
+- Dedup: place_id + bird_id, illetve place_id + lower(pending_bird_name_hu) szinten; a suggestion engine nem írja felül a meglévő (szerkesztett) sorokat, csak újakat ad hozzá.
+
+Indok: Place → suggested birds → editor review → (opcionálisan) Bird generálás → kapcsolatok; így organikusan bővül a faj- és helyháló, miközben a publikus felület kontrollált marad.
 
 ## D32 – Approved képek lockolása regen alatt (Bird images)
 

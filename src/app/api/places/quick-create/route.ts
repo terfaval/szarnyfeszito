@@ -5,6 +5,7 @@ import { createPlace, deletePlaceById, updatePlace } from "@/lib/placeService";
 import { generateUniquePlaceSlug } from "@/lib/slug";
 import { generatePlaceDraftFromNameV1 } from "@/lib/placeGeneration";
 import { createPlaceUiVariantsBlock } from "@/lib/placeContentService";
+import { suggestPlaceBirdLinksV1 } from "@/lib/placeBirdSuggestion";
 import { AIJsonParseError, AISchemaMismatchError } from "@/lib/aiUtils";
 import { AI_MODEL_TEXT } from "@/lib/aiConfig";
 
@@ -87,8 +88,30 @@ export async function POST(request: Request) {
       review_status: "draft",
     });
 
+    let birdSuggestions:
+      | { inserted_count: number; generation_meta: Record<string, unknown> }
+      | { error: string }
+      | null = null;
+
+    try {
+      const suggestionResult = await suggestPlaceBirdLinksV1({ place: place!, review_status: "suggested" });
+      birdSuggestions = {
+        inserted_count: suggestionResult.inserted.length,
+        generation_meta: {
+          model: suggestionResult.model,
+          request_id: suggestionResult.request_id,
+          finish_reason: suggestionResult.finish_reason,
+          prompt_hash: suggestionResult.prompt_hash,
+          generated_at: new Date().toISOString(),
+        },
+      };
+    } catch (suggestError) {
+      birdSuggestions = { error: (suggestError as Error)?.message ?? "Unable to suggest birds." };
+      console.error("Bird suggestion engine failed during place quick-create", suggestError);
+    }
+
     return NextResponse.json(
-      { data: { place, content_block: contentBlock, generation_meta: generationMeta } },
+      { data: { place, content_block: contentBlock, generation_meta: generationMeta, bird_suggestions: birdSuggestions } },
       { status: 201 }
     );
   } catch (error) {

@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/ui/components/Button";
 import { Card } from "@/ui/components/Card";
 import { Input } from "@/ui/components/Input";
@@ -13,7 +13,15 @@ const initialFormState = {
 
 export default function BirdCreateForm() {
   const router = useRouter();
-  const [formValues, setFormValues] = useState(initialFormState);
+  const searchParams = useSearchParams();
+  const prefillNameHu = searchParams.get("prefill_name_hu")?.trim() ?? "";
+  const prefillSource = searchParams.get("source")?.trim() ?? "";
+  const prefillPlaceName = searchParams.get("place_name")?.trim() ?? "";
+
+  const [formValues, setFormValues] = useState(() => ({
+    ...initialFormState,
+    name_hu: prefillNameHu || initialFormState.name_hu,
+  }));
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -71,6 +79,11 @@ export default function BirdCreateForm() {
     <Card className="space-y-4 text-sm">
       <div className="space-y-2">
         <p className="admin-subheading">Quick create</p>
+        {prefillSource === "place_suggestion" && prefillNameHu ? (
+          <p className="admin-note-small">
+            Prefilled from Place suggestion{prefillPlaceName ? ` (“${prefillPlaceName}”)` : ""}.
+          </p>
+        ) : null}
         <p className="admin-note-small">
           Provide a Latin name (Hungarian optional) and we will generate the slug
           for you. Slugs stay lowercase, ASCII, and hyphenated; duplicates get a

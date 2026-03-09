@@ -7,6 +7,7 @@ import {
   deletePlaceBirdLink,
   updatePlaceBirdLink,
 } from "@/lib/placeBirdService";
+import { PLACE_BIRD_REVIEW_STATUS_VALUES, type PlaceBirdReviewStatus } from "@/types/place";
 
 export async function GET(_request: Request, ctx: { params: Promise<{ id: string }> }) {
   const user = await getAdminUserFromCookies();
@@ -19,7 +20,7 @@ export async function GET(_request: Request, ctx: { params: Promise<{ id: string
   const { data: links, error } = await supabaseServerClient
     .from("place_birds")
     .select(
-      "id,place_id,bird_id,pending_bird_name_hu,rank,frequency_band,is_iconic,visible_in_spring,visible_in_summer,visible_in_autumn,visible_in_winter,seasonality_note,created_at,updated_at,bird:birds(id,slug,name_hu)"
+      "id,place_id,bird_id,pending_bird_name_hu,review_status,rank,frequency_band,is_iconic,visible_in_spring,visible_in_summer,visible_in_autumn,visible_in_winter,seasonality_note,created_at,updated_at,bird:birds(id,slug,name_hu)"
     )
     .eq("place_id", place.id)
     .order("rank", { ascending: true })
@@ -41,10 +42,15 @@ export async function POST(request: Request, ctx: { params: Promise<{ id: string
   if (!place) return NextResponse.json({ error: "Place not found." }, { status: 404 });
 
   const body = await request.json().catch(() => ({}));
+  const reviewStatusRaw = typeof body?.review_status === "string" ? body.review_status : "";
+  const reviewStatus = PLACE_BIRD_REVIEW_STATUS_VALUES.includes(reviewStatusRaw as PlaceBirdReviewStatus)
+    ? (reviewStatusRaw as PlaceBirdReviewStatus)
+    : undefined;
   const link = await createPlaceBirdLink({
     place_id: place.id,
     bird_id: typeof body?.bird_id === "string" ? body.bird_id : null,
     pending_bird_name_hu: typeof body?.pending_bird_name_hu === "string" ? body.pending_bird_name_hu : null,
+    review_status: reviewStatus,
     rank: typeof body?.rank === "number" ? body.rank : 0,
     frequency_band: typeof body?.frequency_band === "string" ? body.frequency_band : undefined,
     is_iconic: typeof body?.is_iconic === "boolean" ? body.is_iconic : undefined,
@@ -70,8 +76,14 @@ export async function PATCH(request: Request, ctx: { params: Promise<{ id: strin
   const linkId = typeof body?.id === "string" ? body.id : "";
   if (!linkId) return NextResponse.json({ error: "id is required." }, { status: 400 });
 
+  const reviewStatusRaw = typeof body?.review_status === "string" ? body.review_status : "";
+  const reviewStatus = PLACE_BIRD_REVIEW_STATUS_VALUES.includes(reviewStatusRaw as PlaceBirdReviewStatus)
+    ? (reviewStatusRaw as PlaceBirdReviewStatus)
+    : undefined;
+
   const link = await updatePlaceBirdLink({
     id: linkId,
+    review_status: reviewStatus,
     rank: typeof body?.rank === "number" ? body.rank : undefined,
     frequency_band: typeof body?.frequency_band === "string" ? body.frequency_band : undefined,
     is_iconic: typeof body?.is_iconic === "boolean" ? body.is_iconic : undefined,

@@ -32,7 +32,9 @@
 - review_status (draft/reviewed/approved)
 - version (text)
 
-blocks_json stores the Field-Guide D1 dossier JSON (header, quick_traits, short_options, long_paragraphs, fact_box, fun_fact, ethics_tip, typical_places). generation_meta captures the model name, prompt hash, and generation timestamp for each draft.
+`blocks_json` stores versioned, entity-specific JSON payloads. For Birds this is the Field-Guide Dossier JSON (e.g. `schema_version: "v2.3"`). For Places this is the UI panel contract `schema_version: "place_ui_variants_v1"`. `generation_meta` captures the model name, prompt hash, and generation timestamp for each draft.
+
+Note: Place UI variants are intended as the canonical Explorer panel contract; the Bird dossier schema remains a Studio artifact.
 
 Bird retains the full state machine—draft → text_generated → text_approved → images_generated → images_approved → published—with both text and image approvals required for publish. Place and Phenomenon content blocks remain in a text-only workflow: drafts move through text generation and review before publish, with no image variants or image gating. Field-Guide Dossier JSON (stored in `blocks_json`) is an admin/Studio artifact; Explorer (future phase) consumes UI variant records once defined, so Dossier payloads are not treated as canonical Explorer data for now.
 
@@ -150,6 +152,7 @@ Hidden location nem kerülhet publikus térképre.
 - place_id (uuid, fk → places)
 - bird_id (uuid, nullable, fk → birds)
 - pending_bird_name_hu (text, nullable)
+- review_status (enum) — suggested | approved
 - rank (int)
 - frequency_band (enum) — very_common | common | regular | occasional | special
 - is_iconic (bool)

@@ -110,6 +110,24 @@ KiegĂ©szĂ­tĹ‘ mezĹ‘k (D31):
 - notable_units_json (informational sub-units; not separate Place entities in v1)
 - generation_input (admin-only prompt seed)
 
+Place UI content (Explorer panel contract, D34):
+- Stored in `content_blocks.blocks_json` as versioned JSON with `schema_version="place_ui_variants_v1"`, `language="hu"`.
+- Required blocks for publish: `variants.short`, `variants.ethics_tip`, and all `variants.seasonal_snippet.*` seasons (non-empty).
+- Other variant strings may be empty; `variants.notable_units` is optional structured list of sub-areas.
+
+Place → Birds relations (D35):
+- Stored in `place_birds` (join table), using either:
+  - `bird_id` (linked) OR
+  - `pending_bird_name_hu` (pending; editor can later link/create a Bird)
+- `review_status` is enforced server-side:
+  - `suggested` = editor-assist suggestion; not public
+  - `approved` = reviewed by editor; public
+- Suggestion engine runs:
+  - on Place quick-create generation
+  - on Place content regeneration
+  - on editor manual trigger ("Suggest birds")
+- Explorer/public endpoints only show `place_birds.review_status="approved"` rows (no AI suggestions leaking to public).
+
 ---
 
 ### 3.3 Phenomenon

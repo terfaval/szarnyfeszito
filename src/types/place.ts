@@ -77,11 +77,15 @@ export const PLACE_FREQUENCY_BANDS = [
 ] as const;
 export type PlaceFrequencyBand = (typeof PLACE_FREQUENCY_BANDS)[number];
 
+export const PLACE_BIRD_REVIEW_STATUS_VALUES = ["suggested", "approved"] as const;
+export type PlaceBirdReviewStatus = (typeof PLACE_BIRD_REVIEW_STATUS_VALUES)[number];
+
 export type PlaceBirdLink = {
   id: string;
   place_id: string;
   bird_id: string | null;
   pending_bird_name_hu: string | null;
+  review_status: PlaceBirdReviewStatus;
   rank: number;
   frequency_band: PlaceFrequencyBand;
   is_iconic: boolean;

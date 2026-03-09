@@ -1,11 +1,11 @@
 import { supabaseServerClient } from "@/lib/supabaseServerClient";
-import type { PlaceBirdLink, PlaceFrequencyBand } from "@/types/place";
+import type { PlaceBirdLink, PlaceBirdReviewStatus, PlaceFrequencyBand } from "@/types/place";
 
 export async function listPlaceBirdLinks(placeId: string): Promise<PlaceBirdLink[]> {
   const { data, error } = await supabaseServerClient
     .from("place_birds")
     .select(
-      "id,place_id,bird_id,pending_bird_name_hu,rank,frequency_band,is_iconic,visible_in_spring,visible_in_summer,visible_in_autumn,visible_in_winter,seasonality_note,created_at,updated_at"
+      "id,place_id,bird_id,pending_bird_name_hu,review_status,rank,frequency_band,is_iconic,visible_in_spring,visible_in_summer,visible_in_autumn,visible_in_winter,seasonality_note,created_at,updated_at"
     )
     .eq("place_id", placeId)
     .order("rank", { ascending: true })
@@ -22,6 +22,7 @@ export async function createPlaceBirdLink(input: {
   place_id: string;
   bird_id?: string | null;
   pending_bird_name_hu?: string | null;
+  review_status?: PlaceBirdReviewStatus;
   rank?: number;
   frequency_band?: PlaceFrequencyBand;
   is_iconic?: boolean;
@@ -35,6 +36,7 @@ export async function createPlaceBirdLink(input: {
     place_id: input.place_id,
     bird_id: input.bird_id ?? null,
     pending_bird_name_hu: input.pending_bird_name_hu?.trim() || null,
+    review_status: input.review_status ?? ("approved" as const),
     rank: typeof input.rank === "number" ? input.rank : 0,
     frequency_band: input.frequency_band ?? ("regular" as const),
     is_iconic: input.is_iconic ?? false,
@@ -61,6 +63,7 @@ export async function createPlaceBirdLink(input: {
 
 export async function updatePlaceBirdLink(input: {
   id: string;
+  review_status?: PlaceBirdReviewStatus;
   rank?: number;
   frequency_band?: PlaceFrequencyBand;
   is_iconic?: boolean;
@@ -111,4 +114,3 @@ export async function deletePlaceBirdLink(id: string): Promise<void> {
     throw error;
   }
 }
-

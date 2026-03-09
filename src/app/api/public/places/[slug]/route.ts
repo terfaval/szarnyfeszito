@@ -19,9 +19,10 @@ export async function GET(_request: Request, ctx: { params: Promise<{ slug: stri
   const { data: birdLinks, error } = await supabaseServerClient
     .from("place_birds")
     .select(
-      "id,place_id,bird_id,pending_bird_name_hu,rank,frequency_band,is_iconic,visible_in_spring,visible_in_summer,visible_in_autumn,visible_in_winter,seasonality_note,bird:birds(id,slug,name_hu)"
+      "id,place_id,bird_id,pending_bird_name_hu,review_status,rank,frequency_band,is_iconic,visible_in_spring,visible_in_summer,visible_in_autumn,visible_in_winter,seasonality_note,bird:birds(id,slug,name_hu)"
     )
     .eq("place_id", place.id)
+    .eq("review_status", "approved")
     .order("rank", { ascending: true });
 
   if (error) {

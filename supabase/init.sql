@@ -21,6 +21,7 @@ drop type if exists place_type cascade;
 drop type if exists place_location_precision cascade;
 drop type if exists place_sensitivity_level cascade;
 drop type if exists place_frequency_band cascade;
+drop type if exists place_bird_review_status cascade;
 drop type if exists activity_type cascade;
 
 create extension if not exists "pgcrypto";
@@ -83,6 +84,7 @@ create type place_type as enum (
 create type place_location_precision as enum ('exact', 'approximate', 'hidden');
 create type place_sensitivity_level as enum ('normal', 'sensitive');
 create type place_frequency_band as enum ('very_common', 'common', 'regular', 'occasional', 'special');
+create type place_bird_review_status as enum ('suggested', 'approved');
 
 create table if not exists places (
   id uuid primary key default gen_random_uuid(),
@@ -156,6 +158,7 @@ create table if not exists place_birds (
   place_id uuid not null references places (id) on delete cascade,
   bird_id uuid references birds (id) on delete set null,
   pending_bird_name_hu text,
+  review_status place_bird_review_status not null default 'approved',
   rank integer not null default 0,
   frequency_band place_frequency_band not null default 'regular',
   is_iconic boolean not null default false,
@@ -176,6 +179,7 @@ create table if not exists place_birds (
 create index if not exists place_birds_place_id_idx on place_birds (place_id);
 create index if not exists place_birds_bird_id_idx on place_birds (bird_id);
 create index if not exists place_birds_rank_idx on place_birds (place_id, rank asc, updated_at desc);
+create index if not exists place_birds_place_id_review_status_idx on place_birds (place_id, review_status, rank asc, updated_at desc);
 
 create unique index if not exists place_birds_place_id_bird_id_key
   on place_birds (place_id, bird_id)
