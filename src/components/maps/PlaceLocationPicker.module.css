@@ -1,0 +1,11 @@
+.wrap {
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  overflow: hidden;
+}
+
+.map {
+  height: 280px;
+  width: 100%;
+}
+

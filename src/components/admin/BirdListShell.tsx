@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import BirdCreateForm from "@/components/admin/BirdCreateForm";
+import BirdIcon from "@/components/admin/BirdIcon";
 import { Card } from "@/ui/components/Card";
 import { Input } from "@/ui/components/Input";
 import { StatusPill } from "@/ui/components/StatusPill";
@@ -295,24 +296,12 @@ export default function BirdListShell({ birds }: BirdListShellProps) {
             <Link key={bird.id} href={`/admin/birds/${bird.id}`} className="admin-list-link">
               <div className="admin-list-details">
                 <div className="admin-bird-list-grid">
-                  <div className="admin-bird-icon-cell" aria-hidden="true">
-                    {bird.habitatIconSrc ? (
-                      <img
-                        src={bird.habitatIconSrc}
-                        alt=""
-                        className="admin-bird-habitat-icon"
-                      />
-                    ) : (
-                      <div className="admin-bird-habitat-fallback" />
-                    )}
-                    {bird.iconicPreviewUrl ? (
-                      <img
-                        src={bird.iconicPreviewUrl}
-                        alt=""
-                        className="admin-bird-iconic-centered"
-                      />
-                    ) : null}
-                  </div>
+                  <BirdIcon
+                    habitatSrc={bird.habitatIconSrc}
+                    iconicSrc={bird.iconicPreviewUrl}
+                    showHabitatBackground
+                    size={76}
+                  />
                   <div className="admin-bird-text-cell">
                     <p className="admin-list-title">{bird.name_hu}</p>
                     <p className="admin-list-meta">{bird.slug}</p>

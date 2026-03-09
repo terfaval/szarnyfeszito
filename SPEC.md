@@ -36,8 +36,8 @@ and persists `bird_distribution_maps.ranges[]`.
 
 ### OUT (MVP-ben NINCS)
 
-- Publikus UI
-- Explorer map (Leaflet + OSM)
+- Publikus Bird UI (Field Guide)
+- Full Explorer map (Leaflet + OSM beyond Places)
 - Journaling
 - Közösségi funkciók
 - Multi-role rendszer
@@ -45,8 +45,8 @@ and persists `bird_distribution_maps.ranges[]`.
 - Helyszín hangulatképek
 - Promptolható képgenerálás
 
-Explorer skeleton is a future phase. Explorer visuals, routing, and content rendering are not in active development for this MVP; the current workstream remains focused on the Studio generative engine, with Bird as the primary artifact being authored, reviewed, and published.
-Current active scope: Studio generative engine for Bird content, encompassing AI dossier generation, text review, image review, and Bird-specific publish gating. Place and Phenomenon workstreams remain limited to planning until their data contracts and Explorer rendering are formally scoped.
+Explorer skeleton is a future phase, but a minimal, read-only Place map + panel is now in scope (D31) so Place entities can be previewed and published without waiting for the full Explorer buildout.
+Current active scope: Studio generative engine for Bird content + Place system foundation (CRUD, AI text generation, review, publish gating) + minimal public Place map surface. Phenomenon workstream remains limited to planning until its data contracts and rendering are formally scoped.
 
 ---
 
@@ -91,9 +91,23 @@ Core mezők:
 - id
 - slug
 - name
-- region
+- region_landscape
 - place_type
 - status
+
+KiegĂ©szĂ­tĹ‘ mezĹ‘k (D31):
+- county
+- district
+- nearest_city
+- distance_from_nearest_city_km
+- settlement (optional)
+- location (optional; destination-level marker only)
+- location_precision (exact|approximate|hidden)
+- sensitivity_level (normal|sensitive)
+- is_beginner_friendly
+- access_note / parking_note / best_visit_note
+- notable_units_json (informational sub-units; not separate Place entities in v1)
+- generation_input (admin-only prompt seed)
 
 ---
 
@@ -466,14 +480,17 @@ images is canonical for generated assets with:
 
 ### POST /api/generate-images  (controlled; T007)
 - Preconditions:
-  - bird.status == text_approved OR images_generated
+  - bird.status == text_approved OR images_generated OR images_approved
 - Steps:
   - prompt inputs:
     - default: use Field-Guide dossier only
     - optional: Science Dossier + Visual Brief can be included via `IMAGE_ACCURACY_INPUTS` (off|auto|approved)
+    - per-variant review note (if any): current `images.review_comment` is passed to the prompt as `review_note`
   - buildImageSpec(bird, visualBrief, scienceDossier)
   - generate required variants first (main_habitat + fixed_pose_icon_v1)
   - generate optional variants best-effort (flight_clean, nesting_clean)
+  - lock rule: variants with a current `review_status=approved` image are NOT regenerated/overwritten (they remain current)
+  - regeneration rule: only missing, draft, or reviewed variants are regenerated
   - upload to storage
   - create a new image row per variant and mark it current:
     - images are versioned; exactly one current image exists per (entity_id, style_family, variant)

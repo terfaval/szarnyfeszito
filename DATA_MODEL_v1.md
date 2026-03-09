@@ -115,3 +115,49 @@ Explorer UI kizárólag ui_variants rekordokat használ.
 - is_beginner_friendly (bool)
 
 Hidden location nem kerülhet publikus térképre.
+
+---
+
+## Places – core táblák (D31)
+
+### places
+
+- id (uuid, pk)
+- slug (text, unique)
+- name (text)
+- place_type (enum) — lake | river | fishpond | reservoir | marsh | reedbed | salt_lake | forest_edge | grassland | farmland | mountain_area | urban_park | urban_waterfront | protected_area
+- status (enum) — draft | reviewed | published
+- region_landscape (text, nullable draft-ban)
+- county (text, nullable draft-ban)
+- district (text, nullable)
+- nearest_city (text, nullable draft-ban)
+- distance_from_nearest_city_km (int, nullable)
+- settlement (text, nullable)
+- location (geography point, nullable)
+- location_precision (exact/approximate/hidden)
+- sensitivity_level (normal/sensitive)
+- is_beginner_friendly (bool)
+- access_note / parking_note / best_visit_note (text, nullable)
+- notable_units_json (jsonb, nullable)
+- generation_input (text, nullable)
+- published_at, published_revision
+- created_at, updated_at
+
+### place_birds
+
+- id (uuid, pk)
+- place_id (uuid, fk → places)
+- bird_id (uuid, nullable, fk → birds)
+- pending_bird_name_hu (text, nullable)
+- rank (int)
+- frequency_band (enum) — very_common | common | regular | occasional | special
+- is_iconic (bool)
+- visible_in_spring/summer/autumn/winter (bool)
+- seasonality_note (text, nullable)
+- created_at, updated_at
+
+### phenomenon_places (prepared)
+
+- phenomenon_id (uuid)
+- place_id (uuid, fk → places)
+- created_at

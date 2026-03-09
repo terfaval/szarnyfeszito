@@ -204,8 +204,8 @@ export async function generateImagesForBird(
   required_success: boolean;
   results: ImageGenerationResult[];
 }> {
-  if (bird.status === "images_approved" || bird.status === "published") {
-    throw new Error("Images cannot be generated after images are approved or published.");
+  if (bird.status === "published") {
+    throw new Error("Images cannot be generated after a bird is published.");
   }
 
   if (bird.status === "images_generated" && !options.forceRegenerate) {
@@ -214,8 +214,14 @@ export async function generateImagesForBird(
     );
   }
 
-  if (bird.status !== "text_approved" && bird.status !== "images_generated") {
-    throw new Error("Images can only be generated when the bird has text_approved status.");
+  if (
+    bird.status !== "text_approved" &&
+    bird.status !== "images_generated" &&
+    bird.status !== "images_approved"
+  ) {
+    throw new Error(
+      "Images can only be generated when the bird status is text_approved, images_generated, or images_approved."
+    );
   }
 
   const contentBlock = await getLatestContentBlockForBird(bird.id);
@@ -243,12 +249,19 @@ export async function generateImagesForBird(
   }
 
   const reviewNoteByVariant = new Map<ImageVariant, string>();
+  const reviewStatusByVariant = new Map<ImageVariant, ImageReviewStatus>();
   (currentImages ?? []).forEach((row) => {
     const variant = row.variant as ImageVariant | undefined;
     const note =
       typeof row.review_comment === "string" ? row.review_comment.trim() : "";
-    if (variant && note) {
-      reviewNoteByVariant.set(variant, note);
+    const reviewStatus = row.review_status as ImageReviewStatus | undefined;
+    if (variant) {
+      if (reviewStatus) {
+        reviewStatusByVariant.set(variant, reviewStatus);
+      }
+      if (note) {
+        reviewNoteByVariant.set(variant, note);
+      }
     }
   });
 
@@ -318,6 +331,13 @@ export async function generateImagesForBird(
   };
 
   const specs = buildSpecs();
+  const specsToGenerate = specs.filter((spec) => {
+    const status = reviewStatusByVariant.get(spec.variant) ?? null;
+    if (status === "approved") {
+      return false;
+    }
+    return true;
+  });
 
   const generateOne = async (spec: BuiltImageSpec): Promise<ImageGenerationResult> => {
     const imageId = randomUUID();
@@ -467,19 +487,31 @@ export async function generateImagesForBird(
     }
   };
 
-  for (const spec of specs) {
+  for (const spec of specsToGenerate) {
     results.push(await generateOne(spec));
   }
 
-  const required_success = REQUIRED_IMAGE_VARIANTS.every((variant) =>
-    results.some(
-      (result) => result.variant === variant && result.required && result.status === "success"
-    )
-  );
+  const { data: requiredCurrent, error: requiredCurrentError } = await supabaseServerClient
+    .from("images")
+    .select("variant")
+    .eq("entity_type", "bird")
+    .eq("entity_id", bird.id)
+    .eq("is_current", true)
+    .in("variant", [...REQUIRED_IMAGE_VARIANTS]);
 
-  const updatedBird = required_success
-    ? await updateBird({ id: bird.id, status: "images_generated" })
-    : bird;
+  if (requiredCurrentError) {
+    throw requiredCurrentError;
+  }
+
+  const requiredPresent = new Set<ImageVariant>(
+    (requiredCurrent ?? []).map((row) => row.variant as ImageVariant)
+  );
+  const required_success = REQUIRED_IMAGE_VARIANTS.every((variant) => requiredPresent.has(variant));
+
+  const updatedBird =
+    required_success && bird.status === "text_approved"
+      ? await updateBird({ id: bird.id, status: "images_generated" })
+      : bird;
 
   return { bird: updatedBird, required_success, results };
 }

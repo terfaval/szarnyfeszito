@@ -537,3 +537,27 @@ Indok: az admin felületet terepen/telefonról is használjuk; a regressziók ti
 - A mentés “A” mód: az aktuális recept payload felülírható a következő regeneráláskor, de a rekord tartalmazza a legutóbbi review note-ot és a generálás metaadatait (model + generated_at).
 
 Indok: minimál, gyors admin workflow, de determinisztikus contracttal és kontrollált iterációval.
+
+---
+
+## D31 – Place system foundation + minimal public map surface
+
+- A Place egy **desztináció-szintű** madármegfigyelő helyszín (nem megfigyelési pont, nem precíz koordináta).
+- Place kap saját editorial state-et: `draft` → `reviewed` → `published`; publish után nincs rollback (v0).
+- A Place szöveges tartalmak UI-variánsai (teaser/short/long/seasonal_snippet/ethics_tip/...) a `content_blocks` rekordban, strukturált JSON payloadként tárolódnak, szigorú Zod-validációval; AI generálás kizárólag szerver oldalon történik.
+- Publish gate (Place): kötelező meta (name/slug/place_type/region_landscape/county/nearest_city) + kötelező content variánsok (short + seasonal_snippet + ethics_tip) approved.
+- Etikai védelem: `location_precision (exact|approximate|hidden)` + `sensitivity_level (normal|sensitive)` mezők; `hidden` esetén a helynek nincs publikus térképes jelölője.
+- Minimal public surface: `/places` read-only map + panel (Leaflet) csak published+approved Place rekordokat jelenít meg; nincs runtime AI, nincs service role key kliens oldalon.
+
+Indok: a Place entitások hamar publikus UI elemek lesznek, ezért most kell a stabil adatmodell + workflow + szerver oldali publish gating, miközben a teljes Explorer buildout továbbra is későbbi fázis.
+
+---
+
+## D32 – Approved képek lockolása regen alatt (Bird images)
+
+- A képgenerálás engedélyezett `bird.status = images_approved` állapotban is (nem published), hogy a hiányzó vagy még nem jóváhagyott variánsok pótolhatók legyenek.
+- Lock szabály: ha egy variáns current képe `review_status=approved`, akkor az a variáns **nem** regenerálható és nem írható felül (marad current).
+- Regenerálási szabály: csak a hiányzó, `draft` vagy `reviewed` variánsok generálódnak újra.
+- A review note prompt inputként bekerül (`images.review_comment` → `review_note`), de az újonnan generált kép recordja tiszta `review_comment = null` (a note nem “ragad át” a következő verzióra).
+
+Indok: a publish-ready, approved asseteket védeni kell a véletlen felülírástól; ugyanakkor az opcionális/under-review képek iterációja maradjon gyors.

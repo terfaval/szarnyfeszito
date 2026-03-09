@@ -1,0 +1,41 @@
+.root {
+  width: var(--bird-icon-size, 76px);
+  height: var(--bird-icon-size, 76px);
+  position: relative;
+  border-radius: 20px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.rootNoHabitatBackground {
+  background: transparent;
+  border: none;
+}
+
+.habitatBackground {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  opacity: 0.72;
+}
+
+.habitatFallback {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.08), transparent 60%);
+}
+
+.iconicBird {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 88%;
+  height: 88%;
+  object-fit: contain;
+  display: block;
+}

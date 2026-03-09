@@ -721,9 +721,9 @@ svg {
 
 .admin-bird-list-grid {
   display: grid;
-  grid-template-columns: 64px 1fr;
+  grid-template-columns: max-content 1fr;
   align-items: center;
-  gap: 0.85rem;
+  gap: 1rem;
 }
 
 .admin-bird-icon-cell {
@@ -948,6 +948,11 @@ select.input optgroup {
 .status-pill--draft {
   border-color: rgba(248, 214, 87, 0.6);
   color: #f8d653;
+}
+
+.status-pill--reviewed {
+  border-color: rgba(14, 165, 233, 0.6);
+  color: #38bdf8;
 }
 
 .status-pill--text_generated {

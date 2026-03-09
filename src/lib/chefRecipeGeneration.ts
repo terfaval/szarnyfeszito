@@ -70,6 +70,7 @@ export async function generateChefRecipeV1(args: {
     model: modelId,
     temperature: 0.2,
     max_tokens: 900,
+    response_format: { type: "json_object" },
     messages,
   });
 

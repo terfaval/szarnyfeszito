@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { listBirds } from "@/lib/birdService";
+import { listPlaces } from "@/lib/placeService";
 import { listLatestDossierBlocksForBirds } from "@/lib/contentService";
 import { getSignedImageUrl, listCurrentIconicImagesForBirds } from "@/lib/imageService";
 import { BirdStatus, BIRD_STATUS_VALUES } from "@/types/bird";
 import { Card } from "@/ui/components/Card";
 import { StatusPill } from "@/ui/components/StatusPill";
+import BirdIcon from "@/components/admin/BirdIcon";
 
 export const metadata = {
   title: "Szárnyfeszítő admin dashboard",
@@ -33,6 +35,7 @@ const habitatIconForClass = (habitatClass: unknown) => {
 
 export default async function AdminPage() {
   const birds = await listBirds();
+  const places = await listPlaces();
 
   const statusCounts = birds.reduce(
     (acc, bird) => {
@@ -112,11 +115,12 @@ export default async function AdminPage() {
             </p>
           </Link>
 
-          <article className="admin-stat-card">
-            <p className="admin-stat-label">Places</p>
-            <p className="admin-stat-count">0</p>
-            <p className="admin-stat-note">CRUD coming soon (see T101).</p>
-          </article>
+          <Link className="admin-link-card stack" href="/admin/places">
+            <p className="admin-link-card__title">Manage Places</p>
+            <p className="admin-link-card__description">
+              {places.length} places in registry. Generate, review, and publish destination panels.
+            </p>
+          </Link>
 
           <article className="admin-stat-card">
             <p className="admin-stat-label">Phenomena</p>
@@ -155,24 +159,12 @@ export default async function AdminPage() {
             >
               <div className="admin-list-details">
                 <div className="admin-bird-list-grid">
-                  <div className="admin-bird-icon-cell" aria-hidden="true">
-                    {habitatIconByBirdId.get(bird.id) ? (
-                      <img
-                        src={habitatIconByBirdId.get(bird.id)!}
-                        alt=""
-                        className="admin-bird-habitat-icon"
-                      />
-                    ) : (
-                      <div className="admin-bird-habitat-fallback" />
-                    )}
-                    {iconicPreviewByBirdId.get(bird.id) ? (
-                      <img
-                        src={iconicPreviewByBirdId.get(bird.id)!}
-                        alt=""
-                        className="admin-bird-iconic-centered"
-                      />
-                    ) : null}
-                  </div>
+                  <BirdIcon
+                    habitatSrc={habitatIconByBirdId.get(bird.id) ?? null}
+                    iconicSrc={iconicPreviewByBirdId.get(bird.id) ?? null}
+                    showHabitatBackground
+                    size={76}
+                  />
                   <div className="admin-bird-text-cell">
                     <p className="admin-list-title">{bird.name_hu}</p>
                     <p className="admin-list-meta">{bird.slug}</p>

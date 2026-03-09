@@ -82,7 +82,10 @@ export default function BirdImageReview({
   const allApproved =
     images.length > 0 && images.every((image) => image.review_status === "approved");
 
-  const canGenerate = birdStatus === "text_approved" || birdStatus === "images_generated";
+  const canGenerate =
+    birdStatus === "text_approved" ||
+    birdStatus === "images_generated" ||
+    birdStatus === "images_approved";
 
   const generateLabel = images.length === 0 ? "Generate images" : "Regenerate images";
 
@@ -352,7 +355,8 @@ export default function BirdImageReview({
             <p className="admin-note-small">
               To generate images, the bird must be{" "}
               <span className="font-semibold">text_approved</span> (or already{" "}
-              <span className="font-semibold">images_generated</span>).
+              <span className="font-semibold">images_generated</span>, or{" "}
+              <span className="font-semibold">images_approved</span>).
             </p>
           </div>
         )}

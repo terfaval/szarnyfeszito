@@ -11,6 +11,7 @@ import type { ContentBlock, GeneratedContent } from "@/types/content";
 import type { ImageVariant } from "@/types/image";
 import type { BirdDistributionMapRecord, DistributionStatus, DistributionRange } from "@/types/distributionMap";
 import ReviewRequestOverlay from "@/components/admin/ReviewRequestOverlay";
+import BirdIcon from "@/components/admin/BirdIcon";
 import BirdDistributionMap from "@/components/maps/BirdDistributionMap";
 import DistributionLegend from "@/components/maps/DistributionLegend";
 import { distributionRangeSchema } from "@/lib/distributionMapSchema";
@@ -700,33 +701,12 @@ export default function BirdTextReview({
           <>
             <header className={styles.header}>
               <div className={styles.headerBadgeColumn}>
-                <div className={styles.habitatBadge}>
-                  {habitatIcon ? (
-                    <img
-                      src={habitatIcon.icon}
-                      alt={`${habitatIcon.label} habitat icon`}
-                      className={styles.habitatIconLarge}
-                    />
-                  ) : (
-                    <div className={styles.habitatIconFallback} aria-hidden="true" />
-                  )}
-                  <div className={styles.iconicOverlayFrame}>
-                    {iconicPreviewUrl ? (
-                      <img
-                        src={iconicPreviewUrl}
-                        alt="Iconic bird illustration"
-                        className={styles.iconicOverlayImage}
-                      />
-                    ) : (
-                      <div className={styles.iconicOverlayPlaceholder}>
-                        <p>Iconic (fixed_pose_icon_v1)</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-                {habitatIcon && (
-                  <span className={styles.habitatLabel}>{habitatIcon.label}</span>
-                )}
+                <BirdIcon
+                  habitatSrc={habitatIcon?.icon ?? null}
+                  iconicSrc={iconicPreviewUrl}
+                  showHabitatBackground
+                  size={120}
+                />
               </div>
 
               <div className={styles.headerMain}>
@@ -783,17 +763,19 @@ export default function BirdTextReview({
 
             <div className={styles.layerStack}>
               <div className={styles.backgroundLayer}>
-                {mainHabitatPreviewUrl ? (
-                  <img
-                    src={mainHabitatPreviewUrl}
-                    alt="Scientific main habitat illustration"
-                    className={styles.fullBodyImage}
-                  />
-                ) : (
-                  <div className={styles.fullBodyPlaceholder}>
-                    <p>Scientific (main_habitat)</p>
-                  </div>
-                )}
+                <div className={styles.mainImageFrame}>
+                  {mainHabitatPreviewUrl ? (
+                    <img
+                      src={mainHabitatPreviewUrl}
+                      alt="Main bird image"
+                      className={styles.fullBodyImage}
+                    />
+                  ) : (
+                    <div className={styles.fullBodyPlaceholder}>
+                      <p>Main bird image</p>
+                    </div>
+                  )}
+                </div>
               </div>
               <div className={styles.overlayLayer}>
                 {dossier.identification.key_features.map((feature, index) => (

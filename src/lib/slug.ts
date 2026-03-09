@@ -53,3 +53,40 @@ export async function generateUniqueBirdSlug(nameLatin: string): Promise<string>
 
   return candidate;
 }
+
+export function normalizePlaceSlug(value: string): string {
+  return normalizeBirdSlug(value);
+}
+
+export async function generateUniquePlaceSlug(name: string): Promise<string> {
+  const baseSlug = normalizePlaceSlug(name);
+
+  if (!baseSlug) {
+    throw new Error("Place name must contain letters or numbers to derive a slug.");
+  }
+
+  const { data, error } = await supabaseServerClient
+    .from("places")
+    .select("slug")
+    .like("slug", `${baseSlug}%`);
+
+  if (error) {
+    throw error;
+  }
+
+  const existingSlugs = new Set((data ?? []).map((record) => record.slug));
+
+  if (!existingSlugs.has(baseSlug)) {
+    return baseSlug;
+  }
+
+  let suffix = 2;
+  let candidate = `${baseSlug}-${suffix}`;
+
+  while (existingSlugs.has(candidate)) {
+    suffix += 1;
+    candidate = `${baseSlug}-${suffix}`;
+  }
+
+  return candidate;
+}

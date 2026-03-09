@@ -1,0 +1,13 @@
+.layout {
+  height: min(72vh, 720px);
+  min-height: 420px;
+  border: 1px solid var(--line);
+  border-radius: 1.25rem;
+  overflow: hidden;
+}
+
+.map {
+  height: 100%;
+  width: 100%;
+}
+
