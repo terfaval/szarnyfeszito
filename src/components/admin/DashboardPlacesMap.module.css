@@ -30,13 +30,12 @@
 
 .overlayCard {
   pointer-events: none;
-  background: rgba(255, 255, 255, 0.9);
-  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: var(--panel-2);
+  border: 1px solid var(--line);
   border-radius: 18px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.12);
+  box-shadow: var(--shadow);
   padding: 14px 16px;
   max-width: 520px;
-  backdrop-filter: blur(10px);
 }
 
 .overlayTitle {
@@ -70,12 +69,11 @@
 .tooltipCard {
   width: 360px;
   max-width: min(360px, 80vw);
-  background: rgba(255, 255, 255, 0.96);
-  border: 1px solid rgba(0, 0, 0, 0.12);
+  background: var(--panel-2);
+  border: 1px solid var(--line);
   border-radius: 16px;
-  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.16);
+  box-shadow: var(--shadow);
   padding: 14px 14px 12px;
-  backdrop-filter: blur(10px);
 }
 
 .tooltipMeta {

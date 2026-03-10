@@ -306,8 +306,6 @@ svg {
   transform: translateX(-50%);
   width: min(calc(100vw - (2 * var(--shell-side-pad, 24px))), var(--shell-main-max));
   z-index: 1100;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
 }
 
 .admin-topbar__inner {

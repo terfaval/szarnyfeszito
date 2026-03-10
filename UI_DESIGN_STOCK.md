@@ -60,6 +60,7 @@ Allowed Tailwind usage on admin pages: spacing/layout utilities (`grid`, `gap-*`
 - `.input`: rounded text/select fields with consistent padding, background, and focus ring.
 - `.card`: panels with 16px radius, soft border, drop shadow, and tokenized background for dashboards, list items, and editors.
 - `.stack`, `.row`: flex helpers for vertical stacking or horizontal spreads that reuse the shared spacing scale.
+- Admin overlays (topbar overlays, map tooltips, etc.) should avoid glassmorphism utilities (`backdrop-filter`, `backdrop-blur`, RGBA white panels). Use the theme tokens from `src/app/globals.css` (`--panel`, `--panel-2`, `--line`, `--shadow`) so the admin surface remains consistent across modules.
 
 ## Component catalogue
 
