@@ -1,16 +1,22 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import localFont from "next/font/local";
 import TimeThemeEffect from "@/components/TimeThemeEffect";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
+const sfFontBody = localFont({
+  src: "../fonts/Roboto-VariableFont_wdth,wght.ttf",
+  variable: "--sf-font-body",
+  display: "swap",
+  weight: "100 900",
+  style: "normal",
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+const sfFontDisplay = localFont({
+  src: "../fonts/RubikMonoOne-Regular.ttf",
+  variable: "--sf-font-display",
+  display: "swap",
+  weight: "400",
+  style: "normal",
 });
 
 export const metadata: Metadata = {
@@ -27,10 +33,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
+    <html lang="en" className={`${sfFontBody.variable} ${sfFontDisplay.variable}`}>
+      <body className="antialiased">
         <TimeThemeEffect />
         {children}
       </body>

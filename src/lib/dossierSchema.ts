@@ -119,13 +119,28 @@ const iucnSchema = z.preprocess(
 
 const IDENTIFICATION_AXIS_VALUES = ["csor", "tollazat", "hang", "mozgas"] as const;
 
+function repairHungarianMojibake(input: string): string {
+  // Handles common UTF-8-as-Windows-1250/ISO-8859-* mojibake sequences seen in axis labels.
+  // Example: "CsĹ‘r" (csőr), "MozgĂˇs" (mozgás).
+  return input
+    .replace(/Ăˇ/g, "á")
+    .replace(/Ă©/g, "é")
+    .replace(/Ă­/g, "í")
+    .replace(/Ăł/g, "ó")
+    .replace(/Ă¶/g, "ö")
+    .replace(/ĂĽ/g, "ü")
+    .replace(/Ĺ±/g, "ű")
+    .replace(/Ĺ‘/g, "ő")
+    .replace(/Å‘/g, "ő");
+}
+
 function normalizeIdentificationAxisToken(value: unknown): unknown {
   if (typeof value !== "string") return value;
 
   const trimmed = value.trim();
   if (!trimmed) return value;
 
-  const normalized = trimmed
+  const normalized = repairHungarianMojibake(trimmed)
     .toLowerCase()
     .normalize("NFKD")
     .replace(/[\u0300-\u036f]/g, "")
