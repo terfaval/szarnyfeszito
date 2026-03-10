@@ -107,8 +107,59 @@ const iucnSchema = z.preprocess(
   const habitatClassSchema = z.enum(["erdő", "vízpart", "puszta", "hegy", "város"]);
   const colorBgSchema = z.enum(["white", "black", "grey", "brown", "yellow", "orange", "red", "green", "blue"]);
 
+  const isPlainObject = (value: unknown): value is Record<string, unknown> =>
+    typeof value === "object" && value !== null && !Array.isArray(value);
+
+  const coerceStringLike = (value: unknown): string | null => {
+    if (typeof value === "string") return value;
+    if (!isPlainObject(value)) return null;
+    const candidateKeys = ["value", "label", "name", "token", "text"];
+    for (const key of candidateKeys) {
+      const v = value[key];
+      if (typeof v === "string") return v;
+    }
+    return null;
+  };
+
+  const repairHungarianUtf8Mojibake = (input: string): string =>
+    input
+      .replace(/\u0102\u02C7/g, "á")
+      .replace(/\u0102\u00A9/g, "é")
+      .replace(/\u0102\u00AD/g, "í")
+      .replace(/\u0102\u0142/g, "ó")
+      .replace(/\u0102\u00B3/g, "ó")
+      .replace(/\u0102\u00B6/g, "ö")
+      .replace(/\u0102\u013D/g, "ü")
+      .replace(/\u0139\u00B1/g, "ű")
+      .replace(/\u0139\u2018/g, "ő");
+
+  const normalizeHabitatClassToken = (value: unknown): unknown => {
+    const raw = coerceStringLike(value);
+    if (raw === null) return value;
+
+    const trimmed = raw.trim();
+    if (!trimmed) return value;
+
+    const repaired = repairHungarianUtf8Mojibake(repairHungarianMojibake(trimmed));
+    const normalized = repaired
+      .toLowerCase()
+      .normalize("NFKD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z]+/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+
+    if (normalized.startsWith("erdo")) return "erdő";
+    if (normalized.startsWith("vizpart")) return "vízpart";
+    if (normalized.startsWith("puszta")) return "puszta";
+    if (normalized.startsWith("hegy")) return "hegy";
+    if (normalized.startsWith("varos")) return "város";
+
+    return value;
+  };
+
   const pillMetaSchema = z.object({
-    habitat_class: habitatClassSchema,
+    habitat_class: z.preprocess(normalizeHabitatClassToken, habitatClassSchema),
     color_bg: colorBgSchema.default("grey"),
     region_teaser: trimmedString(),
     size_cm: measurementSchema,
@@ -135,12 +186,13 @@ function repairHungarianMojibake(input: string): string {
 }
 
 function normalizeIdentificationAxisToken(value: unknown): unknown {
-  if (typeof value !== "string") return value;
+  const raw = coerceStringLike(value) ?? value;
+  if (typeof raw !== "string") return value;
 
-  const trimmed = value.trim();
+  const trimmed = raw.trim();
   if (!trimmed) return value;
 
-  const normalized = repairHungarianMojibake(trimmed)
+  const normalized = repairHungarianUtf8Mojibake(repairHungarianMojibake(trimmed))
     .toLowerCase()
     .normalize("NFKD")
     .replace(/[\u0300-\u036f]/g, "")
