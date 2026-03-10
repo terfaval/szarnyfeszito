@@ -43,9 +43,17 @@
   white-space: pre-wrap;
   text-align: center;
   color: var(--brand-warm);
-  font-weight: 300;
+  font-family: var(--font-display);
+  font-weight: 700;
   font-size: 1.05rem;
   line-height: 1.65;
+}
+
+.ethicsTip {
+  white-space: pre-wrap;
+  color: var(--brand-ink);
+  line-height: 1.55;
+  font-size: 0.95rem;
 }
 
 .extrasGrid {

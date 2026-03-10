@@ -2,10 +2,11 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { CircleMarker, MapContainer, TileLayer, Tooltip } from "react-leaflet";
-import "leaflet/dist/leaflet.css";
+import { Tooltip } from "react-leaflet";
+
+import PlacesMap from "@/components/maps/PlacesMap";
+import type { PlacesMapLayersV1 } from "@/types/placesMap";
 import type { PlaceMarker } from "@/types/place";
-import { DEFAULT_BASEMAP, getBasemapTileLayerArgs } from "@/components/maps/basemaps";
 import styles from "./DashboardPlacesMap.module.css";
 
 type HoverPlaceDetail = {
@@ -41,10 +42,11 @@ function seasonLabelHu(season: HoverPlaceDetail["content"]["season"]) {
 
 export default function DashboardPlacesMap({
   markers,
+  layers,
 }: {
   markers: PlaceMarker[];
+  layers: PlacesMapLayersV1 | null;
 }) {
-  const [isDark, setIsDark] = useState(false);
   const [hoveredSlug, setHoveredSlug] = useState<string | null>(null);
   const [pinnedSlug, setPinnedSlug] = useState<string | null>(null);
   const [detail, setDetail] = useState<HoverPlaceDetail | null>(null);
@@ -53,20 +55,6 @@ export default function DashboardPlacesMap({
 
   const cacheRef = useRef<Map<string, HoverPlaceDetail>>(new Map());
   const activeSlug = pinnedSlug ?? hoveredSlug;
-
-  useEffect(() => {
-    const media = window.matchMedia("(prefers-color-scheme: dark)");
-    const update = () => setIsDark(media.matches);
-    update();
-    media.addEventListener("change", update);
-    return () => media.removeEventListener("change", update);
-  }, []);
-
-  const center = useMemo<[number, number]>(() => [47.16, 19.5], []);
-  const tileLayerArgs = useMemo(
-    () => getBasemapTileLayerArgs({ basemap: DEFAULT_BASEMAP, isDark }),
-    [isDark]
-  );
 
   useEffect(() => {
     if (!activeSlug) return;
@@ -98,6 +86,7 @@ export default function DashboardPlacesMap({
       setDetail(next);
       setLoading(false);
     };
+
     run().catch((err) => {
       if (ctrl.signal.aborted) return;
       setError(err instanceof Error ? err.message : "Nem sikerült betölteni a helyszínt.");
@@ -110,136 +99,102 @@ export default function DashboardPlacesMap({
 
   const markerBySlug = useMemo(() => new Map(markers.map((m) => [m.slug, m])), [markers]);
   const activeMarker = activeSlug ? markerBySlug.get(activeSlug) ?? null : null;
+  const selectedRegionId = activeMarker?.leaflet_region_id?.trim() || null;
 
   return (
     <section className={styles.section} aria-label="Published places map">
       <div className={styles.layout} style={{ position: "relative" }}>
-        <MapContainer
-          className={styles.map}
-          center={center}
-          zoom={7}
-          zoomControl={false}
-          scrollWheelZoom={false}
-          doubleClickZoom={false}
-          dragging={false}
-          keyboard={false}
-          boxZoom={false}
-          touchZoom={false}
-        >
-          <TileLayer url={tileLayerArgs.url} attribution={tileLayerArgs.attribution} />
-          {markers.map((marker) => {
-            if (marker.lat === null || marker.lng === null) return null;
-            const isActive = activeSlug === marker.slug;
-            const isDimmed = !!activeSlug && !isActive;
+        <PlacesMap
+          markers={markers}
+          layers={layers}
+          selectedSlug={activeSlug}
+          selectedRegionId={selectedRegionId}
+          basemap="bird"
+          regionVisualization="places_regions_v1"
+          onSelect={(slug) => setPinnedSlug((prev) => (prev === slug ? null : slug))}
+          markerEventHandlers={(marker) => ({
+            mouseover: () => setHoveredSlug(marker.slug),
+            mouseout: () => {
+              if (!pinnedSlug) {
+                setHoveredSlug(null);
+              }
+            },
+          })}
+          renderMarkerChildren={({ marker, isSelected }) => {
+            if (!isSelected) return null;
             const isPinned = pinnedSlug === marker.slug;
             return (
-              <CircleMarker
-                key={marker.id}
-                center={[marker.lat, marker.lng]}
-                radius={isPinned ? 8 : isActive ? 7 : 5}
-                pathOptions={{
-                  color: isPinned ? "#0f172a" : isActive ? "#0f172a" : "#0b3b8c",
-                  weight: isPinned ? 2 : isActive ? 2 : 1,
-                  fillColor: isPinned ? "#1d4ed8" : isActive ? "#2563eb" : "#60a5fa",
-                  fillOpacity: isDimmed ? 0.55 : 0.95,
-                  opacity: isDimmed ? 0.55 : 1,
-                }}
-                eventHandlers={{
-                  mouseover: () => setHoveredSlug(marker.slug),
-                  mouseout: () => {
-                    if (!pinnedSlug) {
-                      setHoveredSlug(null);
-                    }
-                  },
-                  click: () => setPinnedSlug((prev) => (prev === marker.slug ? null : marker.slug)),
-                }}
+              <Tooltip
+                className="sf-place-tooltip"
+                direction="top"
+                offset={[0, -10]}
+                opacity={1}
+                permanent={Boolean(isPinned)}
+                interactive
               >
-                {isActive ? (
-                  <Tooltip
-                    className="sf-place-tooltip"
-                    direction="top"
-                    offset={[0, -10]}
-                    opacity={1}
-                    permanent={Boolean(isPinned)}
-                    interactive
-                  >
-                    <div className={styles.tooltipCard}>
-                      <p className={styles.tooltipMeta}>
-                        {detail?.place?.place_type ?? marker.place_type}
-                        {detail?.place?.county ? ` · ${detail.place.county}` : ""}
-                        {detail?.place?.nearest_city ? ` · ${detail.place.nearest_city}` : ""}
-                      </p>
-                      <p className={styles.tooltipName}>{detail?.place?.name ?? marker.name}</p>
+                <div className={styles.tooltipCard}>
+                  <p className={styles.tooltipMeta}>
+                    {detail?.place?.place_type ?? marker.place_type}
+                    {detail?.place?.county ? ` · ${detail.place.county}` : ""}
+                    {detail?.place?.nearest_city ? ` · ${detail.place.nearest_city}` : ""}
+                  </p>
+                  <p className={styles.tooltipName}>{detail?.place?.name ?? marker.name}</p>
 
-                      {loading ? (
-                        <p className={styles.tooltipCopy}>Betöltés…</p>
-                      ) : error ? (
-                        <p className={styles.tooltipCopy}>{error}</p>
-                      ) : detail ? (
-                        <>
-                          {detail.content.short ? (
-                            <p className={styles.tooltipCopy}>{detail.content.short}</p>
-                          ) : null}
+                  {loading ? (
+                    <p className={styles.tooltipCopy}>Betöltés…</p>
+                  ) : error ? (
+                    <p className={styles.tooltipCopy}>{error}</p>
+                  ) : detail ? (
+                    <>
+                      {detail.content.short ? <p className={styles.tooltipCopy}>{detail.content.short}</p> : null}
 
-                          <p className={styles.tooltipSectionLabel}>
-                            Szezon · {seasonLabelHu(detail.content.season)}
-                          </p>
-                          {detail.content.seasonal_snippet ? (
-                            <p className={styles.tooltipCopy}>{detail.content.seasonal_snippet}</p>
-                          ) : (
-                            <p className={styles.tooltipCopy}>Nincs szezon snippet.</p>
-                          )}
+                      <p className={styles.tooltipSectionLabel}>Szezon · {seasonLabelHu(detail.content.season)}</p>
+                      {detail.content.seasonal_snippet ? (
+                        <p className={styles.tooltipCopy}>{detail.content.seasonal_snippet}</p>
+                      ) : (
+                        <p className={styles.tooltipCopy}>Nincs szezon snippet.</p>
+                      )}
 
-                          <p className={styles.tooltipSectionLabel}>Top madarak</p>
-                          {detail.birds.length ? (
-                            <div className={styles.tooltipBirdList}>
-                              {detail.birds.slice(0, 5).map((bird) => (
-                                <Link
-                                  key={bird.id}
-                                  href={`/admin/birds/${bird.id}`}
-                                  className={styles.tooltipBirdLink}
-                                >
-                                  <span className={styles.tooltipBirdName}>{bird.name_hu}</span>
-                                  <span className={styles.tooltipBirdMeta}>
-                                    #{bird.rank} · {bird.frequency_band}
-                                  </span>
-                                </Link>
-                              ))}
-                            </div>
-                          ) : (
-                            <p className={styles.tooltipCopy}>Nincs publikált madár a szezonban ehhez a helyhez.</p>
-                          )}
-
-                          <div className={styles.tooltipFooter}>
-                            <Link href={`/admin/places/${detail.place.id}`} className={styles.tooltipFooterLink}>
-                              Helyszín
+                      <p className={styles.tooltipSectionLabel}>Top madarak</p>
+                      {detail.birds.length ? (
+                        <div className={styles.tooltipBirdList}>
+                          {detail.birds.slice(0, 5).map((bird) => (
+                            <Link key={bird.id} href={`/admin/birds/${bird.id}`} className={styles.tooltipBirdLink}>
+                              <span className={styles.tooltipBirdName}>{bird.name_hu}</span>
+                              <span className={styles.tooltipBirdMeta}>
+                                #{bird.rank} · {bird.frequency_band}
+                              </span>
                             </Link>
-                            <Link
-                              href={`/admin/places/${detail.place.id}/publish`}
-                              className={styles.tooltipFooterLink}
-                            >
-                              Publish
-                            </Link>
-                          </div>
-                        </>
-                      ) : null}
-                    </div>
-                  </Tooltip>
-                ) : null}
-              </CircleMarker>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className={styles.tooltipCopy}>Nincs publikált madár a szezonban ehhez a helyhez.</p>
+                      )}
+
+                      <div className={styles.tooltipFooter}>
+                        <Link href={`/admin/places/${detail.place.id}`} className={styles.tooltipFooterLink}>
+                          Helyszín
+                        </Link>
+                        <Link href={`/admin/places/${detail.place.id}/publish`} className={styles.tooltipFooterLink}>
+                          Publish
+                        </Link>
+                      </div>
+                    </>
+                  ) : null}
+                </div>
+              </Tooltip>
             );
-          })}
-        </MapContainer>
+          }}
+        />
 
         <div className={styles.overlay} aria-hidden>
           <div className={styles.overlayCard}>
             <p className={styles.overlayTitle}>Published places</p>
-            <p className={styles.overlaySubtitle}>
-              {activeMarker ? activeMarker.name : "Magyarország"}
-            </p>
+            <p className={styles.overlaySubtitle}>{activeMarker ? activeMarker.name : "Magyarország"}</p>
           </div>
         </div>
       </div>
     </section>
   );
 }
+

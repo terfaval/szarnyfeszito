@@ -5,8 +5,10 @@ import { getLatestApprovedContentBlockForPlace } from "@/lib/placeContentService
 import { listApprovedPublishedBirdLinksForPlace } from "@/lib/placeBirdService";
 import { listApprovedCurrentIconicImagesForBirds, getSignedImageUrl } from "@/lib/imageService";
 import { getCurrentSeasonKey } from "@/lib/season";
+import { getDistributionRegionBboxesById, getDistributionRegionGeometriesById } from "@/lib/distributionRegionCatalogService";
 import PlacePublishAction from "@/components/admin/PlacePublishAction";
 import PlacePublishPreview from "@/components/admin/PlacePublishPreview";
+import type { GeoJsonObject } from "geojson";
 
 export const metadata = {
   title: "Place publish — Szárnyfeszítő Admin",
@@ -37,6 +39,24 @@ export default async function PlacePublishPage({
   const approved = await getLatestApprovedContentBlockForPlace(place.id);
   const currentSeason = getCurrentSeasonKey();
   const marker = await getPlaceMarkerById(place.id);
+
+  const leafletRegionId = place.leaflet_region_id?.trim() ?? "";
+  let leafletRegion: { geojson: GeoJsonObject | null; bbox: { south: number; west: number; north: number; east: number } | null } =
+    { geojson: null, bbox: null };
+  if (leafletRegionId) {
+    try {
+      const [geoById, bboxById] = await Promise.all([
+        getDistributionRegionGeometriesById([leafletRegionId]),
+        getDistributionRegionBboxesById([leafletRegionId]),
+      ]);
+      leafletRegion = {
+        geojson: (geoById[leafletRegionId] as GeoJsonObject | undefined) ?? null,
+        bbox: bboxById[leafletRegionId] ?? null,
+      };
+    } catch {
+      leafletRegion = { geojson: null, bbox: null };
+    }
+  }
 
   const placeBirds = await listApprovedPublishedBirdLinksForPlace(place.id);
 
@@ -101,6 +121,7 @@ export default async function PlacePublishPage({
       <PlacePublishPreview
         place={place}
         marker={marker}
+        leafletRegion={leafletRegion}
         content={approved?.blocks_json ?? null}
         currentSeason={currentSeason}
         birds={previewBirds}

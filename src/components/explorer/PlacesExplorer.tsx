@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import PlacesMap from "@/components/maps/PlacesMap";
 import type { PlaceMarker, PlaceNotableUnit } from "@/types/place";
 import { normalizePlaceNotableUnits } from "@/lib/placeNotableUnits";
+import type { PlacesMapLayersV1 } from "@/types/placesMap";
 
 type PublicPlaceDetail = {
   place: {
@@ -11,6 +12,7 @@ type PublicPlaceDetail = {
     slug: string;
     name: string;
     place_type: string;
+    leaflet_region_id: string | null;
     region_landscape: string | null;
     county: string | null;
     district: string | null;
@@ -53,6 +55,7 @@ type PublicPlaceDetail = {
 
 export default function PlacesExplorer() {
   const [markers, setMarkers] = useState<PlaceMarker[]>([]);
+  const [layers, setLayers] = useState<PlacesMapLayersV1 | null>(null);
   const [loadingMarkers, setLoadingMarkers] = useState(true);
   const [markersError, setMarkersError] = useState<string | null>(null);
 
@@ -73,6 +76,7 @@ export default function PlacesExplorer() {
         return;
       }
       setMarkers((payload?.data?.markers ?? []) as PlaceMarker[]);
+      setLayers((payload?.data?.layers ?? null) as PlacesMapLayersV1 | null);
       setLoadingMarkers(false);
     };
     run();
@@ -117,6 +121,15 @@ export default function PlacesExplorer() {
     return normalizePlaceNotableUnits(selectedDetail?.place?.notable_units_json ?? []);
   }, [selectedDetail]);
 
+  const selectedRegionId = useMemo(() => {
+    const fromDetail = selectedDetail?.place?.leaflet_region_id?.trim() ?? "";
+    if (fromDetail) return fromDetail;
+    if (!selectedSlug) return null;
+    const marker = markers.find((m) => m.slug === selectedSlug);
+    const fromMarker = marker?.leaflet_region_id?.trim() ?? "";
+    return fromMarker || null;
+  }, [markers, selectedDetail, selectedSlug]);
+
   return (
     <main className="places-explorer mx-auto w-full max-w-6xl px-6 py-10">
       <header className="mb-6">
@@ -138,9 +151,12 @@ export default function PlacesExplorer() {
           ) : (
             <PlacesMap
               markers={markers}
+              layers={layers}
               selectedSlug={selectedSlug}
+              selectedRegionId={selectedRegionId}
               onSelect={(slug) => selectSlug(slug)}
               basemap="brand"
+              regionVisualization="places_regions_v1"
             />
           )}
         </section>

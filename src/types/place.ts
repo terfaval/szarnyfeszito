@@ -88,6 +88,7 @@ export type PlaceMarker = {
   location_precision: PlaceLocationPrecision;
   sensitivity_level: PlaceSensitivityLevel;
   is_beginner_friendly: boolean;
+  leaflet_region_id: string | null;
   lat: number | null;
   lng: number | null;
   updated_at: string;

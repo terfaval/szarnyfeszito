@@ -12,10 +12,10 @@ const sfFontBody = localFont({
 });
 
 const sfFontDisplay = localFont({
-  src: "../fonts/RubikMonoOne-Regular.ttf",
+  src: "../fonts/Rubik-VariableFont_wght.ttf",
   variable: "--sf-font-display",
   display: "swap",
-  weight: "400",
+  weight: "700",
   style: "normal",
 });
 

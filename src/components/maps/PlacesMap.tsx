@@ -1,26 +1,44 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { CircleMarker, GeoJSON, MapContainer, TileLayer } from "react-leaflet";
+import type { LeafletEventHandlerFnMap } from "leaflet";
 import "leaflet/dist/leaflet.css";
 import styles from "./PlacesMap.module.css";
 import { DEFAULT_BASEMAP, getBasemapTileLayerArgs } from "./basemaps";
 import type { BasemapId } from "./basemaps";
 import type { PlaceMarker } from "@/types/place";
 import { HUNGARY_BORDER_110M, HUNGARY_WATER_MASK_110M } from "./hungaryBorder110m";
+import PlacesRegionVisualization, { type PlacesRegionVisualizationVariant } from "./PlacesRegionVisualization";
+import type { PlacesMapLayersV1 } from "@/types/placesMap";
 
 export type PlacesMapProps = {
   markers: PlaceMarker[];
   selectedSlug: string | null;
+  selectedRegionId?: string | null;
   onSelect: (slug: string) => void;
   basemap?: BasemapId;
+  regionVisualization?: PlacesRegionVisualizationVariant;
+  layers?: PlacesMapLayersV1 | null;
+  markerEventHandlers?: (marker: PlaceMarker) => LeafletEventHandlerFnMap | undefined;
+  renderMarkerChildren?: (args: {
+    marker: PlaceMarker;
+    isSelected: boolean;
+    isDimmed: boolean;
+  }) => ReactNode;
 };
 
 export default function PlacesMap({
   markers,
   selectedSlug,
+  selectedRegionId = null,
   onSelect,
   basemap = DEFAULT_BASEMAP,
+  regionVisualization = "places_regions_v1",
+  layers = null,
+  markerEventHandlers,
+  renderMarkerChildren,
 }: PlacesMapProps) {
   const [isDark, setIsDark] = useState(false);
 
@@ -76,10 +94,21 @@ export default function PlacesMap({
             />
           </>
         ) : null}
+
+        <PlacesRegionVisualization variant={regionVisualization} layers={layers} selectedRegionId={selectedRegionId} />
+
         {markers.map((marker) => {
           if (marker.lat === null || marker.lng === null) return null;
           const isSelected = selectedSlug === marker.slug;
           const isDimmed = !!selectedSlug && !isSelected;
+          const handlers = markerEventHandlers?.(marker) ?? undefined;
+          const mergedHandlers: LeafletEventHandlerFnMap = {
+            ...(handlers ?? {}),
+            click: (event) => {
+              handlers?.click?.(event);
+              onSelect(marker.slug);
+            },
+          };
           return (
             <CircleMarker
               key={marker.id}
@@ -92,10 +121,10 @@ export default function PlacesMap({
                 fillOpacity: isDimmed ? 0.55 : 0.9,
                 opacity: isDimmed ? 0.55 : 1,
               }}
-              eventHandlers={{
-                click: () => onSelect(marker.slug),
-              }}
-            />
+              eventHandlers={mergedHandlers}
+            >
+              {renderMarkerChildren ? renderMarkerChildren({ marker, isSelected, isDimmed }) : null}
+            </CircleMarker>
           );
         })}
       </MapContainer>

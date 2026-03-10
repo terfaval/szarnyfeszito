@@ -261,10 +261,10 @@ const JSON_TEMPLATE_V2_3 = `{
   "long_paragraphs": ["...", "..."],
   "identification": {
     "key_features": [
-      { "title": "CsÄąâ€r", "description": "..." },
-      { "title": "Tollazat", "description": "..." },
-      { "title": "Hang", "description": "..." },
-      { "title": "MozgÄ‚Ë‡s", "description": "..." }
+      { "axis": "csor", "title": "...", "description": "..." },
+      { "axis": "tollazat", "title": "...", "description": "..." },
+      { "axis": "hang", "title": "...", "description": "..." },
+      { "axis": "mozgas", "title": "...", "description": "..." }
     ],
     "identification_paragraph": "..."
   },
@@ -315,13 +315,13 @@ HARD RULES:
 - pill_meta.habitat_class must be exactly one of: erdĹ‘, vĂ­zpart, puszta, hegy, vĂˇros (pick the strongest).
  - pill_meta.color_bg must be exactly one of: white, black, grey, brown, yellow, orange, red, green, blue.
  - distribution/nesting/migration MUST be objects (never strings).
-- Use null for nullable fields when unknown; when you do provide numbers keep ranges conservative and avoid false precision (no spans < ~2 units unless null).
-- Identity lock: header.name_hu must equal the normalized Hungarian name provided as input, and header.name_latin must match the provided Latin name exactly.
-- short_options: exactly 3 strings, 90-170 chars, each a complete sentence ending in punctuation; across the 3 sentences cover at least two different axes (morphology/plumage/beak/sound/movement/habitat/behavior); no trailing conjunctions, no shared openings, no reliance on sensory suffix templates.
-- short_summary: 1-2 sentences can lean Durrell/Adams but must include at least one concrete observable detail; avoid being reduced to â€śkĂĽlĂ¶nleges madĂˇrâ€ť or â€ślenyĹ±gĂ¶zĹ‘ fajâ€ť without detail.
-- long_paragraphs: exactly two paragraphs; Paragraph 1 is a concrete field encounter scene, Paragraph 2 is context (habitat/migration/behavior) without repeating Paragraph 1; at most one witty sentence per paragraph; otherwise stay concrete, avoid hearsay/record phrases (â€śa helyiek szerintâ€ť, â€śgyakran nevezikâ€ť, â€śrekordâ€ť, etc.), and do not invent digits or citations.
-- identification.key_features: exactly 4 entries in this axis order: csor, tollazat, hang, mozgas. Each title must be a short, species-specific heading; each description must be field-usable (concrete, non-generic).
-- Output JSON only.
+ - Use null for nullable fields when unknown; when you do provide numbers keep ranges conservative and avoid false precision (no spans < ~2 units unless null).
+ - Identity lock: header.name_hu must equal the normalized Hungarian name provided as input, and header.name_latin must match the provided Latin name exactly.
+ - short_options: exactly 3 strings, 90-170 chars, each a complete sentence ending in punctuation; across the 3 sentences cover at least two different axes (morphology/plumage/beak/sound/movement/habitat/behavior); no trailing conjunctions, no shared openings, no reliance on sensory suffix templates.
+ - short_summary: 1-2 sentences can lean Durrell/Adams but must include at least one concrete observable detail; avoid being reduced to â€śkĂĽlĂ¶nleges madĂˇrâ€ť or â€ślenyĹ±gĂ¶zĹ‘ fajâ€ť without detail.
+ - long_paragraphs: exactly two paragraphs; Paragraph 1 is a concrete field encounter scene, Paragraph 2 is context (habitat/migration/behavior) without repeating Paragraph 1; at most one witty sentence per paragraph; otherwise stay concrete, avoid hearsay/record phrases (â€śa helyiek szerintâ€ť, â€śgyakran nevezikâ€ť, â€śrekordâ€ť, etc.), and do not invent digits or citations.
+ - identification.key_features: exactly 4 entries in this axis order: csor, tollazat, hang, mozgas. Each entry MUST include axis + title + description; titles must be short and species-specific; descriptions must be field-usable (concrete, non-generic).
+ - Output JSON only.
 `.trim();
 
 // ---------- validation / unwrap ----------

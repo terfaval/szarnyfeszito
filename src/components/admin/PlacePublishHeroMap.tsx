@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import type { GeoJsonObject } from "geojson";
 import { CircleMarker, GeoJSON, MapContainer } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import { HUNGARY_BORDER_110M } from "@/components/maps/hungaryBorder110m";
@@ -11,11 +12,13 @@ const FALLBACK_CENTER: [number, number] = [47.16, 19.5];
 export default function PlacePublishHeroMap({
   lat,
   lng,
-  label,
+  overlayGeoJson,
+  overlayBbox,
 }: {
   lat: number | null;
   lng: number | null;
-  label: string;
+  overlayGeoJson?: GeoJsonObject | null;
+  overlayBbox?: { south: number; west: number; north: number; east: number } | null;
 }) {
   const hasPosition = Number.isFinite(lat) && Number.isFinite(lng);
   const center = useMemo<[number, number]>(() => {
@@ -23,12 +26,25 @@ export default function PlacePublishHeroMap({
     return [lat as number, lng as number];
   }, [hasPosition, lat, lng]);
 
+  const fallbackCenter = useMemo<[number, number]>(() => {
+    if (!overlayBbox) return FALLBACK_CENTER;
+    const hasBbox =
+      Number.isFinite(overlayBbox.south) &&
+      Number.isFinite(overlayBbox.west) &&
+      Number.isFinite(overlayBbox.north) &&
+      Number.isFinite(overlayBbox.east);
+    if (!hasBbox) return FALLBACK_CENTER;
+    return [(overlayBbox.south + overlayBbox.north) / 2, (overlayBbox.west + overlayBbox.east) / 2];
+  }, [overlayBbox]);
+
+  const effectiveCenter = hasPosition ? center : fallbackCenter;
+
   return (
-    <div className={styles.wrap} aria-label={`Map preview: ${label}`}>
+    <div className={styles.wrap} aria-label="Map preview">
       {!hasPosition ? <div className={styles.overlayNote}>No location marker set yet.</div> : null}
       <MapContainer
         className={styles.map}
-        center={center}
+        center={effectiveCenter}
         zoom={8}
         zoomControl={false}
         scrollWheelZoom={false}
@@ -48,6 +64,17 @@ export default function PlacePublishHeroMap({
             fillOpacity: 1,
           }}
         />
+        {overlayGeoJson ? (
+          <GeoJSON
+            data={overlayGeoJson}
+            style={{
+              color: "rgba(var(--brand-accent-rgb), 0.9)",
+              weight: 2,
+              fillColor: "rgba(var(--brand-accent-rgb), 0.22)",
+              fillOpacity: 1,
+            }}
+          />
+        ) : null}
         {hasPosition ? (
           <CircleMarker
             center={[lat as number, lng as number]}

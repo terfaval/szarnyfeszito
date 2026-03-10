@@ -58,7 +58,7 @@ Applies to **display-only** maps (public `/places`, Admin Dashboard Places map, 
 - Background: light = near-white, dark = dark UI-compatible. (Container may use transparent/white fallback while tiles load.)
 - Overlay styling (marker / polygon colors) remains module-owned (per page/menu), as today.
 - Exception: editor pickers (e.g. Place location picker) remain interactive.
-- Exception (public `/places`, D40): `basemap="brand"` shows only Hungary border (brand-ink) on page-bg, with a theme-aware water fill; no roads/county borders; attribution hidden.
+- Exception (public `/places`, D40): `basemap="brand"` is tile-less and shows Hungary silhouette on page-bg, with a theme-aware water fill; attribution hidden. The public Places map may additionally render lightweight region overlays (global country borders + HU region polygons) from the server-side region catalog (D26/D41) to validate the `leaflet_region_id` contract.
 
 ---
 

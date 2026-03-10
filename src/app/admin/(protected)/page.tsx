@@ -13,6 +13,7 @@ import { Card } from "@/ui/components/Card";
 import { StatusPill } from "@/ui/components/StatusPill";
 import BirdIcon from "@/components/admin/BirdIcon";
 import DashboardPlacesMap from "@/components/admin/DashboardPlacesMap";
+import { buildPlacesMapLayersV1 } from "@/lib/placesMapLayers";
 
 export const metadata = {
   title: "Szárnyfeszítő admin dashboard",
@@ -46,6 +47,9 @@ export default async function AdminPage() {
   const birds = await listBirds();
   const places = await listPlaces();
   const publishedMarkers = await listPublishedPlaceDashboardMarkers();
+  const dashboardLayers = await buildPlacesMapLayersV1({
+    placeRegionIds: publishedMarkers.map((m) => m.leaflet_region_id ?? "").filter(Boolean),
+  });
   const currentSeason = getCurrentSeasonKey();
   const currentSeasonLabel =
     currentSeason === "spring"
@@ -231,7 +235,7 @@ export default async function AdminPage() {
 
   return (
     <section className="admin-stack">
-      <DashboardPlacesMap markers={publishedMarkers} />
+      <DashboardPlacesMap markers={publishedMarkers} layers={dashboardLayers} />
 
       <Card className="stack">
         <header className="admin-heading">

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
+import type { GeoJsonObject } from "geojson";
 import type { Place } from "@/types/place";
 import type { PlaceUiVariantsV1 } from "@/lib/placeContentSchema";
 import type { SeasonKey } from "@/lib/season";
@@ -30,6 +31,7 @@ function nonEmpty(value: unknown) {
 export default function PlacePublishPreview({
   place,
   marker,
+  leafletRegion,
   content,
   currentSeason,
   birds,
@@ -37,6 +39,7 @@ export default function PlacePublishPreview({
 }: {
   place: Place;
   marker: { lat: number | null; lng: number | null } | null;
+  leafletRegion: { geojson: GeoJsonObject | null; bbox: { south: number; west: number; north: number; east: number } | null };
   content: PlaceUiVariantsV1 | null;
   currentSeason: SeasonKey;
   birds: PlacePublishBird[];
@@ -90,33 +93,17 @@ export default function PlacePublishPreview({
                 <PlacePublishHeroMap
                   lat={marker?.lat ?? null}
                   lng={marker?.lng ?? null}
-                  label={place.name || place.slug || "Place"}
+                  overlayGeoJson={leafletRegion.geojson}
+                  overlayBbox={leafletRegion.bbox}
                 />
               )}
             </div>
 
-            {nonEmpty(variants.long) ? (
-              <details className={styles.details} open>
-                <summary className={styles.detailsSummary}>Hosszabb leírás</summary>
-                <div className="stack" style={{ marginTop: "0.8rem" }}>
-                  <p className={styles.copyBlock}>{variants.long}</p>
-                  {nonEmpty(variants.ethics_tip) ? (
-                    <div className={styles.highlightBox}>
-                      <p className={styles.highlightTitle}>Etika</p>
-                      <p className={styles.copyBlock} style={{ marginTop: "0.5rem" }}>
-                        {variants.ethics_tip}
-                      </p>
-                    </div>
-                  ) : null}
-                </div>
-              </details>
-            ) : nonEmpty(variants.ethics_tip) ? (
-              <div className={styles.highlightBox}>
-                <p className={styles.highlightTitle}>Etika</p>
-                <p className={styles.copyBlock} style={{ marginTop: "0.5rem" }}>
-                  {variants.ethics_tip}
-                </p>
-              </div>
+            {nonEmpty(variants.long) ? <p className={styles.copyBlock}>{variants.long}</p> : null}
+            {nonEmpty(variants.ethics_tip) ? (
+              <p className={styles.ethicsTip} aria-label="Ethics tip">
+                {variants.ethics_tip}
+              </p>
             ) : null}
 
             {showSeasonal ? (

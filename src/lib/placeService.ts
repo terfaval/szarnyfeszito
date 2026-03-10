@@ -248,7 +248,9 @@ export async function deletePlaceById(id: string): Promise<void> {
 export async function listPublishedPlaceMarkers(): Promise<PlaceMarker[]> {
   const { data, error } = await supabaseServerClient
     .from("place_markers_v1")
-    .select("id,slug,name,place_type,status,location_precision,sensitivity_level,is_beginner_friendly,lat,lng,updated_at")
+    .select(
+      "id,slug,name,place_type,status,location_precision,sensitivity_level,is_beginner_friendly,leaflet_region_id,lat,lng,updated_at"
+    )
     .eq("status", "published")
     .neq("location_precision", "hidden")
     .not("lat", "is", null)
@@ -259,7 +261,21 @@ export async function listPublishedPlaceMarkers(): Promise<PlaceMarker[]> {
     throw error;
   }
 
-  return (data ?? []) as PlaceMarker[];
+  const rows = (data ?? []) as Array<Record<string, unknown>>;
+  return rows.map((row) => ({
+    id: String(row.id ?? ""),
+    slug: String(row.slug ?? ""),
+    name: String(row.name ?? ""),
+    place_type: row.place_type as PlaceMarker["place_type"],
+    status: row.status as PlaceMarker["status"],
+    location_precision: row.location_precision as PlaceMarker["location_precision"],
+    sensitivity_level: row.sensitivity_level as PlaceMarker["sensitivity_level"],
+    is_beginner_friendly: Boolean(row.is_beginner_friendly),
+    leaflet_region_id: typeof row.leaflet_region_id === "string" ? row.leaflet_region_id : null,
+    lat: typeof row.lat === "number" ? row.lat : null,
+    lng: typeof row.lng === "number" ? row.lng : null,
+    updated_at: String(row.updated_at ?? ""),
+  }));
 }
 
 export async function listPublishedPlaceDashboardMarkers(): Promise<PlaceMarker[]> {
@@ -269,6 +285,7 @@ export async function listPublishedPlaceDashboardMarkers(): Promise<PlaceMarker[
       "id,slug,name,place_type,status,location_precision,sensitivity_level,is_beginner_friendly,leaflet_region_id,lat,lng,updated_at"
     )
     .eq("status", "published")
+    .neq("location_precision", "hidden")
     .order("name", { ascending: true });
 
   if (error) {
@@ -310,6 +327,7 @@ export async function listPublishedPlaceDashboardMarkers(): Promise<PlaceMarker[
       location_precision: row.location_precision as PlaceMarker["location_precision"],
       sensitivity_level: row.sensitivity_level as PlaceMarker["sensitivity_level"],
       is_beginner_friendly: Boolean(row.is_beginner_friendly),
+      leaflet_region_id: leafletRegionId || null,
       lat: pinLat,
       lng: pinLng,
       updated_at: String(row.updated_at ?? ""),
@@ -322,7 +340,9 @@ export async function listPublishedPlaceDashboardMarkers(): Promise<PlaceMarker[
 export async function getPlaceMarkerById(placeId: string): Promise<PlaceMarker | null> {
   const { data, error } = await supabaseServerClient
     .from("place_markers_v1")
-    .select("id,slug,name,place_type,status,location_precision,sensitivity_level,is_beginner_friendly,lat,lng,updated_at")
+    .select(
+      "id,slug,name,place_type,status,location_precision,sensitivity_level,is_beginner_friendly,leaflet_region_id,lat,lng,updated_at"
+    )
     .eq("id", placeId)
     .maybeSingle();
 
@@ -330,7 +350,22 @@ export async function getPlaceMarkerById(placeId: string): Promise<PlaceMarker |
     throw error;
   }
 
-  return (data ?? null) as PlaceMarker | null;
+  const row = (data ?? null) as Record<string, unknown> | null;
+  if (!row) return null;
+  return {
+    id: String(row.id ?? ""),
+    slug: String(row.slug ?? ""),
+    name: String(row.name ?? ""),
+    place_type: row.place_type as PlaceMarker["place_type"],
+    status: row.status as PlaceMarker["status"],
+    location_precision: row.location_precision as PlaceMarker["location_precision"],
+    sensitivity_level: row.sensitivity_level as PlaceMarker["sensitivity_level"],
+    is_beginner_friendly: Boolean(row.is_beginner_friendly),
+    leaflet_region_id: typeof row.leaflet_region_id === "string" ? row.leaflet_region_id : null,
+    lat: typeof row.lat === "number" ? row.lat : null,
+    lng: typeof row.lng === "number" ? row.lng : null,
+    updated_at: String(row.updated_at ?? ""),
+  };
 }
 
 export async function listPublishedPlacesByPrimaryType(placeTypes: PlaceType[]): Promise<

@@ -47,6 +47,7 @@ export async function GET(_request: Request, ctx: { params: Promise<{ slug: stri
         slug: place.slug,
         name: place.name,
         place_type: place.place_type,
+        leaflet_region_id: place.leaflet_region_id,
         region_landscape: place.region_landscape,
         county: place.county,
         district: place.district,
