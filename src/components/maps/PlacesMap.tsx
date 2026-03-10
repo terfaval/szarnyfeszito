@@ -8,10 +8,72 @@ import "leaflet/dist/leaflet.css";
 import styles from "./PlacesMap.module.css";
 import { DEFAULT_BASEMAP, getBasemapTileLayerArgs } from "./basemaps";
 import type { BasemapId } from "./basemaps";
-import type { PlaceMarker } from "@/types/place";
+import type { PlaceMarker, PlaceType } from "@/types/place";
 import { HUNGARY_BORDER_110M, HUNGARY_WATER_MASK_110M } from "./hungaryBorder110m";
 import PlacesRegionVisualization, { type PlacesRegionVisualizationVariant } from "./PlacesRegionVisualization";
 import type { PlacesMapLayersV1 } from "@/types/placesMap";
+
+export type PlacesMapMarkerColorMode = "uniform_v1" | "water_highlight_v1" | "place_type_category_v1";
+
+type PlaceTypeCategoryV1 = "waterfront" | "forest" | "mountains" | "other";
+
+function getPlaceTypeCategoryV1(placeType: PlaceType): PlaceTypeCategoryV1 {
+  if (
+    placeType === "lake" ||
+    placeType === "river" ||
+    placeType === "fishpond" ||
+    placeType === "reservoir" ||
+    placeType === "marsh" ||
+    placeType === "reedbed" ||
+    placeType === "salt_lake" ||
+    placeType === "urban_waterfront"
+  ) {
+    return "waterfront";
+  }
+  if (placeType === "forest_edge" || placeType === "urban_park" || placeType === "protected_area") {
+    return "forest";
+  }
+  if (placeType === "mountain_area") return "mountains";
+  return "other";
+}
+
+function buildMarkerPathOptions(args: {
+  marker: PlaceMarker;
+  isSelected: boolean;
+  isDimmed: boolean;
+  isDark: boolean;
+  markerColorMode: PlacesMapMarkerColorMode;
+}) {
+  const { marker, isSelected, isDimmed, isDark, markerColorMode } = args;
+
+  const uniform = {
+    color: isSelected ? "#0f172a" : "#0b3b8c",
+    weight: isSelected ? 2 : 1,
+    fillColor: isSelected ? "#2563eb" : "#60a5fa",
+    fillOpacity: isDimmed ? 0.55 : 0.9,
+    opacity: isDimmed ? 0.55 : 1,
+  };
+  if (markerColorMode === "uniform_v1") return uniform;
+
+  const category = getPlaceTypeCategoryV1(marker.place_type);
+  if (markerColorMode === "water_highlight_v1" && category !== "waterfront") {
+    return uniform;
+  }
+  const palette = {
+    waterfront: { fill: "#38bdf8", fillSelected: "#0284c7" },
+    forest: { fill: "#4ade80", fillSelected: "#16a34a" },
+    mountains: { fill: "#fb923c", fillSelected: "#ea580c" },
+    other: { fill: "#a78bfa", fillSelected: "#7c3aed" },
+  } satisfies Record<PlaceTypeCategoryV1, { fill: string; fillSelected: string }>;
+
+  return {
+    color: isSelected ? (isDark ? "#e5e7eb" : "#0f172a") : isDark ? "#0f172a" : "#0b1220",
+    weight: isSelected ? 2 : 1,
+    fillColor: isSelected ? palette[category].fillSelected : palette[category].fill,
+    fillOpacity: isDimmed ? 0.55 : 0.9,
+    opacity: isDimmed ? 0.55 : 1,
+  };
+}
 
 export type PlacesMapProps = {
   markers: PlaceMarker[];
@@ -21,6 +83,7 @@ export type PlacesMapProps = {
   basemap?: BasemapId;
   regionVisualization?: PlacesRegionVisualizationVariant;
   layers?: PlacesMapLayersV1 | null;
+  markerColorMode?: PlacesMapMarkerColorMode;
   markerEventHandlers?: (marker: PlaceMarker) => LeafletEventHandlerFnMap | undefined;
   renderMarkerChildren?: (args: {
     marker: PlaceMarker;
@@ -37,6 +100,7 @@ export default function PlacesMap({
   basemap = DEFAULT_BASEMAP,
   regionVisualization = "places_regions_v1",
   layers = null,
+  markerColorMode = "uniform_v1",
   markerEventHandlers,
   renderMarkerChildren,
 }: PlacesMapProps) {
@@ -114,13 +178,7 @@ export default function PlacesMap({
               key={marker.id}
               center={[marker.lat, marker.lng]}
               radius={isSelected ? 7 : 5}
-              pathOptions={{
-                color: isSelected ? "#0f172a" : "#0b3b8c",
-                weight: isSelected ? 2 : 1,
-                fillColor: isSelected ? "#2563eb" : "#60a5fa",
-                fillOpacity: isDimmed ? 0.55 : 0.9,
-                opacity: isDimmed ? 0.55 : 1,
-              }}
+              pathOptions={buildMarkerPathOptions({ marker, isSelected, isDimmed, isDark, markerColorMode })}
               eventHandlers={mergedHandlers}
             >
               {renderMarkerChildren ? renderMarkerChildren({ marker, isSelected, isDimmed }) : null}

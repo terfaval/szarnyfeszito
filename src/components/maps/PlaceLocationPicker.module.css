@@ -9,3 +9,6 @@
   width: 100%;
 }
 
+:global(.place-location-picker .leaflet-control-attribution) {
+  display: none !important;
+}

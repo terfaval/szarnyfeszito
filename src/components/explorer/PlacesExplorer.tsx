@@ -157,6 +157,7 @@ export default function PlacesExplorer() {
               onSelect={(slug) => selectSlug(slug)}
               basemap="brand"
               regionVisualization="places_regions_v1"
+              markerColorMode="place_type_category_v1"
             />
           )}
         </section>

@@ -39,6 +39,19 @@
   margin: 0.4rem 0 0.9rem;
 }
 
+.heroMapStack {
+  position: relative;
+}
+
+.didYouKnowOverlay {
+  position: absolute;
+  left: 50%;
+  bottom: 1rem;
+  transform: translateX(-50%);
+  width: min(560px, calc(100% - 1.5rem));
+  z-index: 5;
+}
+
 .seasonalSnippet {
   white-space: pre-wrap;
   text-align: center;
@@ -66,13 +79,22 @@
   .extrasGrid {
     grid-template-columns: 1fr;
   }
+
+  .practicalAfterGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .didYouKnowOverlay {
+    bottom: 0.75rem;
+    width: calc(100% - 1.25rem);
+  }
 }
 
 .didYouKnowCard {
   display: grid;
   grid-template-columns: auto 1fr;
   gap: 0.85rem;
-  align-items: start;
+  align-items: center;
   padding: 1.05rem 1.1rem;
   border-radius: 18px;
   background: var(--brand-accent);
@@ -101,6 +123,83 @@
   line-height: 1.6;
   font-size: 0.98rem;
   font-weight: 500;
+}
+
+.practicalAfterGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
+  gap: 0.9rem;
+}
+
+.generalPracticalCol {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.notableUnitsScroll {
+  margin-top: 0.65rem;
+  max-height: 320px;
+  overflow: auto;
+  padding-right: 0.35rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.notableUnitCard {
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.02);
+  padding: 0.75rem 0.85rem;
+}
+
+.notableUnitHeader {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.notableUnitName {
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.notableUnitType {
+  font-size: 0.75rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.notableUnitNote {
+  margin-top: 0.35rem;
+  white-space: pre-wrap;
+  color: var(--foreground);
+  line-height: 1.55;
+  font-size: 0.92rem;
+}
+
+.notableUnitDistance {
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.notableUnitsScroll::-webkit-scrollbar {
+  width: 10px;
+}
+
+.notableUnitsScroll::-webkit-scrollbar-thumb {
+  background: rgba(var(--brand-ink-rgb), 0.14);
+  border-radius: 9999px;
+}
+
+.notableUnitsScroll::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 9999px;
 }
 
 .details {

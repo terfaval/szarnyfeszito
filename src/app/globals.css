@@ -29,7 +29,7 @@
   --font-body: var(--sf-font-body), system-ui, sans-serif;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --sf-map-water: rgba(var(--brand-ink-rgb), 0.18);
+  --sf-map-water: #bae6fd;
   --font-sans: var(--font-display);
   --font-mono: var(--font-body);
   color-scheme: light;
@@ -102,7 +102,7 @@ h5,
     --page-scrim: linear-gradient(180deg, rgba(5, 11, 29, 0) 0%, rgba(5, 11, 29, 0.9) 90%);
     --background: var(--bg);
     --foreground: var(--text);
-    --sf-map-water: rgba(var(--brand-ink-rgb), 0.32);
+    --sf-map-water: rgba(56, 189, 248, 0.22);
     color-scheme: dark;
   }
 }
@@ -122,7 +122,7 @@ h5,
   --page-scrim: linear-gradient(180deg, rgba(5, 11, 29, 0) 0%, rgba(5, 11, 29, 0.9) 90%);
   --background: var(--bg);
   --foreground: var(--text);
-  --sf-map-water: rgba(var(--brand-ink-rgb), 0.32);
+  --sf-map-water: rgba(56, 189, 248, 0.22);
   color-scheme: dark;
 }
 
@@ -293,6 +293,8 @@ svg {
 }
 
 .admin-topbar {
+  position: relative;
+  z-index: 1200;
   border-radius: 18px;
   border: 1px solid var(--line);
   background: var(--panel-2);

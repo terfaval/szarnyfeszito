@@ -60,7 +60,14 @@ export default function PlaceLocationPicker({
 
   return (
     <div className={`place-location-picker ${styles.wrap}`}>
-      <MapContainer className={styles.map} center={center} zoom={markerPosition ? 10 : 7} scrollWheelZoom>
+      <MapContainer
+        className={styles.map}
+        center={center}
+        zoom={markerPosition ? 10 : 7}
+        scrollWheelZoom
+        zoomControl={false}
+        attributionControl={false}
+      >
         <TileLayer url={tileLayerArgs.url} attribution={tileLayerArgs.attribution} />
         <ClickHandler onPick={onPick} />
         {markerPosition ? <Marker position={markerPosition} /> : null}

@@ -74,6 +74,7 @@ export default function BirdImageReview({
   const [requestStatusMessage, setRequestStatusMessage] = useState<string | null>(
     null
   );
+  const [presettingId, setPresettingId] = useState<string | null>(null);
 
   useEffect(() => {
     setImages(initialImages);
@@ -88,6 +89,9 @@ export default function BirdImageReview({
     birdStatus === "images_approved";
 
   const generateLabel = images.length === 0 ? "Generate images" : "Regenerate images";
+
+  const SPRING_SCENE_PRESET_NOTE =
+    "Tavaszi jelenet (scientific): friss, üde zöldek és koratavaszi fény; látványos, de visszafogott tavaszi hangulat (pl. rügyfakadás / virágzó bokrok), miközben a faj anatómiai jegyei maradnak elsődlegesek. Keep background subtle; no text/watermark.";
 
   const handleGenerate = async () => {
     if (!canGenerate || generating) {
@@ -120,6 +124,54 @@ export default function BirdImageReview({
       setError(err instanceof Error ? err.message : "Unable to generate images.");
     } finally {
       setGenerating(false);
+    }
+  };
+
+  const handleApplySpringPreset = async (
+    image: BirdImageWithPreview,
+    label: string
+  ) => {
+    if (presettingId || requestSubmitting || generating || uploadingId) {
+      return;
+    }
+
+    setPresettingId(image.id);
+    setError(null);
+    setRequestStatusMessage(null);
+
+    try {
+      const response = await fetch(
+        `/api/birds/${birdId}/images/${image.id}/request-fix`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ comment: SPRING_SCENE_PRESET_NOTE }),
+        }
+      );
+
+      const payload = await response.json().catch(() => null);
+
+      if (!response.ok || !payload?.data?.image) {
+        throw new Error(payload?.error ?? "Unable to apply spring preset.");
+      }
+
+      setImages((previous) =>
+        previous.map((row) =>
+          row.id === payload.data.image.id
+            ? { ...payload.data.image, previewUrl: row.previewUrl }
+            : row
+        )
+      );
+
+      setRequestStatusMessage(
+        `Spring scene preset saved for ${label}. Now click "${generateLabel}" to regenerate.`
+      );
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Unable to apply spring preset."
+      );
+    } finally {
+      setPresettingId(null);
     }
   };
 
@@ -434,6 +486,16 @@ export default function BirdImageReview({
                         >
                           {uploadingId === image.id ? "Uploading…" : "Upload"}
                         </Button>
+                        {image.variant === "main_habitat" ? (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            disabled={presettingId === image.id}
+                            onClick={() => handleApplySpringPreset(image, String(label))}
+                          >
+                            {presettingId === image.id ? "Applyingâ€¦" : "Spring preset"}
+                          </Button>
+                        ) : null}
                         <Button
                           type="button"
                           variant="ghost"

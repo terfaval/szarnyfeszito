@@ -367,6 +367,7 @@ export default function BirdTextReview({
   const mainHabitatPreviewUrl = previewByVariant.get("main_habitat") ?? null;
   const flightPreviewUrl = previewByVariant.get("flight_clean") ?? null;
   const nestingPreviewUrl = previewByVariant.get("nesting_clean") ?? null;
+  const regionTeaser = dossier?.pill_meta.region_teaser?.trim() ?? "";
 
   const openOverlay = (target: TextReviewSection) => {
     setOverlayTarget(target);
@@ -699,32 +700,62 @@ export default function BirdTextReview({
       <Card className={styles.dossierCard}>
         {dossier ? (
           <>
-            <header className={styles.header}>
-              <div className={styles.headerBadgeColumn}>
-                <BirdIcon
-                  habitatSrc={habitatIcon?.icon ?? null}
-                  iconicSrc={iconicPreviewUrl}
-                  showHabitatBackground
-                  background={dossier.pill_meta.color_bg}
-                  size={120}
-                />
+            {isPublishMode ? (
+              <div className={styles.publishHero} aria-label="Published hero image">
+                {mainHabitatPreviewUrl ? (
+                  <img
+                    src={mainHabitatPreviewUrl}
+                    alt="Approved scientific hero image"
+                    className={styles.publishHeroImage}
+                  />
+                ) : (
+                  <div className={styles.publishHeroPlaceholder}>
+                    <p>Approved hero image missing</p>
+                  </div>
+                )}
+                <div className={styles.publishHeroOverlay} aria-label="Title overlay">
+                  <div className={styles.publishHeroPills}>
+                    <span className={styles.publishHeroPillTitle}>
+                      {dossier.header.name_hu}
+                    </span>
+                    {dossier.header.subtitle ? (
+                      <span className={styles.publishHeroPill}>
+                        {dossier.header.subtitle}
+                      </span>
+                    ) : null}
+                    {regionTeaser ? (
+                      <span className={styles.publishHeroPill}>{regionTeaser}</span>
+                    ) : null}
+                  </div>
+                  {contentBlock?.review_status ? (
+                    <span className={styles.publishHeroStatus}>
+                      <ReviewStatusPill status={contentBlock.review_status} />
+                    </span>
+                  ) : null}
+                </div>
               </div>
+            ) : (
+              <header className={styles.header}>
+                <div className={styles.headerBadgeColumn}>
+                  <BirdIcon
+                    habitatSrc={habitatIcon?.icon ?? null}
+                    iconicSrc={iconicPreviewUrl}
+                    showHabitatBackground
+                    background={dossier.pill_meta.color_bg}
+                    size={120}
+                  />
+                </div>
 
-              <div className={styles.headerMain}>
-                <div className={styles.headerMainTop}>
-                  <div className={styles.headerTitleBlock}>
-                    <h1 className={styles.birdTitle}>{dossier.header.name_hu}</h1>
-                    <p className={styles.subtitle}>{dossier.header.subtitle}</p>
-                    <div
-                      className={`${styles.shortSummaryRow} ${
-                        isPublishMode ? "" : styles.reviewable
-                      }`}
-                    >
-                      <p className={styles.shortSummaryText}>
-                        {dossier.header.short_summary ||
-                          "The summary will populate once the dossier is generated."}
-                      </p>
-                      {!isPublishMode && (
+                <div className={styles.headerMain}>
+                  <div className={styles.headerMainTop}>
+                    <div className={styles.headerTitleBlock}>
+                      <h1 className={styles.birdTitle}>{dossier.header.name_hu}</h1>
+                      <p className={styles.subtitle}>{dossier.header.subtitle}</p>
+                      <div className={`${styles.shortSummaryRow} ${styles.reviewable}`}>
+                        <p className={styles.shortSummaryText}>
+                          {dossier.header.short_summary ||
+                            "The summary will populate once the dossier is generated."}
+                        </p>
                         <div className={styles.reviewButtons}>
                           <button
                             type="button"
@@ -743,41 +774,55 @@ export default function BirdTextReview({
                             <Icon name="generate" size={16} />
                           </button>
                         </div>
-                      )}
-                    </div>
-                    {!isPublishMode &&
-                      renderEditor(
+                      </div>
+                      {renderEditor(
                         "short",
                         "Edit short summary",
                         "Keep it to 1-2 sentences with a concrete trait."
                       )}
-                  </div>
-
-                  {contentBlock?.review_status && (
-                    <span className={styles.statusBadge}>
-                      <ReviewStatusPill status={contentBlock.review_status} />
-                    </span>
-                  )}
-                </div>
-              </div>
-            </header>
-
-            <div className={styles.layerStack}>
-              <div className={styles.backgroundLayer}>
-                <div className={styles.mainImageFrame}>
-                  {mainHabitatPreviewUrl ? (
-                    <img
-                      src={mainHabitatPreviewUrl}
-                      alt="Main bird image"
-                      className={styles.fullBodyImage}
-                    />
-                  ) : (
-                    <div className={styles.fullBodyPlaceholder}>
-                      <p>Main bird image</p>
                     </div>
-                  )}
+
+                    {contentBlock?.review_status && (
+                      <span className={styles.statusBadge}>
+                        <ReviewStatusPill status={contentBlock.review_status} />
+                      </span>
+                    )}
+                  </div>
                 </div>
+              </header>
+            )}
+
+            {isPublishMode ? (
+              <div className={styles.publishSummaryBlock} aria-label="Approved summary">
+                <p className={styles.publishSummaryText}>
+                  {dossier.header.short_summary ||
+                    "The summary will populate once the dossier is generated."}
+                </p>
               </div>
+            ) : null}
+
+            <div
+              className={`${styles.layerStack} ${
+                isPublishMode ? styles.layerStackPublish : ""
+              }`}
+            >
+              {!isPublishMode ? (
+                <div className={styles.backgroundLayer}>
+                  <div className={styles.mainImageFrame}>
+                    {mainHabitatPreviewUrl ? (
+                      <img
+                        src={mainHabitatPreviewUrl}
+                        alt="Main bird image"
+                        className={styles.fullBodyImage}
+                      />
+                    ) : (
+                      <div className={styles.fullBodyPlaceholder}>
+                        <p>Main bird image</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ) : null}
               <div className={styles.overlayLayer}>
                 {dossier.identification.key_features.map((feature, index) => (
                   <article

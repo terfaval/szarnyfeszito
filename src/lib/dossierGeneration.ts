@@ -31,6 +31,13 @@ const MAX_TOKENS = 1800;
 
 const SHORT_OPTION_TRIM_MIN = 70;
 const SHORT_OPTION_MAX_LEN = 170;
+const SHORT_OPTION_MIN_LEN = 90;
+
+const SHORT_OPTION_PADDING_SUFFIXES: readonly string[] = [
+  " a sziluett és mozgás apró terepi jeleivel",
+  " élőhely és viselkedés alapján is könnyebben beazonosítható",
+  " hang és tollazat finom, megfigyelhető részleteivel",
+];
 
 const safeTruncate = (value: string, limit: number) => {
   if (value.length <= limit) return value;
@@ -77,11 +84,41 @@ const normalizeShortOption = (option: string) => {
   return truncated;
 };
 
+const padShortOptionToMinLen = (option: string, index: number) => {
+  const collapsed = option.replace(/\s+/g, " ").trim();
+  if (!collapsed) return collapsed;
+
+  const punctMatch = collapsed.match(/[.!?]$/);
+  const punct = punctMatch ? punctMatch[0] : ".";
+  const withoutPunct = punctMatch ? collapsed.slice(0, -1).trimEnd() : collapsed;
+
+  if (withoutPunct.length >= SHORT_OPTION_MIN_LEN) {
+    return `${withoutPunct}${punct}`;
+  }
+
+  const suffix = SHORT_OPTION_PADDING_SUFFIXES[index] ?? SHORT_OPTION_PADDING_SUFFIXES[0];
+  const glue = withoutPunct.endsWith(",") ? " " : " — ";
+  const head = `${withoutPunct}${glue}`;
+
+  // Keep space for final punctuation.
+  const remaining = SHORT_OPTION_MAX_LEN - 1 - head.length;
+  if (remaining <= 0) {
+    return `${safeTruncate(withoutPunct, SHORT_OPTION_MAX_LEN - 1)}${punct}`;
+  }
+
+  const trimmedSuffix = safeTruncate(suffix, remaining).trim();
+  const padded = `${head}${trimmedSuffix}`.trim();
+
+  return `${padded}${punct}`;
+};
+
 const normalizeShortOptionsPayload = (payload: Record<string, unknown>) => {
   const options = payload.short_options;
   if (!Array.isArray(options)) return payload;
-  const normalizedOptions = options.map((item) =>
-    typeof item === "string" ? normalizeShortOption(item) : item
+  const normalizedOptions = options.map((item, index) =>
+    typeof item === "string"
+      ? padShortOptionToMinLen(normalizeShortOption(item), index)
+      : item
   );
   const changed = normalizedOptions.some((value, index) => value !== options[index]);
   if (!changed) return payload;

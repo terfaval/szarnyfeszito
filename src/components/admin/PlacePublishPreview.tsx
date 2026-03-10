@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import type { GeoJsonObject } from "geojson";
-import type { Place } from "@/types/place";
+import type { Place, PlaceNotableUnit, PlaceNotableUnitType } from "@/types/place";
 import type { PlaceUiVariantsV1 } from "@/lib/placeContentSchema";
 import type { SeasonKey } from "@/lib/season";
 import BirdIcon from "@/components/admin/BirdIcon";
@@ -24,8 +24,31 @@ const SEASON_LABEL_HU: Record<SeasonKey, string> = {
   winter: "Tél",
 };
 
+const NOTABLE_UNIT_TYPE_LABEL_HU: Record<PlaceNotableUnitType, string> = {
+  wetland: "vizes élőhely",
+  fishpond: "halastó",
+  lake_section: "tórész",
+  reedbed: "nádas",
+  lookout: "kilátó",
+  trail: "ösvény",
+  island: "sziget",
+  shoreline: "partszakasz",
+  grassland_section: "gyepes rész",
+  forest_section: "erdős rész",
+  other: "egyéb",
+};
+
 function nonEmpty(value: unknown) {
   return typeof value === "string" && value.trim().length > 0;
+}
+
+function unitTypeLabelHu(value: PlaceNotableUnitType | null) {
+  if (!value) return "";
+  return NOTABLE_UNIT_TYPE_LABEL_HU[value] ?? value.replaceAll("_", " ");
+}
+
+function unitKey(unit: PlaceNotableUnit) {
+  return `${unit.order_index}:${unit.name}:${unit.unit_type ?? "none"}`;
 }
 
 export default function PlacePublishPreview({
@@ -54,6 +77,10 @@ export default function PlacePublishPreview({
     (nonEmpty(variants.who_is_it_for) || nonEmpty(variants.when_to_go) || nonEmpty(variants.practical_tip));
   const hasDidYouKnow = !!variants && nonEmpty(variants.did_you_know);
   const hasNearbyProtection = !!variants && nonEmpty(variants.nearby_protection_context);
+
+  const shouldOverlayDidYouKnow = hasDidYouKnow && place.location_precision !== "hidden";
+  const notableUnits = (place.notable_units_json ?? []) as PlaceNotableUnit[];
+  const hasNotableUnits = notableUnits.length > 0;
 
   return (
     <section className={styles.previewRoot} aria-label="Place publish preview">
@@ -90,12 +117,30 @@ export default function PlacePublishPreview({
                   <p className="admin-note-small">Location is hidden for this place.</p>
                 </div>
               ) : (
-                <PlacePublishHeroMap
-                  lat={marker?.lat ?? null}
-                  lng={marker?.lng ?? null}
-                  overlayGeoJson={leafletRegion.geojson}
-                  overlayBbox={leafletRegion.bbox}
-                />
+                <div className={styles.heroMapStack}>
+                  <PlacePublishHeroMap
+                    lat={marker?.lat ?? null}
+                    lng={marker?.lng ?? null}
+                    overlayGeoJson={leafletRegion.geojson}
+                    overlayBbox={leafletRegion.bbox}
+                  />
+                  {shouldOverlayDidYouKnow ? (
+                    <div className={styles.didYouKnowOverlay} aria-label="Tudtad-e (overlay)">
+                      <div className={styles.didYouKnowCard} aria-label="Tudtad-e">
+                        <div className={styles.didYouKnowBadge} aria-hidden="true">
+                          <Image
+                            src="/icon_didyouknow.svg"
+                            alt=""
+                            className={styles.didYouKnowIcon}
+                            width={44}
+                            height={44}
+                          />
+                        </div>
+                        <p className={styles.didYouKnowText}>{variants?.did_you_know}</p>
+                      </div>
+                    </div>
+                  ) : null}
+                </div>
               )}
             </div>
 
@@ -160,7 +205,59 @@ export default function PlacePublishPreview({
               </div>
             ) : null}
 
-            {hasDidYouKnow ? (
+            <div className={styles.practicalAfterGrid} aria-label="Practical notes and notable units">
+              <div className={styles.generalPracticalCol} aria-label="General practical notes">
+                <div className="admin-panel">
+                  <p className="admin-subheading">Megközelítés</p>
+                  {nonEmpty(place.access_note) ? (
+                    <p className={styles.copyBlock}>{place.access_note}</p>
+                  ) : (
+                    <p className="admin-note-small">Nincs kitöltve.</p>
+                  )}
+                </div>
+                <div className="admin-panel">
+                  <p className="admin-subheading">Parkolás</p>
+                  {nonEmpty(place.parking_note) ? (
+                    <p className={styles.copyBlock}>{place.parking_note}</p>
+                  ) : (
+                    <p className="admin-note-small">Nincs kitöltve.</p>
+                  )}
+                </div>
+                <div className="admin-panel">
+                  <p className="admin-subheading">Mikor a legjobb?</p>
+                  {nonEmpty(place.best_visit_note) ? (
+                    <p className={styles.copyBlock}>{place.best_visit_note}</p>
+                  ) : (
+                    <p className="admin-note-small">Nincs kitöltve.</p>
+                  )}
+                </div>
+              </div>
+
+              <div className="admin-panel" aria-label="Notable units">
+                <p className="admin-subheading">Notable units</p>
+                {hasNotableUnits ? (
+                  <div className={styles.notableUnitsScroll}>
+                    {notableUnits.map((unit) => {
+                      const unitType = unitTypeLabelHu(unit.unit_type);
+                      return (
+                        <article key={unitKey(unit)} className={styles.notableUnitCard}>
+                          <header className={styles.notableUnitHeader}>
+                            <p className={styles.notableUnitName}>{unit.name}</p>
+                            {unitType ? <span className={styles.notableUnitType}>{unitType}</span> : null}
+                          </header>
+                          <p className={styles.notableUnitNote}>{unit.short_note}</p>
+                          {unit.distance_text ? <p className={styles.notableUnitDistance}>{unit.distance_text}</p> : null}
+                        </article>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="admin-note-small">No notable units yet.</p>
+                )}
+              </div>
+            </div>
+
+            {hasDidYouKnow && !shouldOverlayDidYouKnow ? (
               <div className={styles.didYouKnowCard} aria-label="Tudtad-e">
                 <div className={styles.didYouKnowBadge} aria-hidden="true">
                   <Image
