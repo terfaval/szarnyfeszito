@@ -117,7 +117,41 @@ const iucnSchema = z.preprocess(
     lifespan_years: measurementSchema,
   });
 
-const identificationAxisSchema = z.enum(["csor", "tollazat", "hang", "mozgas"]);
+const IDENTIFICATION_AXIS_VALUES = ["csor", "tollazat", "hang", "mozgas"] as const;
+
+function normalizeIdentificationAxisToken(value: unknown): unknown {
+  if (typeof value !== "string") return value;
+
+  const trimmed = value.trim();
+  if (!trimmed) return value;
+
+  const normalized = trimmed
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  const tokens = normalized.split(" ").filter(Boolean).slice(0, 6);
+  for (const t of tokens) {
+    if ((IDENTIFICATION_AXIS_VALUES as readonly string[]).includes(t)) return t;
+  }
+
+  for (const t of tokens) {
+    if (t.startsWith("csor")) return "csor";
+    if (t.startsWith("tollazat")) return "tollazat";
+    if (t.startsWith("hang")) return "hang";
+    if (t.startsWith("mozgas")) return "mozgas";
+  }
+
+  return value;
+}
+
+const identificationAxisSchema = z.preprocess(
+  normalizeIdentificationAxisToken,
+  z.enum(IDENTIFICATION_AXIS_VALUES)
+);
 
 // v2.2: fixed recognition axes (legacy, still accepted for existing rows)
 const keyFeatureSchemaV22 = z
