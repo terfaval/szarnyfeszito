@@ -1,8 +1,10 @@
 import Link from "next/link";
+import Image from "next/image";
 import type { Place } from "@/types/place";
 import type { PlaceUiVariantsV1 } from "@/lib/placeContentSchema";
 import type { SeasonKey } from "@/lib/season";
 import BirdIcon from "@/components/admin/BirdIcon";
+import PlacePublishHeroMap from "@/components/admin/PlacePublishHeroMap";
 import { Card } from "@/ui/components/Card";
 import styles from "./PlacePublishPreview.module.css";
 
@@ -27,12 +29,14 @@ function nonEmpty(value: unknown) {
 
 export default function PlacePublishPreview({
   place,
+  marker,
   content,
   currentSeason,
   birds,
   showSeasonal,
 }: {
   place: Place;
+  marker: { lat: number | null; lng: number | null } | null;
   content: PlaceUiVariantsV1 | null;
   currentSeason: SeasonKey;
   birds: PlacePublishBird[];
@@ -42,15 +46,11 @@ export default function PlacePublishPreview({
   const seasonalText = variants?.seasonal_snippet?.[currentSeason] ?? "";
   const seasonLabel = SEASON_LABEL_HU[currentSeason];
 
-  const extras = variants
-    ? ([
-        ["when_to_go", "Mikor menj?"],
-        ["practical_tip", "Gyakorlati tipp"],
-        ["did_you_know", "Tudtad?"],
-        ["who_is_it_for", "Kinek való?"],
-        ["nearby_protection_context", "Védelem a közelben"],
-      ] as const).filter(([key]) => nonEmpty(variants[key]))
-    : [];
+  const hasExtras =
+    !!variants &&
+    (nonEmpty(variants.who_is_it_for) || nonEmpty(variants.when_to_go) || nonEmpty(variants.practical_tip));
+  const hasDidYouKnow = !!variants && nonEmpty(variants.did_you_know);
+  const hasNearbyProtection = !!variants && nonEmpty(variants.nearby_protection_context);
 
   return (
     <section className={styles.previewRoot} aria-label="Place publish preview">
@@ -81,8 +81,22 @@ export default function PlacePublishPreview({
               <p className="admin-note-small">No approved `variants.short` yet.</p>
             )}
 
+            <div className={styles.heroMap}>
+              {place.location_precision === "hidden" ? (
+                <div className="admin-panel admin-panel--muted">
+                  <p className="admin-note-small">Location is hidden for this place.</p>
+                </div>
+              ) : (
+                <PlacePublishHeroMap
+                  lat={marker?.lat ?? null}
+                  lng={marker?.lng ?? null}
+                  label={place.name || place.slug || "Place"}
+                />
+              )}
+            </div>
+
             {nonEmpty(variants.long) ? (
-              <details className={styles.details}>
+              <details className={styles.details} open>
                 <summary className={styles.detailsSummary}>Hosszabb leírás</summary>
                 <div className="stack" style={{ marginTop: "0.8rem" }}>
                   <p className={styles.copyBlock}>{variants.long}</p>
@@ -107,9 +121,10 @@ export default function PlacePublishPreview({
 
             {showSeasonal ? (
               <div className="stack">
-                <p className="admin-subheading">Seasonal snippet · {seasonLabel}</p>
                 {nonEmpty(seasonalText) ? (
-                  <p className={styles.copyBlock}>{seasonalText}</p>
+                  <p className={styles.seasonalSnippet} aria-label={`Seasonal snippet for ${seasonLabel}`}>
+                    {seasonalText}
+                  </p>
                 ) : (
                   <p className="admin-note-small">No approved seasonal snippet for {seasonLabel} yet.</p>
                 )}
@@ -135,17 +150,47 @@ export default function PlacePublishPreview({
               </div>
             ) : null}
 
-            {extras.length ? (
-              <div className="stack">
-                <p className="admin-subheading">Extras</p>
-                <div className="admin-stat-grid">
-                  {extras.map(([key, label]) => (
-                    <div key={key} className="admin-panel">
-                      <p className="admin-subheading">{label}</p>
-                      <p className={styles.copyBlock}>{variants[key]}</p>
-                    </div>
-                  ))}
-                </div>
+            {hasExtras ? (
+              <div className={styles.extrasGrid} aria-label="Extras">
+                {nonEmpty(variants.who_is_it_for) ? (
+                  <div className="admin-panel">
+                    <p className="admin-subheading">Kinek való?</p>
+                    <p className={styles.copyBlock}>{variants.who_is_it_for}</p>
+                  </div>
+                ) : null}
+                {nonEmpty(variants.when_to_go) ? (
+                  <div className="admin-panel">
+                    <p className="admin-subheading">Mikor menj?</p>
+                    <p className={styles.copyBlock}>{variants.when_to_go}</p>
+                  </div>
+                ) : null}
+                {nonEmpty(variants.practical_tip) ? (
+                  <div className="admin-panel">
+                    <p className="admin-subheading">Gyakorlati tipp</p>
+                    <p className={styles.copyBlock}>{variants.practical_tip}</p>
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
+
+            {hasDidYouKnow ? (
+              <div className={styles.didYouKnowCard} aria-label="Tudtad-e">
+                <Image
+                  src="/icon_didyouknow.svg"
+                  alt=""
+                  aria-hidden="true"
+                  className={styles.didYouKnowIcon}
+                  width={44}
+                  height={44}
+                />
+                <p className={styles.didYouKnowText}>{variants.did_you_know}</p>
+              </div>
+            ) : null}
+
+            {hasNearbyProtection ? (
+              <div className="admin-panel" aria-label="Helyi védelmi szervezetek és programok">
+                <p className="admin-subheading">Helyi védelem</p>
+                <p className={styles.copyBlock}>{variants.nearby_protection_context}</p>
               </div>
             ) : null}
           </>
@@ -160,3 +205,4 @@ export default function PlacePublishPreview({
     </section>
   );
 }
+

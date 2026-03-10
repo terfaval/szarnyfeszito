@@ -35,6 +35,56 @@
   font-size: 0.95rem;
 }
 
+.heroMap {
+  margin: 0.4rem 0 0.9rem;
+}
+
+.seasonalSnippet {
+  white-space: pre-wrap;
+  text-align: center;
+  color: var(--brand-warm);
+  font-weight: 300;
+  font-size: 1.05rem;
+  line-height: 1.65;
+}
+
+.extrasGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.9rem;
+}
+
+@media (max-width: 860px) {
+  .extrasGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.didYouKnowCard {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.85rem;
+  align-items: start;
+  padding: 1.05rem 1.1rem;
+  border-radius: 18px;
+  background: var(--brand-accent);
+  color: #fff;
+  box-shadow: 0 24px 40px rgba(0, 0, 0, 0.18);
+}
+
+.didYouKnowIcon {
+  width: 44px;
+  height: 44px;
+}
+
+.didYouKnowText {
+  white-space: pre-wrap;
+  color: #fff;
+  line-height: 1.6;
+  font-size: 0.98rem;
+  font-weight: 500;
+}
+
 .details {
   border-radius: 14px;
   border: 1px solid var(--line);
@@ -106,4 +156,3 @@
   max-width: 14rem;
   opacity: 1;
 }
-

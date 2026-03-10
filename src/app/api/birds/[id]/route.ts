@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminUserFromCookies } from "@/lib/auth";
-import { getBirdById, updateBird } from "@/lib/birdService";
+import { deleteBirdById, getBirdById, updateBird } from "@/lib/birdService";
 import { supabaseServerClient } from "@/lib/supabaseServerClient";
 import { BirdColorTag } from "@/types/bird";
 
@@ -120,6 +120,43 @@ export async function PATCH(
   } catch (error) {
     return NextResponse.json(
       { error: (error as Error)?.message ?? "Unable to update bird." },
+      { status: 400 }
+    );
+  }
+}
+
+export async function DELETE(
+  _request: NextRequest,
+  context: {
+    params: Promise<{ id: string }>;
+  }
+) {
+  const user = await getAdminUserFromCookies();
+
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const params = await context.params;
+  const existing = await getBirdById(params.id);
+
+  if (!existing) {
+    return NextResponse.json({ error: "Bird not found." }, { status: 404 });
+  }
+
+  if (existing.status === "published") {
+    return NextResponse.json(
+      { error: "Published birds cannot be deleted." },
+      { status: 400 }
+    );
+  }
+
+  try {
+    await deleteBirdById(params.id);
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    return NextResponse.json(
+      { error: (error as Error)?.message ?? "Unable to delete bird." },
       { status: 400 }
     );
   }

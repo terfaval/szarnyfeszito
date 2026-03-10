@@ -178,12 +178,59 @@ export async function updateBird(input: BirdUpdateInput): Promise<Bird> {
 }
 
 export async function deleteBirdById(id: string): Promise<void> {
-  const { error } = await supabaseServerClient
-    .from("birds")
-    .delete()
-    .eq("id", id);
+  const relationMissing = (error: unknown, relation: string) => {
+    if (!error || typeof error !== "object") return false;
+    const message = "message" in error ? String((error as { message?: unknown }).message ?? "") : "";
+    const code = "code" in error ? String((error as { code?: unknown }).code ?? "") : "";
+    return (
+      code === "42P01" ||
+      message.includes(`relation "${relation}" does not exist`)
+    );
+  };
 
-  if (error) {
-    throw error;
+  const { count: sightingsCount, error: sightingsError } = await supabaseServerClient
+    .from("bird_sighting_birds")
+    .select("bird_id", { count: "exact", head: true })
+    .eq("bird_id", id);
+
+  if (sightingsError && !relationMissing(sightingsError, "bird_sighting_birds")) {
+    throw sightingsError;
   }
+
+  if (!sightingsError && (sightingsCount ?? 0) > 0) {
+    throw new Error("Cannot delete bird: it is referenced by sightings.");
+  }
+
+  const { error: placeBirdsError } = await supabaseServerClient
+    .from("place_birds")
+    .delete()
+    .eq("bird_id", id);
+
+  if (placeBirdsError && !relationMissing(placeBirdsError, "place_birds")) {
+    throw placeBirdsError;
+  }
+
+  const { error: imagesError } = await supabaseServerClient
+    .from("images")
+    .delete()
+    .eq("entity_type", "bird")
+    .eq("entity_id", id);
+
+  if (imagesError) {
+    throw imagesError;
+  }
+
+  const { error: blocksError } = await supabaseServerClient
+    .from("content_blocks")
+    .delete()
+    .eq("entity_type", "bird")
+    .eq("entity_id", id);
+
+  if (blocksError) {
+    throw blocksError;
+  }
+
+  const { error } = await supabaseServerClient.from("birds").delete().eq("id", id);
+
+  if (error) throw error;
 }

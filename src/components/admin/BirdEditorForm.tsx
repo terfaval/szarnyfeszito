@@ -19,6 +19,7 @@ export default function BirdEditorForm({ bird }: BirdEditorFormProps) {
     status: bird.status,
   });
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
@@ -53,6 +54,41 @@ export default function BirdEditorForm({ bird }: BirdEditorFormProps) {
       setError("Unable to save bird.");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    const confirmed = window.confirm(
+      `Delete bird “${bird.name_hu}”?\n\nThis removes the bird record and its admin-only artifacts (content blocks + image rows). This cannot be undone.`
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setDeleting(true);
+    setError(null);
+    setMessage(null);
+
+    try {
+      const response = await fetch(`/api/birds/${bird.id}`, {
+        method: "DELETE",
+      });
+
+      const payload = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        setError(payload?.error ?? "Unable to delete bird.");
+        return;
+      }
+
+      setMessage("Bird deleted. Redirectingâ€¦");
+      router.push("/admin/birds");
+      router.refresh();
+    } catch {
+      setError("Unable to delete bird.");
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -115,12 +151,28 @@ export default function BirdEditorForm({ bird }: BirdEditorFormProps) {
 
       <Button
         type="submit"
-        disabled={saving}
+        disabled={saving || deleting}
         variant="primary"
         className="w-full justify-center"
       >
         {saving ? "Saving…" : "Save changes"}
       </Button>
+
+      <div className="space-y-3">
+        <p className="admin-message admin-message--warning">
+          Deleting a bird is intended for mistaken/unfinished entries. Published birds cannot be
+          deleted.
+        </p>
+        <Button
+          type="button"
+          disabled={saving || deleting}
+          variant="accent"
+          className="w-full justify-center"
+          onClick={handleDelete}
+        >
+          {deleting ? "Deletingâ€¦" : "Delete bird"}
+        </Button>
+      </div>
 
       {error && (
         <p className="admin-message admin-message--error" aria-live="assertive">

@@ -1,0 +1,30 @@
+.wrap {
+  position: relative;
+  border-radius: 18px;
+  overflow: hidden;
+  border: 1px solid rgba(var(--brand-ink-rgb), 0.18);
+  background: var(--brand-paper);
+  box-shadow: 0 22px 40px rgba(var(--brand-ink-rgb), 0.12);
+}
+
+.map {
+  height: 360px;
+  width: 100%;
+  background: var(--brand-paper);
+}
+
+.overlayNote {
+  position: absolute;
+  z-index: 500;
+  top: 14px;
+  left: 14px;
+  border-radius: 9999px;
+  padding: 0.4rem 0.65rem;
+  border: 1px solid rgba(var(--brand-ink-rgb), 0.25);
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--brand-ink);
+  font-size: 0.75rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+

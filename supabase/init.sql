@@ -156,7 +156,7 @@ create index if not exists places_updated_at_idx on places (updated_at desc);
 create table if not exists place_birds (
   id uuid primary key default gen_random_uuid(),
   place_id uuid not null references places (id) on delete cascade,
-  bird_id uuid references birds (id) on delete set null,
+  bird_id uuid references birds (id) on delete cascade,
   pending_bird_name_hu text,
   review_status place_bird_review_status not null default 'approved',
   rank integer not null default 0,

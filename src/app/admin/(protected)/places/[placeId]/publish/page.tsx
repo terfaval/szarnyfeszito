@@ -1,6 +1,6 @@
 import { Card } from "@/ui/components/Card";
 import { isUuid } from "@/lib/birdService";
-import { getPlaceById, getPlaceBySlug } from "@/lib/placeService";
+import { getPlaceById, getPlaceBySlug, getPlaceMarkerById } from "@/lib/placeService";
 import { getLatestApprovedContentBlockForPlace } from "@/lib/placeContentService";
 import { listApprovedPublishedBirdLinksForPlace } from "@/lib/placeBirdService";
 import { listApprovedCurrentIconicImagesForBirds, getSignedImageUrl } from "@/lib/imageService";
@@ -36,6 +36,7 @@ export default async function PlacePublishPage({
 
   const approved = await getLatestApprovedContentBlockForPlace(place.id);
   const currentSeason = getCurrentSeasonKey();
+  const marker = await getPlaceMarkerById(place.id);
 
   const placeBirds = await listApprovedPublishedBirdLinksForPlace(place.id);
 
@@ -99,6 +100,7 @@ export default async function PlacePublishPage({
       <PlacePublishAction place={place} missing={missing} />
       <PlacePublishPreview
         place={place}
+        marker={marker}
         content={approved?.blocks_json ?? null}
         currentSeason={currentSeason}
         birds={previewBirds}
