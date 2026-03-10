@@ -241,7 +241,13 @@ Nincs stílusválasztás.
 
 ### 7.2 Dashboard
 
-- Birds count by status
+- Full-screen Hungary map (Leaflet + OSM) showing **published** Places as markers.
+  - Hover opens a popup card with: place name, location (place_type + county/nearest_city), `variants.short`, the **current season** snippet, and the **top 5** seasonal birds for that place.
+  - Birds shown here are derived from `place_birds` **approved** links only (no suggested rows), and only **published** Bird entities are allowed to appear in the card.
+  - Map shows only Places that are `status="published"` and not `location_precision="hidden"`.
+- Under the map: “Habitat spotlights” in 3 columns: **vízpart**, **erdő**, **hegység**.
+  - Each column lists ~7 birds (habitat icon + bird name), and links to one or more published Places where the bird is visible in the current season.
+- Birds count by status (pipeline)
 - Places count
 - Phenomena count
 - Quick create buttons

@@ -1,16 +1,22 @@
 import Link from "next/link";
 import { listBirds } from "@/lib/birdService";
-import { listPlaces } from "@/lib/placeService";
+import { listPlaces, listPublishedPlaceMarkers, listPublishedPlacesByPrimaryType } from "@/lib/placeService";
 import { listLatestDossierBlocksForBirds } from "@/lib/contentService";
+import { supabaseServerClient } from "@/lib/supabaseServerClient";
 import { getSignedImageUrl, listCurrentIconicImagesForBirds } from "@/lib/imageService";
 import { BirdStatus, BIRD_STATUS_VALUES } from "@/types/bird";
+import type { PlaceType } from "@/types/place";
+import { getCurrentSeasonKey } from "@/lib/season";
 import { Card } from "@/ui/components/Card";
 import { StatusPill } from "@/ui/components/StatusPill";
 import BirdIcon from "@/components/admin/BirdIcon";
+import DashboardPlacesMap from "@/components/admin/DashboardPlacesMap";
 
 export const metadata = {
   title: "Szárnyfeszítő admin dashboard",
 };
+
+export const dynamic = "force-dynamic";
 
 const habitatIconForClass = (habitatClass: unknown) => {
   if (typeof habitatClass !== "string") {
@@ -36,6 +42,16 @@ const habitatIconForClass = (habitatClass: unknown) => {
 export default async function AdminPage() {
   const birds = await listBirds();
   const places = await listPlaces();
+  const publishedMarkers = await listPublishedPlaceMarkers();
+  const currentSeason = getCurrentSeasonKey();
+  const currentSeasonLabel =
+    currentSeason === "spring"
+      ? "Tavasz"
+      : currentSeason === "summer"
+      ? "Nyár"
+      : currentSeason === "autumn"
+      ? "Ősz"
+      : "Tél";
 
   const statusCounts = birds.reduce(
     (acc, bird) => {
@@ -71,8 +87,206 @@ export default async function AdminPage() {
     })
   );
 
+  const spotlightGroups: Array<{
+    key: "water" | "forest" | "mountain";
+    label: string;
+    placeTypes: PlaceType[];
+  }> = [
+    {
+      key: "water",
+      label: "Vízpart",
+      placeTypes: [
+        "lake",
+        "river",
+        "fishpond",
+        "reservoir",
+        "marsh",
+        "reedbed",
+        "salt_lake",
+        "urban_waterfront",
+      ],
+    },
+    { key: "forest", label: "Erdő", placeTypes: ["forest_edge", "protected_area"] },
+    { key: "mountain", label: "Hegység", placeTypes: ["mountain_area"] },
+  ];
+
+  type SpotlightPlace = { id: string; name: string; slug: string };
+  type SpotlightBird = {
+    id: string;
+    slug: string;
+    name_hu: string;
+    habitatIconSrc: string | null;
+    places: SpotlightPlace[];
+    bestRank: number;
+  };
+
+  const publishedPlacesByGroup = await Promise.all(
+    spotlightGroups.map(async (group) => ({
+      key: group.key,
+      label: group.label,
+      places: await listPublishedPlacesByPrimaryType(group.placeTypes),
+    }))
+  );
+
+  const spotlightBirdsByGroup = new Map<string, SpotlightBird[]>();
+  const spotlightBirdIds = new Set<string>();
+
+  for (const group of publishedPlacesByGroup) {
+    const placeById = new Map(group.places.map((place) => [place.id, place] as const));
+    const placeIds = Array.from(placeById.keys());
+    if (placeIds.length === 0) {
+      spotlightBirdsByGroup.set(group.key, []);
+      continue;
+    }
+
+    type Row = {
+      place_id: string;
+      rank: number;
+      frequency_band: string;
+      is_iconic: boolean;
+      visible_in_spring: boolean;
+      visible_in_summer: boolean;
+      visible_in_autumn: boolean;
+      visible_in_winter: boolean;
+      updated_at: string;
+      bird: { id: string; slug: string; name_hu: string; status?: string } | null;
+    };
+
+    const { data, error } = await supabaseServerClient
+      .from("place_birds")
+      .select(
+        "place_id,bird_id,rank,frequency_band,is_iconic,visible_in_spring,visible_in_summer,visible_in_autumn,visible_in_winter,updated_at,bird:birds(id,slug,name_hu,status)"
+      )
+      .eq("review_status", "approved")
+      .not("bird_id", "is", null)
+      .in("place_id", placeIds)
+      .order("rank", { ascending: true })
+      .order("updated_at", { ascending: false })
+      .limit(600);
+
+    if (error) {
+      throw error;
+    }
+
+    const rows = (data ?? []) as unknown as Row[];
+    const seasonalRows = rows.filter((row) => {
+      if (!row.bird || row.bird.status !== "published") return false;
+      if (currentSeason === "spring") return row.visible_in_spring;
+      if (currentSeason === "summer") return row.visible_in_summer;
+      if (currentSeason === "autumn") return row.visible_in_autumn;
+      return row.visible_in_winter;
+    });
+
+    const byBirdId = new Map<string, SpotlightBird>();
+    for (const row of seasonalRows) {
+      const bird = row.bird;
+      if (!bird) continue;
+      const place = placeById.get(row.place_id);
+      if (!place) continue;
+
+      const existing = byBirdId.get(bird.id);
+      if (!existing) {
+        byBirdId.set(bird.id, {
+          id: bird.id,
+          slug: bird.slug,
+          name_hu: bird.name_hu,
+          habitatIconSrc: null,
+          places: [{ id: place.id, name: place.name, slug: place.slug }],
+          bestRank: row.rank,
+        });
+      } else {
+        existing.bestRank = Math.min(existing.bestRank, row.rank);
+        if (!existing.places.some((p) => p.id === place.id)) {
+          existing.places.push({ id: place.id, name: place.name, slug: place.slug });
+          if (existing.places.length > 3) {
+            existing.places = existing.places.slice(0, 3);
+          }
+        }
+      }
+    }
+
+    const list = Array.from(byBirdId.values())
+      .sort((a, b) => a.bestRank - b.bestRank || b.places.length - a.places.length || a.name_hu.localeCompare(b.name_hu))
+      .slice(0, 7);
+
+    list.forEach((bird) => spotlightBirdIds.add(bird.id));
+    spotlightBirdsByGroup.set(group.key, list);
+  }
+
+  const spotlightDossierByBirdId = await listLatestDossierBlocksForBirds(Array.from(spotlightBirdIds));
+  for (const group of spotlightGroups) {
+    const list = spotlightBirdsByGroup.get(group.key) ?? [];
+    list.forEach((bird) => {
+      const dossier = spotlightDossierByBirdId.get(bird.id);
+      bird.habitatIconSrc = habitatIconForClass(dossier?.pill_meta?.habitat_class);
+    });
+    spotlightBirdsByGroup.set(group.key, list);
+  }
+
   return (
     <section className="admin-stack">
+      <DashboardPlacesMap markers={publishedMarkers} />
+
+      <Card className="stack">
+        <header className="admin-heading">
+          <p className="admin-heading__label">Places</p>
+          <h2 className="admin-heading__title admin-heading__title--large">Habitat spotlights</h2>
+          <p className="admin-heading__description">
+            Top birds visible in {currentSeasonLabel} across published places, grouped by primary place type.
+          </p>
+        </header>
+
+        <div className="grid gap-4 md:grid-cols-3">
+          {spotlightGroups.map((group) => {
+            const birdsForGroup = spotlightBirdsByGroup.get(group.key) ?? [];
+            return (
+              <div key={group.key} className="admin-stat-card">
+                <p className="admin-stat-label">{group.label}</p>
+                {birdsForGroup.length ? (
+                  <div className="mt-3 space-y-3">
+                    {birdsForGroup.map((bird) => (
+                      <div key={bird.id} className="flex items-start gap-3">
+                        {bird.habitatIconSrc ? (
+                          <img
+                            src={bird.habitatIconSrc}
+                            alt=""
+                            className="h-10 w-10 shrink-0 rounded-xl p-2"
+                            style={{ border: "1px solid var(--line)", background: "var(--panel-2)" }}
+                          />
+                        ) : (
+                          <div
+                            className="h-10 w-10 shrink-0 rounded-xl"
+                            style={{ border: "1px solid var(--line)", background: "var(--panel-2)" }}
+                          />
+                        )}
+                        <div className="min-w-0 flex-1">
+                          <Link href={`/admin/birds/${bird.id}`} className="admin-nav-link">
+                            {bird.name_hu}
+                          </Link>
+                          <div className="mt-1 flex flex-wrap gap-2">
+                            {bird.places.map((place) => (
+                              <Link
+                                key={place.id}
+                                href={`/admin/places/${place.id}`}
+                                className="admin-note-small hover:underline"
+                              >
+                                {place.name}
+                              </Link>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="admin-stat-note mt-3">No matches yet.</p>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </Card>
+
       <Card className="stack">
         <header className="admin-heading">
           <p className="admin-heading__label">Dashboard</p>

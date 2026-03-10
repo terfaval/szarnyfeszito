@@ -595,3 +595,20 @@ Indok: Place → suggested birds → editor review → (opcionálisan) Bird gene
 - A review note prompt inputként bekerül (`images.review_comment` → `review_note`), de az újonnan generált kép recordja tiszta `review_comment = null` (a note nem “ragad át” a következő verzióra).
 
 Indok: a publish-ready, approved asseteket védeni kell a véletlen felülírástól; ugyanakkor az opcionális/under-review képek iterációja maradjon gyors.
+
+---
+
+## D36 – Admin Dashboard: published Places map + seasonal bird hover cards
+
+- A Studio `/admin` Dashboard tetején megjelenik egy full-screen Magyarország térkép (Leaflet + OSM), amely csak **published** Place-eket jelöl (rejtett location nem jelenhet meg).
+- Hoverre egy popup kártya jelenik meg a helyhez, amely a Place canonical UI contractját használja:
+  - `variants.short`
+  - `variants.seasonal_snippet[currentSeason]`
+  - top 5, az aktuális évszakban látható madár (Place → Bird linkek alapján).
+- Gating szabályok:
+  - Place: `status="published"`, `location_precision != "hidden"`.
+  - Place → Bird: csak `place_birds.review_status="approved"` sorok.
+  - Bird: csak `status="published"` jelenhet meg publikus jellegű dashboard summaryban.
+- A Dashboard alatt “Habitat spotlights” blokk 3 oszloppal (vízpart/erdő/hegység), oszloponként ~7 madárral (habitat ikon + név + linkelt helyszín(ek)).
+
+Indok: a Place rendszer publikálása után gyors, vizuális ellenőrző felület kell a dashboardon a publikált helyekről, az aktuális szezon tartalmáról, és a publikálásban szereplő madár-kapcsolatokról.

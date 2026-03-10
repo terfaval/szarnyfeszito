@@ -38,6 +38,7 @@ export type ApprovedPublishedPlaceBirdLink = Pick<
 export async function listApprovedPublishedBirdLinksForPlace(
   placeId: string
 ): Promise<ApprovedPublishedPlaceBirdLink[]> {
+  type BirdWithStatus = { id: string; slug: string; name_hu: string; status?: string };
   type RowWithStatus = Pick<
     PlaceBirdLink,
     | "id"
@@ -52,13 +53,13 @@ export async function listApprovedPublishedBirdLinksForPlace(
     | "visible_in_winter"
     | "updated_at"
   > & {
-    bird: { id: string; slug: string; name_hu: string; status?: string } | null;
+    bird: BirdWithStatus | BirdWithStatus[] | null;
   };
 
   const { data, error } = await supabaseServerClient
     .from("place_birds")
     .select(
-      "id,place_id,bird_id,rank,frequency_band,is_iconic,visible_in_spring,visible_in_summer,visible_in_autumn,visible_in_winter,updated_at,bird:birds(id,slug,name_hu,status)"
+      "id,place_id,bird_id,rank,frequency_band,is_iconic,visible_in_spring,visible_in_summer,visible_in_autumn,visible_in_winter,updated_at,bird:birds!place_birds_bird_id_fkey(id,slug,name_hu,status)"
     )
     .eq("place_id", placeId)
     .eq("review_status", "approved")
@@ -72,6 +73,10 @@ export async function listApprovedPublishedBirdLinksForPlace(
 
   const rows = (data ?? []) as RowWithStatus[];
   return rows
+    .map((row) => {
+      const bird = Array.isArray(row.bird) ? (row.bird[0] ?? null) : row.bird;
+      return { ...row, bird };
+    })
     .filter((row) => row.bird?.status === "published")
     .map((row) => ({
       ...row,

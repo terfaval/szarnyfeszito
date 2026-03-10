@@ -267,3 +267,26 @@ export async function getPlaceMarkerById(placeId: string): Promise<PlaceMarker |
 
   return (data ?? null) as PlaceMarker | null;
 }
+
+export async function listPublishedPlacesByPrimaryType(placeTypes: PlaceType[]): Promise<
+  Array<Pick<Place, "id" | "slug" | "name" | "place_type">>
+> {
+  const unique = Array.from(new Set(placeTypes)).filter(Boolean);
+  if (unique.length === 0) {
+    return [];
+  }
+
+  const { data, error } = await supabaseServerClient
+    .from("places")
+    .select("id,slug,name,place_type")
+    .eq("status", "published")
+    .in("place_type", unique)
+    .order("name", { ascending: true })
+    .limit(500);
+
+  if (error) {
+    throw error;
+  }
+
+  return (data ?? []) as Array<Pick<Place, "id" | "slug" | "name" | "place_type">>;
+}

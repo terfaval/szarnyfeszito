@@ -1,0 +1,165 @@
+.section {
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  background: var(--panel);
+}
+
+.layout {
+  height: calc(100vh - 140px);
+  min-height: 560px;
+  max-height: 920px;
+}
+
+.map {
+  height: 100%;
+  width: 100%;
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
+  padding: 18px clamp(18px, 4vw, 32px);
+}
+
+.overlayCard {
+  pointer-events: none;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 18px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.12);
+  padding: 14px 16px;
+  max-width: 520px;
+  backdrop-filter: blur(10px);
+}
+
+.overlayTitle {
+  font-size: 0.7rem;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.overlaySubtitle {
+  margin-top: 6px;
+  font-size: 1.25rem;
+  font-weight: 650;
+  color: var(--foreground);
+}
+
+:global(.sf-place-tooltip) {
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
+:global(.sf-place-tooltip.leaflet-tooltip-top:before),
+:global(.sf-place-tooltip.leaflet-tooltip-bottom:before),
+:global(.sf-place-tooltip.leaflet-tooltip-left:before),
+:global(.sf-place-tooltip.leaflet-tooltip-right:before) {
+  display: none !important;
+}
+
+.tooltipCard {
+  width: 360px;
+  max-width: min(360px, 80vw);
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 16px;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.16);
+  padding: 14px 14px 12px;
+  backdrop-filter: blur(10px);
+}
+
+.tooltipMeta {
+  font-size: 0.7rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.tooltipName {
+  margin-top: 6px;
+  font-size: 1.05rem;
+  font-weight: 650;
+  color: var(--foreground);
+}
+
+.tooltipCopy {
+  margin-top: 8px;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  color: var(--foreground);
+  white-space: pre-wrap;
+}
+
+.tooltipSectionLabel {
+  margin-top: 12px;
+  font-size: 0.7rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.tooltipBirdList {
+  margin-top: 8px;
+  display: grid;
+  gap: 6px;
+}
+
+.tooltipBirdLink {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border-radius: 12px;
+  padding: 8px 10px;
+  text-decoration: none;
+  color: var(--foreground);
+  background: rgba(15, 23, 42, 0.04);
+}
+
+.tooltipBirdLink:hover {
+  background: rgba(15, 23, 42, 0.08);
+}
+
+.tooltipBirdName {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.tooltipBirdMeta {
+  font-size: 0.72rem;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.tooltipFooter {
+  margin-top: 12px;
+  pointer-events: auto;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.tooltipFooterLink {
+  font-size: 0.78rem;
+  font-weight: 650;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: var(--brand-accent);
+}
+
+.tooltipFooterLink:hover {
+  text-decoration: underline;
+}
+
