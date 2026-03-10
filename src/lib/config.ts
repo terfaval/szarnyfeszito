@@ -35,4 +35,15 @@ export const DISTRIBUTION_REGION_CATALOG_SOURCE = enumEnv(
 );
 export const NODE_ENV = process.env.NODE_ENV?.trim() || "development";
 export const IS_PRODUCTION = NODE_ENV === "production";
-export const APP_URL = optionalEnv("NEXT_PUBLIC_APP_URL") ?? "http://localhost:3000";
+
+function deriveAppUrl(): string {
+  const explicit = optionalEnv("NEXT_PUBLIC_APP_URL");
+  if (explicit) return explicit;
+
+  const vercelUrl = optionalEnv("VERCEL_URL");
+  if (vercelUrl) return `https://${vercelUrl.replace(/^https?:\/\//, "")}`;
+
+  return "http://localhost:3000";
+}
+
+export const APP_URL = deriveAppUrl();

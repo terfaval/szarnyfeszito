@@ -127,6 +127,13 @@ Place UI content (Explorer panel contract, D34):
 - Required blocks for publish: `variants.short`, `variants.ethics_tip`, and all `variants.seasonal_snippet.*` seasons (non-empty).
 - Other variant strings may be empty.
 
+Place images (Studio-only generation; D42):
+- Stored in the canonical `images` table with:
+  - `entity_type="place"`
+  - `style_family="scientific"`
+  - `variant="place_hero_spring_v1"`
+- Publish requires an **approved** current hero image for `place_hero_spring_v1`.
+
 Place notable units (internal sub-locations, D41):
 - Stored on the Place record as `places.notable_units_json` (structured array, optional).
 - Explorer panel uses this field to render the "Helyszínek" section when present.
@@ -224,6 +231,8 @@ Nincs prompt szerkesztés UI-ban.
 1. main_habitat (standing + enyhe élőhely háttér)
 2. standing_clean (semleges háttér)
 3. flight_clean (repülő, semleges háttér)
+
+4. place_hero_spring_v1 (Place only; spring hero scene, realistic scientific style)
 
 #### Iconic
 
@@ -341,6 +350,11 @@ Publish előtt:
 - TEXT_APPROVED
 - main_habitat image approved
 - iconic image approved
+
+- Place:
+  - required metadata fields filled
+  - required Place UI variants approved
+  - place_hero_spring_v1 image approved
 
 ---
 

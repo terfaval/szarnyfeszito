@@ -487,7 +487,7 @@ Indok: ez teszi lehetővé a szigorú validálást, a generációk verifikálás
 
 ## D14 â€“ Place/Phenomenon text-only pipeline
 
-- Places and Phenomena follow AI text generation plus review, then publish, but they do not require image generation or image-based gating. Their publish transitions depend solely on approved textual content and metadata validation.
+- Phenomena follow AI text generation plus review, then publish, and they do not require image generation or image-based gating. Their publish transitions depend solely on approved textual content and metadata validation. (Places later gain a single publish-gated hero image; see D42.)
 - Indok: Differentiates these entities from Bird so we donâ€™t overburden the MVP, yet keeps them ready for the Explorer panels once the read-only surface is active.
 
 ---
@@ -728,3 +728,31 @@ Birdwatch logging should reflect “I saw X at place Y”, and help selection by
 ### Out of scope (v1)
 - Hard exclusion based on Place links (it remains a soft priority).
 - Seasonality-aware ranking (can be added later).
+
+---
+
+## D42 – Place hero image (spring, scientific) + publish gate
+
+**Status:** Accepted  
+**Date:** 2026-03-10  
+**Scope:** Studio Place workflow (generation, review, publish preview). Explorer remains read-only and has no runtime AI.
+
+### Context
+- Place publish cards will display a full-bleed hero image above the header.
+- We need a controlled, review-gated way to generate that asset server-side.
+
+### Decision
+- Add a single Place image output (v1):
+  - `entity_type="place"`, `style_family="scientific"`, `variant="place_hero_spring_v1"`.
+  - Content intent: a realistic, scientific-style spring highlight moment for the place (no fantasy / no cartoon).
+- Publish gate (Place) requires:
+  - required metadata + approved UI variants (per D31), and
+  - an **approved** current hero image for `place_hero_spring_v1`.
+- Studio publish preview card:
+  - Renders the approved hero image at the very top (full-bleed in the card), with overlay pills (name, subtitle, localization).
+  - The map hero preview remains, but moves below the header.
+
+### Out of scope (v1)
+- Additional seasons or multiple Place image variants.
+- Iconic Place images.
+- Any runtime generation on Explorer/public surfaces.

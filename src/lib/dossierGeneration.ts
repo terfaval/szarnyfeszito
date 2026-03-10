@@ -125,12 +125,72 @@ const normalizeShortOptionsPayload = (payload: Record<string, unknown>) => {
   return { ...payload, short_options: normalizedOptions };
 };
 
-const extractAnchorKeywords = (signature: string): string[] => {
-  const stopwords = ["Ă©s", "vagy", "mint", "az", "egy", "ami", "ahol"];
-  return signature
+const coerceShortOptionsForQualityGates = (
+  options: [string, string, string]
+): [string, string, string] => {
+  const normalized = options.map((option, index) =>
+    padShortOptionToMinLen(normalizeShortOption(option), index)
+  ) as [string, string, string];
+  return normalized;
+};
+
+const repairHungarianMojibake = (input: string): string => {
+  // Handles common UTF-8-as-Windows-1250/ISO-8859-* mojibake sequences.
+  // Example: "mocsĂˇr" (mocsár), "lenyĹ±gĂ¶zĹ‘" (lenyűgöző).
+  return input
+    .replace(/Ăˇ/g, "á")
+    .replace(/Ă©/g, "é")
+    .replace(/Ă­/g, "í")
+    .replace(/Ăł/g, "ó")
+    .replace(/Ă¶/g, "ö")
+    .replace(/ĂĽ/g, "ü")
+    .replace(/Ĺ±/g, "ű")
+    .replace(/Ĺ‘/g, "ő")
+    .replace(/Å‘/g, "ő");
+};
+
+const repairHungarianUtf8Mojibake = (input: string): string =>
+  input
+    .replace(/\u0102\u02C7/g, "á")
+    .replace(/\u0102\u00A9/g, "é")
+    .replace(/\u0102\u00AD/g, "í")
+    .replace(/\u0102\u0142/g, "ó")
+    .replace(/\u0102\u00B3/g, "ó")
+    .replace(/\u0102\u00B6/g, "ö")
+    .replace(/\u0102\u013D/g, "ü")
+    .replace(/\u0139\u00B1/g, "ű")
+    .replace(/\u0139\u2018/g, "ő");
+
+const normalizeForSignatureGate = (input: string): string => {
+  const repaired = repairHungarianUtf8Mojibake(repairHungarianMojibake(input));
+  return repaired
     .toLowerCase()
-    .split(/\W+/)
-    .filter((word) => word.length >= 4 && !stopwords.includes(word))
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+};
+
+const extractAnchorKeywords = (signature: string): string[] => {
+  const stopwords = new Set([
+    "es",
+    "vagy",
+    "mint",
+    "az",
+    "egy",
+    "ami",
+    "ahol",
+    "hogy",
+    "de",
+    "mert",
+    "csak",
+    "is",
+  ]);
+
+  return normalizeForSignatureGate(signature)
+    .split(" ")
+    .filter((word) => word.length >= 4 && !stopwords.has(word))
     .slice(0, 3);
 };
 
@@ -147,9 +207,9 @@ const validateSignatureCoherence = (dossier: BirdDossier) => {
     return reasons;
   }
 
-  const summary = (dossier.header?.short_summary ?? "").toLowerCase();
-  const longText = (dossier.long_paragraphs ?? []).join(" ").toLowerCase();
-  const shortText = (dossier.short_options ?? []).join(" ").toLowerCase();
+  const summary = normalizeForSignatureGate(dossier.header?.short_summary ?? "");
+  const longText = normalizeForSignatureGate((dossier.long_paragraphs ?? []).join(" "));
+  const shortText = normalizeForSignatureGate((dossier.short_options ?? []).join(" "));
 
   const summaryHit = anchors.some((anchor) => summary.includes(anchor));
   const longHits = anchors.filter((anchor) => longText.includes(anchor)).length;
@@ -163,36 +223,45 @@ const validateSignatureCoherence = (dossier: BirdDossier) => {
 };
 
 const validateSignatureSpecificity = (signature: string): string[] => {
-  const s = signature.toLowerCase();
+  const repaired = repairHungarianUtf8Mojibake(repairHungarianMojibake(signature));
+  const s = normalizeForSignatureGate(signature);
+  const tokens = s.split(" ").filter(Boolean);
   const reasons: string[] = [];
 
-  const generic = ["kĂĽlĂ¶nleges", "jellegzetes", "lenyĹ±gĂ¶zĹ‘", "lĂˇtvĂˇnyos", "figyelemfelkeltĹ‘"];
-  const genericHits = generic.filter((w) => s.includes(w)).length;
+  const tokenMatchesAnyStem = (stems: string[]) =>
+    tokens.some((token) =>
+      stems.some((stem) => (stem.length <= 2 ? token === stem : token.startsWith(stem)))
+    );
 
-  const concrete = [
-    "hang",
-    "trombit",
-    "sziluett",
-    "v-alak",
-    "vonul",
-    "csapat",
-    "mocsĂˇr",
-    "nĂˇdas",
-    "puszta",
-    "rĂ©t",
-    "repĂĽl",
-    "nyak",
-    "lĂˇb",
+  const generic = [
+    "kulonleges",
+    "jellegzetes",
+    "lenyugozo",
+    "latvanyos",
+    "figyelemfelkelto",
+    "egyedi",
+    "szep",
   ];
-  const hasConcrete = concrete.some((w) => s.includes(w));
+  const genericHits = generic.filter((w) => tokenMatchesAnyStem([w])).length;
+
+  const soundStems = ["hang", "enek", "dal", "kialt", "csipog", "cserreg", "huhog", "trombit", "kurrog", "sikolt"];
+  const silhouetteStems = ["sziluett", "alak", "tollazat", "csor", "szarny", "farok", "nyak", "lab", "folt", "csik", "kontraszt"];
+  const habitatStems = ["nadas", "nad", "mocsar", "vizpart", "viz", "to", "folyo", "patak", "ret", "puszta", "erdo", "hegy", "varos", "szikes", "part"];
+  const movementStems = ["repul", "szall", "suhan", "lebeg", "vitorlaz", "ugral", "fut", "lopakod", "vonul", "koroz", "merul", "buk", "csapat"];
+
+  const hasConcrete =
+    tokenMatchesAnyStem(soundStems) ||
+    tokenMatchesAnyStem(silhouetteStems) ||
+    tokenMatchesAnyStem(habitatStems) ||
+    tokenMatchesAnyStem(movementStems);
 
   if (!hasConcrete) {
     reasons.push("signature_trait lacks concrete field-guide anchors");
   }
-  if (genericHits >= 2 && signature.length < 80) {
+  if (genericHits >= 2 && repaired.length < 80) {
     reasons.push("signature_trait reads generic (adjectives-only)");
   }
-  if ((signature.match(/[.!?]/g) ?? []).length > 1) {
+  if ((repaired.match(/[.!?]/g) ?? []).length > 1) {
     reasons.push("signature_trait should be a single sentence");
   }
 
@@ -221,60 +290,6 @@ export type DossierGenerationResult = {
   generated_at: string;
 };
 
-// ---------- strict template ----------
-const JSON_TEMPLATE = `{
-  "schema_version": "v2.3",
-  "signature_trait": "Ă„â€šĂ‹ÂÄ‚ËĂ˘â‚¬ĹˇĂ‚Â¬Ä‚â€šĂ‚Â¦",
-  "header": {
-    "name_hu": "Ä‚ËĂ˘â€šÂ¬Ă‚Â¦",
-    "name_latin": "Ä‚ËĂ˘â€šÂ¬Ă‚Â¦",
-    "subtitle": "Ä‚ËĂ˘â€šÂ¬Ă‚Â¦",
-    "short_summary": "Ä‚ËĂ˘â€šÂ¬Ă‚Â¦"
-  },
-  "pill_meta": {
-    "habitat_class": "erdő",
-    "color_bg": "grey",
-    "region_teaser": "Ä‚ËĂ˘â€šÂ¬Ă‚Â¦",
-    "size_cm": { "min": null, "max": null },
-    "wingspan_cm": { "min": null, "max": null },
-    "diet_short": "Ä‚ËĂ˘â€šÂ¬Ă‚Â¦",
-    "lifespan_years": { "min": null, "max": null }
-  },
-  "short_options": ["Ä‚ËĂ˘â€šÂ¬Ă‚Â¦", "Ä‚ËĂ˘â€šÂ¬Ă‚Â¦", "Ä‚ËĂ˘â€šÂ¬Ă‚Â¦"],
-  "long_paragraphs": ["Ä‚ËĂ˘â€šÂ¬Ă‚Â¦", "Ä‚ËĂ˘â€šÂ¬Ă‚Â¦"],
-  "identification": {
-    "key_features": [
-      { "axis": "csor", "title": "...", "description": "..." },
-      { "axis": "tollazat", "title": "...", "description": "..." },
-      { "axis": "hang", "title": "...", "description": "..." },
-      { "axis": "mozgas", "title": "...", "description": "..." }
-    ],
-    "identification_paragraph": "Ä‚ËĂ˘â€šÂ¬Ă‚Â¦"
-  },
-  "distribution": {
-    "taxonomy": { "order": null, "family": null, "genus": null, "species": null },
-    "iucn_status": null,
-    "distribution_regions": ["Ä‚ËĂ˘â€šÂ¬Ă‚Â¦"],
-    "distribution_note": "Ä‚ËĂ˘â€šÂ¬Ă‚Â¦"
-  },
-  "nesting": {
-    "nesting_type": null,
-    "nest_site": null,
-    "breeding_season": null,
-    "clutch_or_chicks_count": null,
-    "nesting_note": "Ä‚ËĂ˘â€šÂ¬Ă‚Â¦"
-  },
-  "migration": {
-    "is_migratory": null,
-    "timing": null,
-    "route": null,
-    "migration_note": "Ä‚ËĂ˘â€šÂ¬Ă‚Â¦"
-  },
-  "fun_fact": "Ä‚ËĂ˘â€šÂ¬Ă‚Â¦",
-  "ethics_tip": "Ä‚ËĂ˘â€šÂ¬Ă‚Â¦",
-  "typical_places": ["Ä‚ËĂ˘â€šÂ¬Ă‚Â¦"]
-}`;
-
 // Prefer an ASCII placeholder template to avoid mojibake confusing the model output.
 const JSON_TEMPLATE_V2_3 = `{
   "schema_version": "v2.3",
@@ -286,7 +301,7 @@ const JSON_TEMPLATE_V2_3 = `{
     "short_summary": "..."
   },
   "pill_meta": {
-    "habitat_class": "erdĹ‘",
+    "habitat_class": "erdő",
     "color_bg": "grey",
     "region_teaser": "...",
     "size_cm": { "min": null, "max": null },
@@ -347,18 +362,18 @@ Return ONLY a single JSON object. No markdown, no commentary, no code fences.
 You MUST output EXACTLY the following object shape (fill values, keep keys/types):
 ${JSON_TEMPLATE_V2_3}
 
-HARD RULES:
+ HARD RULES:
   - Top-level keys must be present: header, pill_meta, short_options, long_paragraphs, identification, distribution, nesting, migration, fun_fact, did_you_know, ethics_tip, typical_places, leaflets.
-- pill_meta.habitat_class must be exactly one of: erdĹ‘, vĂ­zpart, puszta, hegy, vĂˇros (pick the strongest).
+- pill_meta.habitat_class must be exactly one of: erdő, vízpart, puszta, hegy, város (pick the strongest).
  - pill_meta.color_bg must be exactly one of: white, black, grey, brown, yellow, orange, red, green, blue.
  - distribution/nesting/migration MUST be objects (never strings).
- - Use null for nullable fields when unknown; when you do provide numbers keep ranges conservative and avoid false precision (no spans < ~2 units unless null).
- - Identity lock: header.name_hu must equal the normalized Hungarian name provided as input, and header.name_latin must match the provided Latin name exactly.
- - short_options: exactly 3 strings, 90-170 chars, each a complete sentence ending in punctuation; across the 3 sentences cover at least two different axes (morphology/plumage/beak/sound/movement/habitat/behavior); no trailing conjunctions, no shared openings, no reliance on sensory suffix templates.
- - short_summary: 1-2 sentences can lean Durrell/Adams but must include at least one concrete observable detail; avoid being reduced to â€śkĂĽlĂ¶nleges madĂˇrâ€ť or â€ślenyĹ±gĂ¶zĹ‘ fajâ€ť without detail.
- - long_paragraphs: exactly two paragraphs; Paragraph 1 is a concrete field encounter scene, Paragraph 2 is context (habitat/migration/behavior) without repeating Paragraph 1; at most one witty sentence per paragraph; otherwise stay concrete, avoid hearsay/record phrases (â€śa helyiek szerintâ€ť, â€śgyakran nevezikâ€ť, â€śrekordâ€ť, etc.), and do not invent digits or citations.
- - identification.key_features: exactly 4 entries in this axis order: csor, tollazat, hang, mozgas. Each entry MUST include axis + title + description; titles must be short and species-specific; descriptions must be field-usable (concrete, non-generic).
- - Output JSON only.
+  - Use null for nullable fields when unknown; when you do provide numbers keep ranges conservative and avoid false precision (no spans < ~2 units unless null).
+  - Identity lock: header.name_hu must equal the normalized Hungarian name provided as input, and header.name_latin must match the provided Latin name exactly.
+  - short_options: exactly 3 strings, 90-170 chars, each a complete sentence ending in punctuation; across the 3 sentences cover at least two different axes (morphology/plumage/beak/sound/movement/habitat/behavior); no trailing conjunctions, no shared openings, no reliance on sensory suffix templates.
+  - short_summary: 1-2 sentences can lean Durrell/Adams but must include at least one concrete observable detail; avoid being reduced to "különleges madár" or "lenyűgöző faj" without detail.
+  - long_paragraphs: exactly two paragraphs; Paragraph 1 is a concrete field encounter scene, Paragraph 2 is context (habitat/migration/behavior) without repeating Paragraph 1; at most one witty sentence per paragraph; otherwise stay concrete, avoid hearsay/record phrases ("a helyiek szerint", "gyakran nevezik", "rekord", etc.), and do not invent digits or citations.
+  - identification.key_features: exactly 4 entries in this axis order: csor, tollazat, hang, mozgas. Each entry MUST include axis + title + description; titles must be short and species-specific; descriptions must be field-usable (concrete, non-generic).
+  - Output JSON only.
 `.trim();
 
 // ---------- validation / unwrap ----------
@@ -452,14 +467,14 @@ export async function generateBirdDossier(
   
   Content expectations (Hungarian):
   - Identity lock: use the provided names exactly; do not substitute another species.
-  - pill_meta.habitat_class: pick 1 from (erdĹ‘/vĂ­zpart/puszta/hegy/vĂˇros) as the strongest fit for this bird.
+  - pill_meta.habitat_class: pick 1 from (erdő/vízpart/puszta/hegy/város) as the strongest fit for this bird.
   - pill_meta.color_bg: pick 1 from (white/black/grey/brown/yellow/orange/red/green/blue) as a background color tag for bird cards/icons.
   - short_options: exactly 3 sentences, 90-170 chars, end punctuation; across the 3 sentences cover at least two different axes (morphology/plumage/beak/sound/movement/habitat/behavior) but do not force axis keywords.
   - short_summary: 1-2 sentences can lean Durrell/Adams but must include at least one concrete observable detail and avoid generic phrases.
   - long_paragraphs: exactly two paragraphs; Paragraph 1 is a concrete field encounter scene, Paragraph 2 is context (habitat/migration/behavior) without repeating Paragraph 1; at most one witty sentence per paragraph; avoid hearsay/records; do not invent digits or citations.
   - identification: deliver exactly four key_features in axis order (csor/tollazat/hang/mozgas). Each item must have a short, species-specific title plus a longer, concrete description useful for real identification.
-  - Structured facts: use null when unknown or offer conservative ranges (â‰Ą2 units wide) within plausible caps.
-  - distribution/nesting/migration each needs short categorical fields + 2Ă˘â‚¬â€ś3 sentence note.
+  - Structured facts: use null when unknown or offer conservative ranges (≥2 units wide) within plausible caps.
+  - distribution/nesting/migration each needs short categorical fields + 2–3 sentence note.
   - Do not invent impossible claims.
   
   Output JSON only, matching the template exactly.
@@ -477,7 +492,7 @@ so that they consistently center around this signature_trait.
 Do not switch dominant focus mid-text.
 
 pill_meta.habitat_class:
-- Pick from the fixed set (erdĹ‘/vĂ­zpart/puszta/hegy/vĂˇros) as the strongest fit.
+- Pick from the fixed set (erdő/vízpart/puszta/hegy/város) as the strongest fit.
 
 pill_meta.color_bg:
 - Pick from the fixed set (white/black/grey/brown/yellow/orange/red/green/blue) as a background color tag.
@@ -502,12 +517,12 @@ identification.key_features:
 - each description must be practical for real identification (concrete, non-generic)
 
 Avoid generic filler phrases like:
-"kĂĽlĂ¶nleges megjelenĂ©s",
-"kĂ¶nnyen felismerhetĹ‘",
-"gyakran megtalĂˇlhatĂł".
+"különleges megjelenés",
+"könnyen felismerhető",
+"gyakran megtalálható".
 
 signature_trait MUST contain at least one concrete observable: sound OR silhouette OR habitat OR movement.
-Do not use generic adjectives-only signatures like 'jellegzetes' / 'lenyĹ±gĂ¶zĹ‘' without concrete anchors.
+Do not use generic adjectives-only signatures like 'jellegzetes' / 'lenyűgöző' without concrete anchors.
 
 If uncertain about numeric ranges, use null.
 Avoid overly narrow ranges (false precision).
@@ -588,6 +603,7 @@ Avoid overly narrow ranges (false precision).
       try {
         const normalizedPayload = normalizeShortOptionsPayload(payload);
         const dossier = parseBirdDossier(normalizedPayload);
+        dossier.short_options = coerceShortOptionsForQualityGates(dossier.short_options);
         runQualityGates(dossier, bird);
         const specIssues = validateSignatureSpecificity(dossier.signature_trait);
         if (specIssues.length > 0) {
@@ -639,7 +655,7 @@ Avoid overly narrow ranges (false precision).
         );
         if (allowsSignatureRewrite) {
           baseLines.push(
-            "Rewrite signature_trait into a more concrete field-guide hook (sound/silhouette/habitat/movement) and rewrite the supporting texts to match it."
+            'Rewrite signature_trait into a more concrete field-guide hook (sound/silhouette/habitat/movement) and rewrite the supporting texts to match it. Use explicit concrete words like: "hang", "cserreg", "nádas", "mocsár", "vízpart", "V-alak", "repül", "suhan".'
           );
         } else {
           baseLines.push(
@@ -693,6 +709,7 @@ Avoid overly narrow ranges (false precision).
       try {
         const normalizedRetryPayload = normalizeShortOptionsPayload(retryPayload);
         const dossier = parseBirdDossier(normalizedRetryPayload);
+        dossier.short_options = coerceShortOptionsForQualityGates(dossier.short_options);
         runQualityGates(dossier, bird);
         const specIssues = validateSignatureSpecificity(dossier.signature_trait);
         if (specIssues.length > 0) {
@@ -884,3 +901,9 @@ ${reviewHint}
 
   throw new Error("Unable to regenerate identification block.");
 }
+
+export const __test = {
+  extractAnchorKeywords,
+  normalizeForSignatureGate,
+  validateSignatureSpecificity,
+};

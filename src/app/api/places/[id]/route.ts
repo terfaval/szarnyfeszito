@@ -167,6 +167,27 @@ export async function PATCH(request: Request, ctx: { params: Promise<{ id: strin
         { status: 409 }
       );
     }
+
+    const { data: heroImage, error: heroError } = await supabaseServerClient
+      .from("images")
+      .select("id")
+      .eq("entity_type", "place")
+      .eq("entity_id", existing.id)
+      .eq("variant", "place_hero_spring_v1")
+      .eq("is_current", true)
+      .eq("review_status", "approved")
+      .maybeSingle();
+
+    if (heroError) {
+      return NextResponse.json({ error: "Unable to validate place hero image." }, { status: 500 });
+    }
+
+    if (!heroImage) {
+      return NextResponse.json(
+        { error: "Place is not publish-ready.", missing: ["image.place_hero_spring_v1"] },
+        { status: 409 }
+      );
+    }
   }
 
   const nextRevision =

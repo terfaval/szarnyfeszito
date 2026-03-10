@@ -1,4 +1,5 @@
 import { Bird } from "@/types/bird";
+import type { Place } from "@/types/place";
 import {
   ImageRecord,
   ImageReviewStatus,
@@ -8,6 +9,7 @@ import {
 import { createHash, randomUUID } from "crypto";
 import { supabaseServerClient } from "@/lib/supabaseServerClient";
 import { getBirdById, updateBird } from "@/lib/birdService";
+import { getLatestApprovedContentBlockForPlace } from "@/lib/placeContentService";
 import {
   IMAGE_ACCURACY_INPUTS,
   IMAGE_STYLE_CONFIG_ID_ICONIC,
@@ -35,6 +37,10 @@ const REQUIRED_SPECS: ImageSpec[] = [
 const OPTIONAL_SPECS: ImageSpec[] = [
   { style_family: "scientific", variant: "flight_clean" },
   { style_family: "scientific", variant: "nesting_clean" },
+];
+
+const PLACE_HERO_SPECS: ImageSpec[] = [
+  { style_family: "scientific", variant: "place_hero_spring_v1" },
 ];
 
 type BuiltImageSpec = {
@@ -73,12 +79,15 @@ export type ImageGenerationResult = {
 };
 
 function buildVersionedObjectPath(args: {
-  bird: Bird;
+  entityType: "bird" | "place" | "phenomenon";
+  entitySlug: string;
   styleFamily: string;
   variant: string;
   imageId: string;
 }) {
-  return `birds/${args.bird.slug}/${args.styleFamily}/${args.variant}/${args.imageId}.png`;
+  const root =
+    args.entityType === "bird" ? "birds" : args.entityType === "place" ? "places" : "phenomena";
+  return `${root}/${args.entitySlug}/${args.styleFamily}/${args.variant}/${args.imageId}.png`;
 }
 
 async function uploadPngToStorage(args: {
@@ -130,9 +139,9 @@ function sha256Hex(value: unknown) {
   return createHash("sha256").update(text).digest("hex");
 }
 
-function deterministicSeed(args: { birdId: string; styleFamily: string; variant: string }) {
+function deterministicSeed(args: { entityId: string; styleFamily: string; variant: string }) {
   const digest = createHash("sha256")
-    .update(`${args.birdId}:${args.styleFamily}:${args.variant}`)
+    .update(`${args.entityId}:${args.styleFamily}:${args.variant}`)
     .digest();
   const seed = digest.readUInt32BE(0) % 2147483647;
   return seed;
@@ -301,7 +310,7 @@ export async function generateImagesForBird(
         variant: spec.variant,
         styleConfigId,
         seed: deterministicSeed({
-          birdId: bird.id,
+          entityId: bird.id,
           styleFamily: spec.style_family,
           variant: spec.variant,
         }),
@@ -342,7 +351,8 @@ export async function generateImagesForBird(
   const generateOne = async (spec: BuiltImageSpec): Promise<ImageGenerationResult> => {
     const imageId = randomUUID();
     const storageObjectPath = buildVersionedObjectPath({
-      bird,
+      entityType: "bird",
+      entitySlug: bird.slug,
       styleFamily: spec.styleFamily,
       variant: spec.variant,
       imageId,
@@ -372,8 +382,9 @@ export async function generateImagesForBird(
       });
 
       const generated = await provider.generate({
-        birdId: bird.id,
-        birdSlug: bird.slug,
+        entityType: "bird",
+        entityId: bird.id,
+        entitySlug: bird.slug,
         styleFamily: spec.styleFamily,
         variant: spec.variant,
         promptPayload: spec.promptPayload,
@@ -514,6 +525,291 @@ export async function generateImagesForBird(
       : bird;
 
   return { bird: updatedBird, required_success, results };
+}
+
+export const PLACE_HERO_VARIANT: ImageVariant = "place_hero_spring_v1";
+
+export async function getCurrentPlaceHeroImage(placeId: string): Promise<ImageRecord | null> {
+  const { data, error } = await supabaseServerClient
+    .from("images")
+    .select("*")
+    .eq("entity_type", "place")
+    .eq("entity_id", placeId)
+    .eq("variant", PLACE_HERO_VARIANT)
+    .eq("is_current", true)
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  return (data ?? null) as ImageRecord | null;
+}
+
+export async function getApprovedCurrentPlaceHeroImage(placeId: string): Promise<ImageRecord | null> {
+  const { data, error } = await supabaseServerClient
+    .from("images")
+    .select("*")
+    .eq("entity_type", "place")
+    .eq("entity_id", placeId)
+    .eq("variant", PLACE_HERO_VARIANT)
+    .eq("is_current", true)
+    .eq("review_status", "approved")
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  return (data ?? null) as ImageRecord | null;
+}
+
+export async function generateHeroImageForPlace(
+  place: Place,
+  options: { forceRegenerate?: boolean } = {}
+): Promise<{
+  place: Place;
+  required_success: boolean;
+  results: ImageGenerationResult[];
+}> {
+  if (place.status === "published") {
+    throw new Error("Images cannot be generated after a place is published.");
+  }
+
+  const safeSlug = (place.slug ?? "").trim() || place.id;
+
+  const { data: currentImages, error: currentImagesError } = await supabaseServerClient
+    .from("images")
+    .select("variant, review_comment, review_status")
+    .eq("entity_type", "place")
+    .eq("entity_id", place.id)
+    .eq("variant", PLACE_HERO_VARIANT)
+    .eq("is_current", true);
+
+  if (currentImagesError) {
+    throw currentImagesError;
+  }
+
+  const reviewNoteByVariant = new Map<ImageVariant, string>();
+  const reviewStatusByVariant = new Map<ImageVariant, ImageReviewStatus>();
+  (currentImages ?? []).forEach((row) => {
+    const variant = row.variant as ImageVariant | undefined;
+    const note = typeof row.review_comment === "string" ? row.review_comment.trim() : "";
+    const reviewStatus = row.review_status as ImageReviewStatus | undefined;
+    if (variant) {
+      if (reviewStatus) {
+        reviewStatusByVariant.set(variant, reviewStatus);
+      }
+      if (note) {
+        reviewNoteByVariant.set(variant, note);
+      }
+    }
+  });
+
+  if (reviewStatusByVariant.get(PLACE_HERO_VARIANT) === "approved") {
+    return { place, required_success: true, results: [] };
+  }
+
+  if ((currentImages ?? []).length > 0 && !options.forceRegenerate) {
+    throw new Error("Place hero image can only be regenerated when force_regenerate=true.");
+  }
+
+  const approvedContent = await getLatestApprovedContentBlockForPlace(place.id);
+  const variants = approvedContent?.blocks_json?.variants ?? null;
+  const springSnippet = variants?.seasonal_snippet?.spring ?? null;
+
+  const provider = getImageProvider();
+  const results: ImageGenerationResult[] = [];
+
+  const spec = PLACE_HERO_SPECS[0];
+  const styleConfigId = IMAGE_STYLE_CONFIG_ID_SCIENTIFIC;
+  const reviewNote = reviewNoteByVariant.get(spec.variant) ?? null;
+
+  const built: BuiltImageSpec = {
+    styleFamily: spec.style_family,
+    variant: spec.variant,
+    styleConfigId,
+    seed: deterministicSeed({
+      entityId: place.id,
+      styleFamily: spec.style_family,
+      variant: spec.variant,
+    }),
+    promptPayload: {
+      place: {
+        id: place.id,
+        slug: safeSlug,
+        name: place.name,
+        place_type: place.place_type,
+        region_landscape: place.region_landscape ?? null,
+        county: place.county ?? null,
+        nearest_city: place.nearest_city ?? null,
+        location_precision: place.location_precision,
+        sensitivity_level: place.sensitivity_level,
+        notable_units_json: place.notable_units_json ?? null,
+      },
+      ui_variants: variants
+        ? {
+            teaser: variants.teaser ?? null,
+            seasonal_snippet_spring: springSnippet,
+          }
+        : null,
+      intent: "place_hero_spring_scientific_realistic",
+      review_note: reviewNote,
+      style_family: spec.style_family,
+      variant: spec.variant,
+      style_config_id: styleConfigId,
+    },
+    isRequired: true,
+  };
+
+  const imageId = randomUUID();
+  const storageObjectPath = buildVersionedObjectPath({
+    entityType: "place",
+    entitySlug: safeSlug,
+    styleFamily: built.styleFamily,
+    variant: built.variant,
+    imageId,
+  });
+  const storagePath = `${SUPABASE_IMAGE_BUCKET}/${storageObjectPath}`;
+
+  const prompt_hash = sha256Hex(built.promptPayload);
+  const spec_hash = sha256Hex({
+    styleFamily: built.styleFamily,
+    variant: built.variant,
+    styleConfigId: built.styleConfigId,
+    seed: built.seed,
+    prompt_hash,
+  });
+
+  const generateOne = async (): Promise<ImageGenerationResult> => {
+    try {
+      const startedAt = new Date().toISOString();
+      console.info("[image-gen] start", {
+        place_id: place.id,
+        variant: built.variant,
+        style_family: built.styleFamily,
+        required: built.isRequired,
+        seed: built.seed,
+        storage_path: storagePath,
+        image_id: imageId,
+        started_at: startedAt,
+      });
+
+      const generated = await provider.generate({
+        entityType: "place",
+        entityId: place.id,
+        entitySlug: safeSlug,
+        styleFamily: built.styleFamily,
+        variant: built.variant,
+        promptPayload: built.promptPayload,
+        seed: built.seed,
+        styleConfigId: built.styleConfigId,
+      });
+
+      if (generated.mimeType !== "image/png") {
+        throw new Error(`Invalid mimeType returned by provider: ${generated.mimeType}`);
+      }
+
+      if (!generated.buffer || generated.buffer.length === 0) {
+        throw new Error("Provider returned empty image buffer.");
+      }
+
+      await uploadPngToStorage({
+        objectPath: storageObjectPath,
+        buffer: generated.buffer,
+      });
+
+      const now = new Date().toISOString();
+      const providerModel = generated.providerModel ?? null;
+      const { widthPx, heightPx } = parsePngDimensions(generated.buffer);
+
+      const { error: unsetError } = await supabaseServerClient
+        .from("images")
+        .update({ is_current: false, updated_at: now })
+        .eq("entity_type", "place")
+        .eq("entity_id", place.id)
+        .eq("style_family", built.styleFamily)
+        .eq("variant", built.variant)
+        .eq("is_current", true);
+
+      if (unsetError) {
+        throw unsetError;
+      }
+
+      const { error: insertError } = await supabaseServerClient.from("images").insert({
+        id: imageId,
+        entity_type: "place",
+        entity_id: place.id,
+        style_family: built.styleFamily,
+        variant: built.variant,
+        storage_path: storagePath,
+        is_current: true,
+        review_status: "draft",
+        review_comment: null,
+        version: `${AI_MODEL_IMAGE}:${now}`,
+        style_config_id: built.styleConfigId,
+        seed: generated.seed ?? built.seed ?? null,
+        width_px: widthPx,
+        height_px: heightPx,
+        provider_model: providerModel,
+        spec_hash,
+        prompt_hash,
+        created_by: "ai",
+        updated_at: now,
+      });
+
+      if (insertError) {
+        throw insertError;
+      }
+
+      return {
+        variant: built.variant,
+        style_family: built.styleFamily,
+        required: true,
+        status: "success",
+        storage_path: storagePath,
+        provider_model: providerModel,
+        width_px: widthPx,
+        height_px: heightPx,
+        seed: generated.seed ?? built.seed ?? null,
+      };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unknown error.";
+      console.info("[image-gen] failed", {
+        place_id: place.id,
+        variant: built.variant,
+        style_family: built.styleFamily,
+        required: true,
+        error_message: message,
+      });
+      return {
+        variant: built.variant,
+        style_family: built.styleFamily,
+        required: true,
+        status: "failed",
+        error_code: "UNKNOWN",
+        error_message: message,
+      };
+    }
+  };
+
+  results.push(await generateOne());
+
+  const { data: requiredCurrent, error: requiredCurrentError } = await supabaseServerClient
+    .from("images")
+    .select("variant")
+    .eq("entity_type", "place")
+    .eq("entity_id", place.id)
+    .eq("is_current", true)
+    .eq("variant", PLACE_HERO_VARIANT);
+
+  if (requiredCurrentError) {
+    throw requiredCurrentError;
+  }
+
+  const required_success = (requiredCurrent ?? []).length > 0;
+
+  return { place, required_success, results };
 }
 
 export async function listImagesForBird(birdId: string): Promise<ImageRecord[]> {
@@ -748,7 +1044,8 @@ export async function uploadManualBirdImageVariant(args: {
 
   const imageId = randomUUID();
   const objectPath = buildVersionedObjectPath({
-    bird,
+    entityType: "bird",
+    entitySlug: bird.slug,
     styleFamily: args.styleFamily,
     variant: args.variant,
     imageId,
@@ -876,7 +1173,9 @@ export async function updateImageReviewStatus(
     throw error ?? new Error("Unable to update image status.");
   }
 
-  await advanceBirdIfImagesApproved(data.entity_id);
+  if (data.entity_type === "bird") {
+    await advanceBirdIfImagesApproved(data.entity_id);
+  }
 
   return data;
 }

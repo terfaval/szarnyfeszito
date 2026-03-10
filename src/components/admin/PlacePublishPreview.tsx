@@ -56,6 +56,7 @@ export default function PlacePublishPreview({
   marker,
   leafletRegion,
   content,
+  heroImageUrl,
   currentSeason,
   birds,
   showSeasonal,
@@ -64,6 +65,7 @@ export default function PlacePublishPreview({
   marker: { lat: number | null; lng: number | null } | null;
   leafletRegion: { geojson: GeoJsonObject | null; bbox: { south: number; west: number; north: number; east: number } | null };
   content: PlaceUiVariantsV1 | null;
+  heroImageUrl?: string | null;
   currentSeason: SeasonKey;
   birds: PlacePublishBird[];
   showSeasonal: boolean;
@@ -82,6 +84,13 @@ export default function PlacePublishPreview({
   const notableUnits = (place.notable_units_json ?? []) as PlaceNotableUnit[];
   const hasNotableUnits = notableUnits.length > 0;
 
+  const subtitle = variants && nonEmpty(variants.teaser) ? variants.teaser : "";
+  const localizationPills = [
+    place.place_type,
+    place.county ? place.county : "",
+    place.nearest_city ? place.nearest_city : "",
+  ].filter((value) => nonEmpty(value));
+
   return (
     <section className={styles.previewRoot} aria-label="Place publish preview">
       <header className="admin-heading">
@@ -93,6 +102,25 @@ export default function PlacePublishPreview({
       </header>
 
       <Card className="stack">
+        {heroImageUrl ? (
+          <div className={styles.heroImageFrame} aria-label="Approved hero image">
+            <Image src={heroImageUrl} alt="" fill className={styles.heroImage} sizes="100vw" priority />
+            <div className={styles.heroOverlay} aria-label="Hero overlay">
+              <div className={styles.heroPills}>
+                <span className={`${styles.heroPill} ${styles.heroPillName}`}>
+                  {place.name || place.slug || "Untitled place"}
+                </span>
+                {subtitle ? <span className={styles.heroPill}>{subtitle}</span> : null}
+                {localizationPills.map((pill) => (
+                  <span key={pill} className={styles.heroPill}>
+                    {pill}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+        ) : null}
+
         <header className={styles.placeHeader}>
           <p className={styles.placeMetaLine}>
             {place.place_type}
@@ -105,12 +133,6 @@ export default function PlacePublishPreview({
 
         {variants ? (
           <>
-            {nonEmpty(variants.short) ? (
-              <p className={styles.copyBlock}>{variants.short}</p>
-            ) : (
-              <p className="admin-note-small">No approved `variants.short` yet.</p>
-            )}
-
             <div className={styles.heroMap}>
               {place.location_precision === "hidden" ? (
                 <div className="admin-panel admin-panel--muted">
@@ -143,6 +165,12 @@ export default function PlacePublishPreview({
                 </div>
               )}
             </div>
+
+            {nonEmpty(variants.short) ? (
+              <p className={styles.copyBlock}>{variants.short}</p>
+            ) : (
+              <p className="admin-note-small">No approved `variants.short` yet.</p>
+            )}
 
             {nonEmpty(variants.long) ? <p className={styles.copyBlock}>{variants.long}</p> : null}
             {nonEmpty(variants.ethics_tip) ? (
@@ -231,6 +259,12 @@ export default function PlacePublishPreview({
                     <p className="admin-note-small">Nincs kitöltve.</p>
                   )}
                 </div>
+                {hasNearbyProtection ? (
+                  <div className="admin-panel" aria-label="Helyi védelmi szervezetek és programok">
+                    <p className="admin-subheading">Helyi védelem</p>
+                    <p className={styles.copyBlock}>{variants.nearby_protection_context}</p>
+                  </div>
+                ) : null}
               </div>
 
               <div className="admin-panel" aria-label="Notable units">
@@ -269,13 +303,6 @@ export default function PlacePublishPreview({
                   />
                 </div>
                 <p className={styles.didYouKnowText}>{variants.did_you_know}</p>
-              </div>
-            ) : null}
-
-            {hasNearbyProtection ? (
-              <div className="admin-panel" aria-label="Helyi védelmi szervezetek és programok">
-                <p className="admin-subheading">Helyi védelem</p>
-                <p className={styles.copyBlock}>{variants.nearby_protection_context}</p>
               </div>
             ) : null}
           </>

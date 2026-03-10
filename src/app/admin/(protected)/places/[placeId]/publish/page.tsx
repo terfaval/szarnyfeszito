@@ -3,10 +3,11 @@ import { isUuid } from "@/lib/birdService";
 import { getPlaceById, getPlaceBySlug, getPlaceMarkerById } from "@/lib/placeService";
 import { getLatestApprovedContentBlockForPlace } from "@/lib/placeContentService";
 import { listApprovedPublishedBirdLinksForPlace } from "@/lib/placeBirdService";
-import { listApprovedCurrentIconicImagesForBirds, getSignedImageUrl } from "@/lib/imageService";
+import { getCurrentPlaceHeroImage, listApprovedCurrentIconicImagesForBirds, getSignedImageUrl } from "@/lib/imageService";
 import { getCurrentSeasonKey } from "@/lib/season";
 import { getDistributionRegionBboxesById, getDistributionRegionGeometriesById } from "@/lib/distributionRegionCatalogService";
 import PlacePublishAction from "@/components/admin/PlacePublishAction";
+import PlaceHeroImagePanel from "@/components/admin/PlaceHeroImagePanel";
 import PlacePublishPreview from "@/components/admin/PlacePublishPreview";
 import type { GeoJsonObject } from "geojson";
 
@@ -39,6 +40,11 @@ export default async function PlacePublishPage({
   const approved = await getLatestApprovedContentBlockForPlace(place.id);
   const currentSeason = getCurrentSeasonKey();
   const marker = await getPlaceMarkerById(place.id);
+
+  const heroImage = await getCurrentPlaceHeroImage(place.id);
+  const heroPreviewUrl = heroImage?.storage_path ? await getSignedImageUrl(heroImage.storage_path) : null;
+  const heroImageWithPreview = heroImage ? { ...heroImage, previewUrl: heroPreviewUrl } : null;
+  const heroApprovedUrl = heroImage?.review_status === "approved" ? heroPreviewUrl : null;
 
   const leafletRegionId = place.leaflet_region_id?.trim() ?? "";
   let leafletRegion: { geojson: GeoJsonObject | null; bbox: { south: number; west: number; north: number; east: number } | null } =
@@ -115,14 +121,20 @@ export default async function PlacePublishPage({
     }
   }
 
+  if (!heroImage || heroImage.review_status !== "approved") {
+    missing.push("image.place_hero_spring_v1");
+  }
+
   return (
     <Card className="place-panel place-publish stack">
+      <PlaceHeroImagePanel placeId={place.id} placeStatus={place.status} image={heroImageWithPreview} />
       <PlacePublishAction place={place} missing={missing} />
       <PlacePublishPreview
         place={place}
         marker={marker}
         leafletRegion={leafletRegion}
         content={approved?.blocks_json ?? null}
+        heroImageUrl={heroApprovedUrl}
         currentSeason={currentSeason}
         birds={previewBirds}
         showSeasonal={place.status === "published" || missing.length === 0}

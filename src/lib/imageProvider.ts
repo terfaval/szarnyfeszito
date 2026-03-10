@@ -7,8 +7,9 @@ import { AI_MODEL_IMAGE, OPENAI_API_KEY } from "@/lib/aiConfig";
 import type { ImageStyleFamily, ImageVariant } from "@/types/image";
 
 export type GenerateImageInput = {
-  birdId: string;
-  birdSlug: string;
+  entityType: "bird" | "place" | "phenomenon";
+  entityId: string;
+  entitySlug: string;
   styleFamily: ImageStyleFamily;
   variant: ImageVariant;
   promptPayload: Record<string, unknown>;
@@ -53,35 +54,44 @@ function parseSizePx(size: string) {
 
 function buildOpenAIPrompt(input: GenerateImageInput) {
   const base = [
-    "You are generating a PNG image for a Hungarian bird field guide app.",
-    "High priority: anatomy accuracy, recognizability, consistency, educational natural-history illustration (not artistic).",
+    "You are generating a PNG image for a Hungarian nature guide app.",
+    "High priority: accuracy, recognizability, consistency, educational natural-history illustration (not artistic).",
     "",
     `Style family: ${input.styleFamily}`,
     `Variant: ${input.variant}`,
-    `Bird slug: ${input.birdSlug}`,
+    `Entity type: ${input.entityType}`,
+    `Entity slug: ${input.entitySlug}`,
     input.seed !== undefined ? `Seed (best-effort): ${input.seed ?? "null"}` : "",
     "",
     "Constraints / negatives:",
     "- NO photograph, NO hyperrealism, NO 3D render, NO CGI, NO game art, NO cartoon, NO anime, NO fantasy.",
     "- NO watermark, NO text, NO labels.",
     "- Do NOT invent anatomy or extra limbs.",
+    input.entityType !== "bird"
+      ? "- Do NOT include birds/animals unless explicitly requested by the structured JSON hints."
+      : "",
     "",
     "Variant rules:",
     input.styleFamily === "scientific"
       ? [
           "- Natural history plate / scientific illustration style.",
-          "- Full body visible, mostly side view, mild perspective, no extreme distortion.",
           "- Background: very light, neutral, slightly textured paper feel.",
           "- Colors: soft natural palette (muted greens/browns/beige/greys). Avoid neon/vibrant digital colors.",
+          input.entityType === "bird"
+            ? "- Bird: full body visible, mostly side view, mild perspective, no extreme distortion."
+            : "- Place: realistic habitat / landscape depiction; no maps, no UI, no text; keep it credible.",
           input.variant === "main_habitat"
-            ? "- main_habitat: include only a subtle habitat hint (e.g., reeds, shallow water, grass clumps, branch). Keep background simple."
+             ? "- main_habitat: include only a subtle habitat hint (e.g., reeds, shallow water, grass clumps, branch). Keep background simple."
+             : "",
+          input.variant === "place_hero_spring_v1"
+            ? "- place_hero_spring_v1: spring highlight moment for the place; realistic, scientific illustration feel; wide scenic composition; no people; no buildings unless clearly implied by the place metadata; no animals unless requested."
             : "",
           input.variant === "flight_clean"
-            ? "- flight_clean: clean neutral background, bird in flight, wings fully visible, wing structure readable."
-            : "",
+             ? "- flight_clean: clean neutral background, bird in flight, wings fully visible, wing structure readable."
+             : "",
           input.variant === "nesting_clean"
-            ? "- nesting_clean: bird at nest with chicks visible if possible; natural scene, not cartoonish."
-            : "",
+             ? "- nesting_clean: bird at nest with chicks visible if possible; natural scene, not cartoonish."
+             : "",
         ]
           .filter(Boolean)
           .join("\n")

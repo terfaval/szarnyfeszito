@@ -5,6 +5,7 @@ export type ImageVariant =
   | "standing_clean"
   | "flight_clean"
   | "nesting_clean"
+  | "place_hero_spring_v1"
   | "fixed_pose_icon_v1";
 
 export type ImageReviewStatus = "draft" | "reviewed" | "approved";
