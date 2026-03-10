@@ -66,6 +66,17 @@ export default function PlacePublishAction({ place, missing }: PlacePublishActio
         )}
       </Card>
 
+      {place.published_at ? (
+        <p className="admin-note-small">
+          Last published{" "}
+          {new Date(place.published_at).toLocaleString(undefined, {
+            dateStyle: "medium",
+            timeStyle: "short",
+          })}
+          {typeof place.published_revision === "number" ? ` · rev ${place.published_revision}` : ""}
+        </p>
+      ) : null}
+
       <Button
         type="button"
         variant="accent"
@@ -84,4 +95,3 @@ export default function PlacePublishAction({ place, missing }: PlacePublishActio
     </section>
   );
 }
-

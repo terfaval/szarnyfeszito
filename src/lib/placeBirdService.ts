@@ -18,6 +18,45 @@ export async function listPlaceBirdLinks(placeId: string): Promise<PlaceBirdLink
   return (data ?? []) as PlaceBirdLink[];
 }
 
+export type ApprovedPublishedPlaceBirdLink = Pick<
+  PlaceBirdLink,
+  "id" | "place_id" | "bird_id" | "rank" | "frequency_band" | "is_iconic" | "updated_at"
+> & {
+  bird: { id: string; slug: string; name_hu: string } | null;
+};
+
+export async function listApprovedPublishedBirdLinksForPlace(
+  placeId: string
+): Promise<ApprovedPublishedPlaceBirdLink[]> {
+  type RowWithStatus = Pick<
+    PlaceBirdLink,
+    "id" | "place_id" | "bird_id" | "rank" | "frequency_band" | "is_iconic" | "updated_at"
+  > & {
+    bird: { id: string; slug: string; name_hu: string; status?: string } | null;
+  };
+
+  const { data, error } = await supabaseServerClient
+    .from("place_birds")
+    .select("id,place_id,bird_id,rank,frequency_band,is_iconic,updated_at,bird:birds(id,slug,name_hu,status)")
+    .eq("place_id", placeId)
+    .eq("review_status", "approved")
+    .not("bird_id", "is", null)
+    .order("rank", { ascending: true })
+    .order("updated_at", { ascending: false });
+
+  if (error) {
+    throw error;
+  }
+
+  const rows = (data ?? []) as RowWithStatus[];
+  return rows
+    .filter((row) => row.bird?.status === "published")
+    .map((row) => ({
+      ...row,
+      bird: row.bird ? { id: row.bird.id, slug: row.bird.slug, name_hu: row.bird.name_hu } : null,
+    })) as ApprovedPublishedPlaceBirdLink[];
+}
+
 export async function createPlaceBirdLink(input: {
   place_id: string;
   bird_id?: string | null;

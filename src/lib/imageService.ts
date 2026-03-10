@@ -584,6 +584,27 @@ export async function listCurrentIconicImagesForBirds(birdIds: string[]) {
   return (data ?? []) as Array<Pick<ImageRecord, "entity_id" | "storage_path">>;
 }
 
+export async function listApprovedCurrentIconicImagesForBirds(birdIds: string[]) {
+  if (birdIds.length === 0) {
+    return [] as Array<Pick<ImageRecord, "entity_id" | "storage_path">>;
+  }
+
+  const { data, error } = await supabaseServerClient
+    .from("images")
+    .select("entity_id, storage_path")
+    .eq("entity_type", "bird")
+    .eq("variant", "fixed_pose_icon_v1")
+    .eq("is_current", true)
+    .eq("review_status", "approved")
+    .in("entity_id", birdIds);
+
+  if (error) {
+    throw error;
+  }
+
+  return (data ?? []) as Array<Pick<ImageRecord, "entity_id" | "storage_path">>;
+}
+
 async function importLegacyStorageImagesForBird(birdId: string): Promise<ImageRecord[]> {
   const bird = await getBirdById(birdId);
   if (!bird?.slug) {

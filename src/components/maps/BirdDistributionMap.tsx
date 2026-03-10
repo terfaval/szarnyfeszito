@@ -7,6 +7,7 @@ import { MapContainer, TileLayer, GeoJSON } from "react-leaflet";
 import type { PathOptions } from "leaflet";
 import "leaflet/dist/leaflet.css";
 import styles from "./BirdDistributionMap.module.css";
+import { getBasemapTileLayerArgs } from "./basemaps";
 
 const STATUS_COLORS: Record<DistributionStatus, string> = {
   resident: "#BE2D12",
@@ -21,11 +22,6 @@ const LAYER_ORDER: DistributionStatus[] = [
   "wintering",
   "passage",
 ];
-
-const tileUrls = {
-  light: "https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png",
-  dark: "https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png",
-};
 
 export type BirdDistributionMapProps = {
   mapType: "global" | "hungary";
@@ -72,6 +68,10 @@ export default function BirdDistributionMap({
   const center: [number, number] =
     mapType === "global" ? [20, 0] : [47.16, 19.5];
   const zoom = mapType === "global" ? 2 : 6;
+  const tileLayerArgs = useMemo(
+    () => getBasemapTileLayerArgs({ basemap: "bird", isDark }),
+    [isDark]
+  );
 
   const byStatus = useMemo(() => {
     const grouped: Record<DistributionStatus, DistributionRange[]> = {
@@ -139,7 +139,7 @@ export default function BirdDistributionMap({
         keyboard={false}
         attributionControl={false}
       >
-        <TileLayer url={isDark ? tileUrls.dark : tileUrls.light} />
+        <TileLayer url={tileLayerArgs.url} attribution={tileLayerArgs.attribution} />
         {LAYER_ORDER.map((status) => {
           const data = collections[status];
           if (!data) return null;

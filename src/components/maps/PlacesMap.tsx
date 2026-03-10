@@ -1,41 +1,65 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
-import { MapContainer, Marker, TileLayer } from "react-leaflet";
+import { useEffect, useMemo, useState } from "react";
+import { CircleMarker, MapContainer, TileLayer } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import styles from "./PlacesMap.module.css";
-import { ensureLeafletDefaultIcon } from "./leafletIconFix";
+import { DEFAULT_BASEMAP, getBasemapTileLayerArgs } from "./basemaps";
+import type { BasemapId } from "./basemaps";
 import type { PlaceMarker } from "@/types/place";
-
-const tileUrl = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
 
 export type PlacesMapProps = {
   markers: PlaceMarker[];
   selectedSlug: string | null;
   onSelect: (slug: string) => void;
+  basemap?: BasemapId;
 };
 
-export default function PlacesMap({ markers, selectedSlug, onSelect }: PlacesMapProps) {
+export default function PlacesMap({
+  markers,
+  selectedSlug,
+  onSelect,
+  basemap = DEFAULT_BASEMAP,
+}: PlacesMapProps) {
+  const [isDark, setIsDark] = useState(false);
+
   useEffect(() => {
-    ensureLeafletDefaultIcon();
+    const media = window.matchMedia("(prefers-color-scheme: dark)");
+    const update = () => setIsDark(media.matches);
+    update();
+    media.addEventListener("change", update);
+    return () => media.removeEventListener("change", update);
   }, []);
 
   const center = useMemo<[number, number]>(() => [47.16, 19.5], []);
+  const tileLayerArgs = useMemo(
+    () => getBasemapTileLayerArgs({ basemap, isDark }),
+    [basemap, isDark]
+  );
 
   return (
     <div className={`places-map ${styles.layout}`}>
       <MapContainer className={styles.map} center={center} zoom={7} scrollWheelZoom>
-        <TileLayer url={tileUrl} />
+        <TileLayer url={tileLayerArgs.url} attribution={tileLayerArgs.attribution} />
         {markers.map((marker) => {
           if (marker.lat === null || marker.lng === null) return null;
+          const isSelected = selectedSlug === marker.slug;
+          const isDimmed = !!selectedSlug && !isSelected;
           return (
-            <Marker
+            <CircleMarker
               key={marker.id}
-              position={[marker.lat, marker.lng]}
+              center={[marker.lat, marker.lng]}
+              radius={isSelected ? 7 : 5}
+              pathOptions={{
+                color: isSelected ? "#0f172a" : "#0b3b8c",
+                weight: isSelected ? 2 : 1,
+                fillColor: isSelected ? "#2563eb" : "#60a5fa",
+                fillOpacity: isDimmed ? 0.55 : 0.9,
+                opacity: isDimmed ? 0.55 : 1,
+              }}
               eventHandlers={{
                 click: () => onSelect(marker.slug),
               }}
-              opacity={selectedSlug && selectedSlug !== marker.slug ? 0.65 : 1}
             />
           );
         })}
@@ -43,4 +67,3 @@ export default function PlacesMap({ markers, selectedSlug, onSelect }: PlacesMap
     </div>
   );
 }
-

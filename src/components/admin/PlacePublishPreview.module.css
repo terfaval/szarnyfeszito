@@ -1,0 +1,109 @@
+.previewRoot {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.placeHeader {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.placeMetaLine {
+  font-size: 0.75rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.placeName {
+  font-size: 1.6rem;
+  font-weight: 600;
+  color: var(--brand-warm);
+}
+
+.teaser {
+  color: var(--brand-ink);
+  font-size: 0.95rem;
+}
+
+.copyBlock {
+  white-space: pre-wrap;
+  color: var(--foreground);
+  line-height: 1.55;
+  font-size: 0.95rem;
+}
+
+.details {
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.03);
+  padding: 0.9rem 1rem;
+}
+
+.detailsSummary {
+  cursor: pointer;
+  font-size: 0.85rem;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--brand-warm);
+}
+
+.highlightBox {
+  border-radius: 14px;
+  border: 1px solid rgba(241, 161, 30, 0.35);
+  background: rgba(241, 161, 30, 0.12);
+  padding: 0.9rem 1rem;
+}
+
+.highlightTitle {
+  font-size: 0.75rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: #f1a11e;
+}
+
+.birdRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  align-items: center;
+}
+
+.birdLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: 9999px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.02);
+  padding: 0.35rem 0.6rem;
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 0.2s ease;
+}
+
+.birdLink:hover,
+.birdLink:focus-visible {
+  border-color: rgba(var(--brand-ink-rgb), 0.8);
+}
+
+.birdName {
+  max-width: 0;
+  opacity: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  transition: max-width 0.2s ease, opacity 0.2s ease;
+  font-size: 0.85rem;
+  color: var(--foreground);
+}
+
+.birdLink:hover .birdName,
+.birdLink:focus-visible .birdName {
+  max-width: 14rem;
+  opacity: 1;
+}
+
