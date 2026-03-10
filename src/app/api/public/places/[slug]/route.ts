@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { supabaseServerClient } from "@/lib/supabaseServerClient";
 import { getPlaceBySlug } from "@/lib/placeService";
 import { getLatestApprovedContentBlockForPlace } from "@/lib/placeContentService";
+import { placeUiVariantsSchemaV1 } from "@/lib/placeContentSchema";
 
 export async function GET(_request: Request, ctx: { params: Promise<{ slug: string }> }) {
   const { slug } = await ctx.params;
@@ -13,6 +14,16 @@ export async function GET(_request: Request, ctx: { params: Promise<{ slug: stri
 
   const contentBlock = await getLatestApprovedContentBlockForPlace(place.id);
   if (!contentBlock || contentBlock.review_status !== "approved" || !contentBlock.blocks_json) {
+    return NextResponse.json({ error: "Place content is not available." }, { status: 404 });
+  }
+
+  const parsedContent = placeUiVariantsSchemaV1.safeParse(contentBlock.blocks_json);
+  if (!parsedContent.success) {
+    console.error("Invalid published place content payload", {
+      place_id: place.id,
+      block_id: contentBlock.id,
+      issues: parsedContent.error.issues,
+    });
     return NextResponse.json({ error: "Place content is not available." }, { status: 404 });
   }
 
@@ -50,7 +61,7 @@ export async function GET(_request: Request, ctx: { params: Promise<{ slug: stri
         best_visit_note: place.best_visit_note,
         notable_units_json: place.notable_units_json,
       },
-      content: contentBlock.blocks_json,
+      content: parsedContent.data,
       place_birds: birdLinks ?? [],
     },
   });
