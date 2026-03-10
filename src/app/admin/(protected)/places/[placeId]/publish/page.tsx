@@ -38,7 +38,16 @@ export default async function PlacePublishPage({
   const currentSeason = getCurrentSeasonKey();
 
   const placeBirds = await listApprovedPublishedBirdLinksForPlace(place.id);
-  const birdIds = placeBirds.map((row) => row.bird?.id).filter((id): id is string => Boolean(id));
+
+  const isBirdVisibleInSeason = (row: (typeof placeBirds)[number]) => {
+    if (currentSeason === "spring") return row.visible_in_spring;
+    if (currentSeason === "summer") return row.visible_in_summer;
+    if (currentSeason === "autumn") return row.visible_in_autumn;
+    return row.visible_in_winter;
+  };
+
+  const seasonalBirdRows = placeBirds.filter(isBirdVisibleInSeason);
+  const birdIds = seasonalBirdRows.map((row) => row.bird?.id).filter((id): id is string => Boolean(id));
   const iconicRows = await listApprovedCurrentIconicImagesForBirds(birdIds);
   const storagePathByBirdId = new Map(iconicRows.map((row) => [row.entity_id, row.storage_path]));
   const signedPairs = await Promise.all(
@@ -50,7 +59,7 @@ export default async function PlacePublishPage({
   );
   const iconicUrlByBirdId = new Map(signedPairs);
 
-  const previewBirds = placeBirds
+  const previewBirds = seasonalBirdRows
     .filter((row) => row.bird)
     .map((row) => ({
       id: row.bird!.id,
@@ -93,6 +102,7 @@ export default async function PlacePublishPage({
         content={approved?.blocks_json ?? null}
         currentSeason={currentSeason}
         birds={previewBirds}
+        showSeasonal={place.status === "published" || missing.length === 0}
       />
     </Card>
   );

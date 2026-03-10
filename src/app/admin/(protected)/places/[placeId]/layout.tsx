@@ -23,6 +23,7 @@ export default async function PlaceEditorLayout({
   const links = {
     general: { href: `/admin/places/${place.id}`, enabled: true },
     birds: { href: `/admin/places/${place.id}/birds`, enabled: true },
+    notable_units: { href: `/admin/places/${place.id}/notable-units`, enabled: true },
     content: { href: `/admin/places/${place.id}/content`, enabled: true },
     publish: { href: `/admin/places/${place.id}/publish`, enabled: true },
   };
@@ -37,4 +38,3 @@ export default async function PlaceEditorLayout({
     </section>
   );
 }
-

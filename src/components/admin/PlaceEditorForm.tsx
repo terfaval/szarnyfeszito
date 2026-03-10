@@ -55,7 +55,6 @@ export default function PlaceEditorForm({ place, marker }: PlaceEditorFormProps)
     parking_note: place.parking_note ?? "",
     best_visit_note: place.best_visit_note ?? "",
     generation_input: place.generation_input ?? "",
-    notable_units_json: place.notable_units_json ? JSON.stringify(place.notable_units_json, null, 2) : "",
   }));
 
   const [saving, setSaving] = useState(false);
@@ -80,19 +79,6 @@ export default function PlaceEditorForm({ place, marker }: PlaceEditorFormProps)
     setError(null);
     setMessage(null);
 
-    let notableUnitsJson: unknown | null | undefined = undefined;
-    if (values.notable_units_json.trim()) {
-      try {
-        notableUnitsJson = JSON.parse(values.notable_units_json);
-      } catch {
-        setError("notable_units_json must be valid JSON.");
-        setSaving(false);
-        return;
-      }
-    } else {
-      notableUnitsJson = null;
-    }
-
     const response = await fetch(`/api/places/${place.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -116,7 +102,6 @@ export default function PlaceEditorForm({ place, marker }: PlaceEditorFormProps)
         parking_note: values.parking_note.trim() || null,
         best_visit_note: values.best_visit_note.trim() || null,
         generation_input: values.generation_input.trim() || null,
-        notable_units_json: notableUnitsJson,
       }),
     });
 
@@ -373,24 +358,6 @@ export default function PlaceEditorForm({ place, marker }: PlaceEditorFormProps)
           onChange={(event) => setValues((p) => ({ ...p, generation_input: event.target.value }))}
           placeholder="Large fishpond system near Fertő lake, important migration stopover."
         />
-      </section>
-
-      <section className="place-meta space-y-4">
-        <p className="admin-subheading">Notable units (JSON)</p>
-        <p className="admin-note-small">
-          Informational sub-units only (not separate Places in v1). Stored as JSON.
-        </p>
-        <label className="form-field">
-          <span className="form-field__label">notable_units_json</span>
-          <div className="form-field__row">
-            <textarea
-              className="input min-h-[160px] font-mono text-xs"
-              value={values.notable_units_json}
-              onChange={(event) => setValues((p) => ({ ...p, notable_units_json: event.target.value }))}
-              placeholder='[{"name":"Nyirkai-Hany","type":"wetland","distance_km":5,"note":"Important restoration site."}]'
-            />
-          </div>
-        </label>
       </section>
 
       <Button type="submit" disabled={saving} variant="primary" className="w-full justify-center">

@@ -16,6 +16,7 @@ type PlaceEditorHeaderProps = {
   links: {
     general: { href: string; enabled: boolean };
     birds: { href: string; enabled: boolean };
+    notable_units: { href: string; enabled: boolean };
     content: { href: string; enabled: boolean };
     publish: { href: string; enabled: boolean };
   };
@@ -31,6 +32,7 @@ export function PlaceEditorHeader({ place, links }: PlaceEditorHeaderProps) {
   const items = [
     { label: "General", key: "general" as const, ...links.general },
     { label: "Birds", key: "birds" as const, ...links.birds },
+    { label: "Notable units", key: "notable_units" as const, ...links.notable_units },
     { label: "Content", key: "content" as const, ...links.content },
     { label: "Publish", key: "publish" as const, ...links.publish },
   ];

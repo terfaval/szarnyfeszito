@@ -20,7 +20,17 @@ export async function listPlaceBirdLinks(placeId: string): Promise<PlaceBirdLink
 
 export type ApprovedPublishedPlaceBirdLink = Pick<
   PlaceBirdLink,
-  "id" | "place_id" | "bird_id" | "rank" | "frequency_band" | "is_iconic" | "updated_at"
+  | "id"
+  | "place_id"
+  | "bird_id"
+  | "rank"
+  | "frequency_band"
+  | "is_iconic"
+  | "visible_in_spring"
+  | "visible_in_summer"
+  | "visible_in_autumn"
+  | "visible_in_winter"
+  | "updated_at"
 > & {
   bird: { id: string; slug: string; name_hu: string } | null;
 };
@@ -30,14 +40,26 @@ export async function listApprovedPublishedBirdLinksForPlace(
 ): Promise<ApprovedPublishedPlaceBirdLink[]> {
   type RowWithStatus = Pick<
     PlaceBirdLink,
-    "id" | "place_id" | "bird_id" | "rank" | "frequency_band" | "is_iconic" | "updated_at"
+    | "id"
+    | "place_id"
+    | "bird_id"
+    | "rank"
+    | "frequency_band"
+    | "is_iconic"
+    | "visible_in_spring"
+    | "visible_in_summer"
+    | "visible_in_autumn"
+    | "visible_in_winter"
+    | "updated_at"
   > & {
     bird: { id: string; slug: string; name_hu: string; status?: string } | null;
   };
 
   const { data, error } = await supabaseServerClient
     .from("place_birds")
-    .select("id,place_id,bird_id,rank,frequency_band,is_iconic,updated_at,bird:birds(id,slug,name_hu,status)")
+    .select(
+      "id,place_id,bird_id,rank,frequency_band,is_iconic,visible_in_spring,visible_in_summer,visible_in_autumn,visible_in_winter,updated_at,bird:birds(id,slug,name_hu,status)"
+    )
     .eq("place_id", placeId)
     .eq("review_status", "approved")
     .not("bird_id", "is", null)

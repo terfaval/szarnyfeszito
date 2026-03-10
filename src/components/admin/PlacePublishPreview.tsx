@@ -30,11 +30,13 @@ export default function PlacePublishPreview({
   content,
   currentSeason,
   birds,
+  showSeasonal,
 }: {
   place: Place;
   content: PlaceUiVariantsV1 | null;
   currentSeason: SeasonKey;
   birds: PlacePublishBird[];
+  showSeasonal: boolean;
 }) {
   const variants = content?.variants ?? null;
   const seasonalText = variants?.seasonal_snippet?.[currentSeason] ?? "";
@@ -103,33 +105,35 @@ export default function PlacePublishPreview({
               </div>
             ) : null}
 
-            <div className="stack">
-              <p className="admin-subheading">Seasonal snippet · {seasonLabel}</p>
-              {nonEmpty(seasonalText) ? (
-                <p className={styles.copyBlock}>{seasonalText}</p>
-              ) : (
-                <p className="admin-note-small">No approved seasonal snippet for {seasonLabel} yet.</p>
-              )}
+            {showSeasonal ? (
+              <div className="stack">
+                <p className="admin-subheading">Seasonal snippet · {seasonLabel}</p>
+                {nonEmpty(seasonalText) ? (
+                  <p className={styles.copyBlock}>{seasonalText}</p>
+                ) : (
+                  <p className="admin-note-small">No approved seasonal snippet for {seasonLabel} yet.</p>
+                )}
 
-              {birds.length ? (
-                <div className={styles.birdRow} aria-label="Linked birds">
-                  {birds.map((bird) => (
-                    <Link
-                      key={bird.id}
-                      href={`/admin/birds/${bird.id}`}
-                      className={styles.birdLink}
-                      aria-label={`Open bird: ${bird.name_hu}`}
-                      title={bird.name_hu}
-                    >
-                      <BirdIcon iconicSrc={bird.iconicSrc} showHabitatBackground={false} size={44} />
-                      <span className={styles.birdName}>{bird.name_hu}</span>
-                    </Link>
-                  ))}
-                </div>
-              ) : (
-                <p className="admin-note-small">No published birds linked to this place yet.</p>
-              )}
-            </div>
+                {birds.length ? (
+                  <div className={styles.birdRow} aria-label="Linked birds">
+                    {birds.map((bird) => (
+                      <Link
+                        key={bird.id}
+                        href={`/admin/birds/${bird.id}`}
+                        className={styles.birdLink}
+                        aria-label={`Open bird: ${bird.name_hu}`}
+                        title={bird.name_hu}
+                      >
+                        <BirdIcon iconicSrc={bird.iconicSrc} showHabitatBackground={false} size={44} />
+                        <span className={styles.birdName}>{bird.name_hu}</span>
+                      </Link>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="admin-note-small">No published birds linked to this place for {seasonLabel}.</p>
+                )}
+              </div>
+            ) : null}
 
             {extras.length ? (
               <div className="stack">
@@ -156,4 +160,3 @@ export default function PlacePublishPreview({
     </section>
   );
 }
-

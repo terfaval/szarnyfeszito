@@ -35,6 +35,7 @@ A JSON pontos sémája:
   - when_to_go: string (mikor érdemes menni)
   - who_is_it_for: string (kezdő/haladó, család, fotós, stb.)
   - nearby_protection_context: string (közeli védelem / természetvédelmi kontextus; csak publikus, általános)
+  - notable_units: array of { name, type?, note } (0-8 elem; csak tájékoztató jellegű, nem érzékeny mikro-helyek)
 `;
 
 function zodIssuesToStrings(error: ZodError) {
@@ -203,7 +204,8 @@ Válasz JSON sémája:
   location_precision: "exact"|"approximate"|"hidden"
   sensitivity_level: "normal"|"sensitive"
 }
-- content: Place UI variants JSON (schema_version="place_ui_variants_v1", language="hu", variants: {...})`;
+  - content: Place UI variants JSON (schema_version="place_ui_variants_v1", language="hu", variants: {...})
+    - variants.notable_units: JSON array (can be empty) of { name, type?, note }`;
 
 export async function generatePlaceDraftFromNameV1(args: {
   place_name: string;
