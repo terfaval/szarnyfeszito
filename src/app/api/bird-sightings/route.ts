@@ -33,9 +33,14 @@ export async function POST(request: Request) {
   }
 
   const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;
+  const placeId = typeof body.placeId === "string" ? body.placeId.trim() : "";
   const birdIdsRaw = body.birdIds;
   const seenAt = typeof body.seenAt === "string" ? body.seenAt : undefined;
   const notes = typeof body.notes === "string" ? body.notes : null;
+
+  if (!placeId || !isUuid(placeId)) {
+    return NextResponse.json({ error: "placeId is required (uuid)." }, { status: 400 });
+  }
 
   if (!Array.isArray(birdIdsRaw)) {
     return NextResponse.json({ error: "birdIds is required (array)." }, { status: 400 });
@@ -54,6 +59,16 @@ export async function POST(request: Request) {
 
   if (uniqueBirdIds.length > 12) {
     return NextResponse.json({ error: "Too many birds selected (max 12)." }, { status: 400 });
+  }
+
+  const { data: place, error: placeError } = await supabaseServerClient
+    .from("places")
+    .select("id")
+    .eq("id", placeId)
+    .maybeSingle();
+
+  if (placeError || !place) {
+    return NextResponse.json({ error: "Place not found." }, { status: 404 });
   }
 
   const { data: birds, error } = await supabaseServerClient
@@ -75,6 +90,7 @@ export async function POST(request: Request) {
   try {
     const sighting = await createBirdSighting({
       createdBy: user.id,
+      placeId,
       birdIds: uniqueBirdIds,
       seenAt,
       notes,
@@ -87,4 +103,3 @@ export async function POST(request: Request) {
     );
   }
 }
-

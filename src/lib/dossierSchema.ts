@@ -105,9 +105,11 @@ const iucnSchema = z.preprocess(
   });
 
   const habitatClassSchema = z.enum(["erdő", "vízpart", "puszta", "hegy", "város"]);
+  const colorBgSchema = z.enum(["white", "black", "grey", "brown", "yellow", "orange", "red", "green", "blue"]);
 
   const pillMetaSchema = z.object({
     habitat_class: habitatClassSchema,
+    color_bg: colorBgSchema.default("grey"),
     region_teaser: trimmedString(),
     size_cm: measurementSchema,
     wingspan_cm: measurementSchema,

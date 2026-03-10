@@ -4,19 +4,7 @@ import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/ui/components/Button";
 import { Input } from "@/ui/components/Input";
-import { Bird, BirdColorTag, BIRD_STATUS_VALUES, BirdStatus } from "@/types/bird";
-
-const COLOR_OPTIONS: Array<{ tag: BirdColorTag; label: string }> = [
-  { tag: "white", label: "Fehér" },
-  { tag: "black", label: "Fekete" },
-  { tag: "grey", label: "Szürke" },
-  { tag: "brown", label: "Barna" },
-  { tag: "yellow", label: "Sárga" },
-  { tag: "orange", label: "Narancs" },
-  { tag: "red", label: "Piros" },
-  { tag: "green", label: "Zöld" },
-  { tag: "blue", label: "Kék" },
-];
+import { Bird, BIRD_STATUS_VALUES, BirdStatus } from "@/types/bird";
 
 type BirdEditorFormProps = {
   bird: Bird;
@@ -29,7 +17,6 @@ export default function BirdEditorForm({ bird }: BirdEditorFormProps) {
     name_hu: bird.name_hu,
     name_latin: bird.name_latin ?? "",
     status: bird.status,
-    color_tags: bird.color_tags ?? [],
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -50,7 +37,6 @@ export default function BirdEditorForm({ bird }: BirdEditorFormProps) {
           name_hu: values.name_hu.trim(),
           name_latin: values.name_latin.trim(),
           status: values.status,
-          color_tags: values.color_tags,
         }),
       });
 
@@ -126,32 +112,6 @@ export default function BirdEditorForm({ bird }: BirdEditorFormProps) {
           </select>
         </div>
       </label>
-
-      <fieldset className="form-field">
-        <legend className="form-field__label">Szín (szűréshez)</legend>
-        <div className="form-field__row" style={{ flexWrap: "wrap", gap: "0.75rem" }}>
-          {COLOR_OPTIONS.map((option) => {
-            const checked = values.color_tags.includes(option.tag);
-            return (
-              <label key={option.tag} className="admin-note-small" style={{ display: "inline-flex", gap: "0.5rem" }}>
-                <input
-                  type="checkbox"
-                  checked={checked}
-                  onChange={() =>
-                    setValues((previous) => {
-                      const next = new Set(previous.color_tags);
-                      if (next.has(option.tag)) next.delete(option.tag);
-                      else next.add(option.tag);
-                      return { ...previous, color_tags: Array.from(next) };
-                    })
-                  }
-                />
-                {option.label}
-              </label>
-            );
-          })}
-        </div>
-      </fieldset>
 
       <Button
         type="submit"

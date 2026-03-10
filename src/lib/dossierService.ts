@@ -21,6 +21,11 @@ export async function createDossierBlockForBird(
   dossier: BirdDossier,
   meta: GenerationMeta
 ): Promise<DossierBlockRecord> {
+  const short = dossier.header.short_summary ?? "";
+  const long = Array.isArray(dossier.long_paragraphs) ? dossier.long_paragraphs.join("\n\n") : "";
+  const did_you_know = dossier.did_you_know ?? "";
+  const ethics_tip = dossier.ethics_tip ?? "";
+
   const payload = {
     entity_type: "bird",
     entity_id: birdId,
@@ -28,11 +33,11 @@ export async function createDossierBlockForBird(
     blocks_json: dossier,
     generation_meta: meta,
     version: `${meta.model}:${meta.generated_at}`,
-    short: "",
-    long: "",
+    short,
+    long,
     feature_block: [],
-    did_you_know: "",
-    ethics_tip: "",
+    did_you_know,
+    ethics_tip,
   };
 
   const { data, error } = await supabaseServerClient
@@ -68,9 +73,12 @@ export async function generateAndPersistDossierForBird(
     generationMeta
   );
 
+  const shouldSetColorTags = Array.isArray(bird.color_tags) ? bird.color_tags.length === 0 : true;
+
   const updatedBird = await updateBird({
     id: bird.id,
     status: "text_generated",
+    color_tags: shouldSetColorTags ? [generationResult.dossier.pill_meta.color_bg] : undefined,
   });
 
   return {

@@ -7,6 +7,7 @@ type ListSightingsOptions = {
 
 type SightingsRow = {
   id: string;
+  place_id: string | null;
   seen_at: string;
   notes: string | null;
   birds: Array<{
@@ -21,6 +22,7 @@ function mapRow(row: SightingsRow): BirdSighting {
 
   return {
     id: row.id,
+    place_id: row.place_id ?? null,
     seen_at: row.seen_at,
     notes: row.notes,
     birds,
@@ -35,7 +37,7 @@ export async function listBirdSightingsForUser(
 
   const { data, error } = await supabaseServerClient
     .from("bird_sightings")
-    .select("id,seen_at,notes,birds:bird_sighting_birds(bird:birds(id,slug,name_hu))")
+    .select("id,place_id,seen_at,notes,birds:bird_sighting_birds(bird:birds(id,slug,name_hu))")
     .eq("created_by", userId)
     .order("seen_at", { ascending: false })
     .limit(limit);
@@ -49,17 +51,18 @@ export async function listBirdSightingsForUser(
 }
 
 export async function createBirdSighting(input: BirdSightingCreateInput): Promise<BirdSighting> {
-  const { createdBy, birdIds, seenAt, notes } = input;
+  const { createdBy, placeId, birdIds, seenAt, notes } = input;
 
   const { data: inserted, error: insertError } = await supabaseServerClient
     .from("bird_sightings")
     .insert({
       created_by: createdBy,
+      place_id: placeId,
       seen_at: seenAt ?? new Date().toISOString(),
       notes: notes ?? null,
       updated_at: new Date().toISOString(),
     })
-    .select("id,seen_at,notes")
+    .select("id,place_id,seen_at,notes")
     .single();
 
   if (insertError || !inserted) {
@@ -83,7 +86,7 @@ export async function createBirdSighting(input: BirdSightingCreateInput): Promis
 
   const { data, error } = await supabaseServerClient
     .from("bird_sightings")
-    .select("id,seen_at,notes,birds:bird_sighting_birds(bird:birds(id,slug,name_hu))")
+    .select("id,place_id,seen_at,notes,birds:bird_sighting_birds(bird:birds(id,slug,name_hu))")
     .eq("id", sightingId)
     .maybeSingle();
 
@@ -93,4 +96,3 @@ export async function createBirdSighting(input: BirdSightingCreateInput): Promis
 
   return mapRow(data as unknown as SightingsRow);
 }
-

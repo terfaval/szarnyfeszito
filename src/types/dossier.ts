@@ -12,8 +12,20 @@ export type BirdDossierSizeRange = {
 
 export type HabitatClass = "erdő" | "vízpart" | "puszta" | "hegy" | "város";
 
+export type BirdIconBackground =
+  | "white"
+  | "black"
+  | "grey"
+  | "brown"
+  | "yellow"
+  | "orange"
+  | "red"
+  | "green"
+  | "blue";
+
 export type BirdDossierPillMeta = {
   habitat_class: HabitatClass;
+  color_bg: BirdIconBackground;
   region_teaser: string;
   size_cm: BirdDossierSizeRange;
   wingspan_cm: BirdDossierSizeRange;

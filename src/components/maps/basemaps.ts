@@ -1,4 +1,4 @@
-export type BasemapId = "bird" | "osm";
+export type BasemapId = "bird" | "osm" | "brand";
 
 export const DEFAULT_BASEMAP: BasemapId = "bird";
 
@@ -23,6 +23,9 @@ const BIRD_TILE = {
 export function getBasemapTileLayerArgs(args: { basemap: BasemapId; isDark: boolean }) {
   if (args.basemap === "osm") {
     return { url: OSM_TILE.url, attribution: OSM_TILE.attribution } as const;
+  }
+  if (args.basemap === "brand") {
+    throw new Error('Basemap "brand" has no tile layer.');
   }
   const tile = args.isDark ? BIRD_TILE.dark : BIRD_TILE.light;
   return { url: tile.url, attribution: tile.attribution } as const;

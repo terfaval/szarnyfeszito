@@ -3,19 +3,33 @@
 import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import BirdIcon from "@/components/admin/BirdIcon";
+import { Button } from "@/ui/components/Button";
+import { Card } from "@/ui/components/Card";
+import { Input } from "@/ui/components/Input";
 import type { Bird, BirdColorTag, BirdSizeCategory, BirdVisibilityCategory } from "@/types/bird";
 import styles from "./BirdSightingFab.module.css";
 
-const COLOR_OPTIONS: Array<{ tag: BirdColorTag; label: string }> = [
-  { tag: "white", label: "Fehér" },
-  { tag: "black", label: "Fekete" },
-  { tag: "grey", label: "Szürke" },
-  { tag: "brown", label: "Barna" },
-  { tag: "yellow", label: "Sárga" },
-  { tag: "orange", label: "Narancs" },
-  { tag: "red", label: "Piros" },
-  { tag: "green", label: "Zöld" },
-  { tag: "blue", label: "Kék" },
+type PlaceListItem = {
+  id: string;
+  slug: string;
+  name: string;
+  place_type: string;
+  status: string;
+  county: string | null;
+  nearest_city: string | null;
+};
+
+const COLOR_OPTIONS: Array<{ tag: BirdColorTag; label: string; swatch: string }> = [
+  { tag: "white", label: "Fehér", swatch: "#f8fafc" },
+  { tag: "black", label: "Fekete", swatch: "#1f2937" },
+  { tag: "grey", label: "Szürke", swatch: "#eef2f7" },
+  { tag: "brown", label: "Barna", swatch: "#f3ede7" },
+  { tag: "yellow", label: "Sárga", swatch: "#fff3cc" },
+  { tag: "orange", label: "Narancs", swatch: "#ffe7d6" },
+  { tag: "red", label: "Piros", swatch: "#fdecef" },
+  { tag: "green", label: "Zöld", swatch: "#e8f3ea" },
+  { tag: "blue", label: "Kék", swatch: "#e8f2ff" },
 ];
 
 const SIZE_OPTIONS: Array<{ value: BirdSizeCategory; label: string }> = [
@@ -43,58 +57,36 @@ function toggleInList<T extends string>(list: T[], value: T) {
 export default function BirdSightingFab() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const [search, setSearch] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+
+  const [placeSearch, setPlaceSearch] = useState("");
+  const [placesLoading, setPlacesLoading] = useState(false);
+  const [places, setPlaces] = useState<PlaceListItem[]>([]);
+  const [selectedPlace, setSelectedPlace] = useState<PlaceListItem | null>(null);
+
+  const [birdSearch, setBirdSearch] = useState("");
   const [sizeCategory, setSizeCategory] = useState<BirdSizeCategory | "">("");
   const [visibilityCategory, setVisibilityCategory] = useState<BirdVisibilityCategory | "">("");
   const [colorTags, setColorTags] = useState<BirdColorTag[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
+
+  const [birdsLoading, setBirdsLoading] = useState(false);
   const [birds, setBirds] = useState<Bird[]>([]);
   const [selectedBirdIds, setSelectedBirdIds] = useState<string[]>([]);
-  const abortRef = useRef<AbortController | null>(null);
 
-  const selectedSet = useMemo(() => new Set(selectedBirdIds), [selectedBirdIds]);
+  const [placeRankByBirdId, setPlaceRankByBirdId] = useState<Map<string, number>>(new Map());
 
-  useEffect(() => {
-    if (!open) return;
+  const [iconsByBirdId, setIconsByBirdId] = useState<
+    Record<string, { habitatSrc: string | null; iconicSrc: string | null }>
+  >({});
 
-    const timeout = setTimeout(async () => {
-      abortRef.current?.abort();
-      const controller = new AbortController();
-      abortRef.current = controller;
+  const [saving, setSaving] = useState(false);
 
-      const params = new URLSearchParams();
-      params.set("status", "published");
-      if (search.trim()) params.set("search", search.trim());
-      if (sizeCategory) params.set("size_category", sizeCategory);
-      if (visibilityCategory) params.set("visibility_category", visibilityCategory);
-      colorTags.forEach((tag) => params.append("color", tag));
+  const placesAbortRef = useRef<AbortController | null>(null);
+  const birdsAbortRef = useRef<AbortController | null>(null);
+  const iconsAbortRef = useRef<AbortController | null>(null);
 
-      setLoading(true);
-      setError(null);
-      try {
-        const response = await fetch(`/api/birds?${params.toString()}`, { signal: controller.signal });
-        const payload = await response.json().catch(() => null);
-        if (!response.ok) {
-          setError(payload?.error ?? "Nem sikerült betölteni a madárlistát.");
-          setBirds([]);
-          return;
-        }
-        setBirds((payload?.data ?? []) as Bird[]);
-      } catch (err) {
-        if ((err as Error)?.name !== "AbortError") {
-          setError("Nem sikerült betölteni a madárlistát.");
-          setBirds([]);
-        }
-      } finally {
-        setLoading(false);
-      }
-    }, 250);
-
-    return () => clearTimeout(timeout);
-  }, [open, search, sizeCategory, visibilityCategory, colorTags]);
+  const selectedBirdSet = useMemo(() => new Set(selectedBirdIds), [selectedBirdIds]);
 
   useEffect(() => {
     if (!open) return;
@@ -105,15 +97,175 @@ export default function BirdSightingFab() {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [open]);
 
-  const selectedBirds = useMemo(() => {
-    if (selectedBirdIds.length === 0) return [];
-    const byId = new Map(birds.map((b) => [b.id, b] as const));
-    return selectedBirdIds.map((id) => byId.get(id)).filter(Boolean) as Bird[];
-  }, [birds, selectedBirdIds]);
+  useEffect(() => {
+    if (!open) return;
+    if (selectedPlace) return;
 
-  const canSave = selectedBirdIds.length > 0 && !saving;
+    const timeout = setTimeout(async () => {
+      placesAbortRef.current?.abort();
+      const controller = new AbortController();
+      placesAbortRef.current = controller;
+
+      const params = new URLSearchParams();
+      if (placeSearch.trim()) params.set("search", placeSearch.trim());
+
+      setPlacesLoading(true);
+      setError(null);
+      try {
+        const response = await fetch(`/api/places?${params.toString()}`, { signal: controller.signal });
+        const payload = await response.json().catch(() => null);
+        if (!response.ok) {
+          setError(payload?.error ?? "Nem sikerült betölteni a helyszíneket.");
+          setPlaces([]);
+          return;
+        }
+        setPlaces((payload?.data ?? []) as PlaceListItem[]);
+      } catch (err) {
+        if ((err as Error)?.name !== "AbortError") {
+          setError("Nem sikerült betölteni a helyszíneket.");
+          setPlaces([]);
+        }
+      } finally {
+        setPlacesLoading(false);
+      }
+    }, 250);
+
+    return () => clearTimeout(timeout);
+  }, [open, selectedPlace, placeSearch]);
+
+  useEffect(() => {
+    if (!open) return;
+    if (!selectedPlace) return;
+
+    const timeout = setTimeout(async () => {
+      birdsAbortRef.current?.abort();
+      const controller = new AbortController();
+      birdsAbortRef.current = controller;
+
+      const params = new URLSearchParams();
+      params.set("status", "published");
+      if (birdSearch.trim()) params.set("search", birdSearch.trim());
+      if (sizeCategory) params.set("size_category", sizeCategory);
+      if (visibilityCategory) params.set("visibility_category", visibilityCategory);
+      colorTags.forEach((tag) => params.append("color", tag));
+
+      setBirdsLoading(true);
+      setError(null);
+      try {
+        const response = await fetch(`/api/birds?${params.toString()}`, { signal: controller.signal });
+        const payload = await response.json().catch(() => null);
+        if (!response.ok) {
+          setError(payload?.error ?? "Nem sikerült betölteni a madarakat.");
+          setBirds([]);
+          return;
+        }
+        setBirds((payload?.data ?? []) as Bird[]);
+      } catch (err) {
+        if ((err as Error)?.name !== "AbortError") {
+          setError("Nem sikerült betölteni a madarakat.");
+          setBirds([]);
+        }
+      } finally {
+        setBirdsLoading(false);
+      }
+    }, 200);
+
+    return () => clearTimeout(timeout);
+  }, [open, selectedPlace, birdSearch, sizeCategory, visibilityCategory, colorTags]);
+
+  useEffect(() => {
+    if (!open) return;
+    if (!selectedPlace) return;
+
+    const controller = new AbortController();
+    const load = async () => {
+      try {
+        const response = await fetch(`/api/places/${selectedPlace.id}/birds`, { signal: controller.signal });
+        const payload = await response.json().catch(() => null);
+        if (!response.ok) {
+          return;
+        }
+
+        const links = (payload?.data?.links ?? []) as Array<{
+          review_status: string;
+          rank: number;
+          bird: { id: string } | null;
+        }>;
+
+        const next = new Map<string, number>();
+        links.forEach((link) => {
+          if (link.review_status !== "approved") return;
+          if (!link.bird?.id) return;
+          next.set(link.bird.id, typeof link.rank === "number" ? link.rank : 999);
+        });
+        setPlaceRankByBirdId(next);
+      } catch {
+        // ignore
+      }
+    };
+
+    load();
+    return () => controller.abort();
+  }, [open, selectedPlace]);
+
+  const sortedBirds = useMemo(() => {
+    const copy = [...birds];
+    copy.sort((a, b) => {
+      const ar = placeRankByBirdId.get(a.id);
+      const br = placeRankByBirdId.get(b.id);
+      const aIsPlace = typeof ar === "number";
+      const bIsPlace = typeof br === "number";
+      if (aIsPlace !== bIsPlace) return aIsPlace ? -1 : 1;
+      if (aIsPlace && bIsPlace) return (ar ?? 999) - (br ?? 999) || a.name_hu.localeCompare(b.name_hu, "hu");
+      return a.name_hu.localeCompare(b.name_hu, "hu");
+    });
+    return copy;
+  }, [birds, placeRankByBirdId]);
+
+  useEffect(() => {
+    if (!open) return;
+    if (!selectedPlace) return;
+
+    const ids = Array.from(
+      new Set([...sortedBirds.slice(0, 40).map((b) => b.id), ...selectedBirdIds])
+    );
+    if (ids.length === 0) return;
+
+    iconsAbortRef.current?.abort();
+    const controller = new AbortController();
+    iconsAbortRef.current = controller;
+
+    const params = new URLSearchParams();
+    params.set("ids", ids.join(","));
+
+    const load = async () => {
+      try {
+        const response = await fetch(`/api/bird-icons?${params.toString()}`, { signal: controller.signal });
+        const payload = await response.json().catch(() => null);
+        if (!response.ok) return;
+        const data = (payload?.data ?? {}) as Record<string, { habitatSrc: string | null; iconicSrc: string | null }>;
+        setIconsByBirdId((prev) => ({ ...prev, ...data }));
+      } catch {
+        // ignore
+      }
+    };
+
+    load();
+    return () => controller.abort();
+  }, [open, selectedPlace, sortedBirds, selectedBirdIds]);
+
+  const selectedBirdIcons = useMemo(() => {
+    return selectedBirdIds.map((id) => ({
+      id,
+      habitatSrc: iconsByBirdId[id]?.habitatSrc ?? null,
+      iconicSrc: iconsByBirdId[id]?.iconicSrc ?? null,
+    }));
+  }, [iconsByBirdId, selectedBirdIds]);
+
+  const canSave = Boolean(selectedPlace) && selectedBirdIds.length > 0 && !saving;
 
   const onSave = async () => {
+    if (!selectedPlace) return;
     setSaving(true);
     setError(null);
     setMessage(null);
@@ -122,7 +274,7 @@ export default function BirdSightingFab() {
       const response = await fetch("/api/bird-sightings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ birdIds: selectedBirdIds }),
+        body: JSON.stringify({ placeId: selectedPlace.id, birdIds: selectedBirdIds }),
       });
       const payload = await response.json().catch(() => null);
       if (!response.ok) {
@@ -132,8 +284,6 @@ export default function BirdSightingFab() {
 
       setMessage("Rögzítve.");
       setSelectedBirdIds([]);
-      setSearch("");
-      setOpen(false);
       router.refresh();
     } catch {
       setError("Nem sikerült rögzíteni.");
@@ -142,143 +292,255 @@ export default function BirdSightingFab() {
     }
   };
 
+  const close = () => {
+    setOpen(false);
+    setError(null);
+    setMessage(null);
+  };
+
+  const resetPlace = () => {
+    setSelectedPlace(null);
+    setPlaceRankByBirdId(new Map());
+    setBirds([]);
+    setSelectedBirdIds([]);
+    setBirdSearch("");
+    setSizeCategory("");
+    setVisibilityCategory("");
+    setColorTags([]);
+    setIconsByBirdId({});
+  };
+
   return (
-    <div className={styles.fab} aria-live="polite">
-      {open ? <div className={styles.overlay} onClick={() => setOpen(false)} /> : null}
-
+    <div className={styles.fab}>
       {open ? (
-        <div className={styles.panel} role="dialog" aria-label="Birdwatch rögzítés">
-          <div className={styles.panelHeader}>
-            <div>
-              <p className="admin-heading__label admin-text-accent">Birdwatch</p>
-              <h2 className="admin-heading__title admin-heading__title--large">Madár rögzítés</h2>
-              <p className="admin-heading__description">
-                Válassz madarat (keresés + szűrők), majd rögzítsd hogy láttad.
-              </p>
-            </div>
-            <button type="button" className={styles.closeButton} onClick={() => setOpen(false)}>
-              Bezár
-            </button>
-          </div>
-
-          <div className="stack" style={{ gap: "0.75rem", marginTop: "0.75rem" }}>
-            <label className="form-field">
-              <span className="form-field__label">Keresés</span>
-              <div className="form-field__row">
-                <input
-                  className="input"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  placeholder="pl. széncinege"
-                />
-              </div>
-            </label>
-
-            <div className={styles.filtersRow}>
-              <label className="form-field" style={{ minWidth: 160 }}>
-                <span className="form-field__label">Méret</span>
-                <div className="form-field__row">
-                  <select
-                    className="input"
-                    value={sizeCategory}
-                    onChange={(e) => setSizeCategory(e.target.value as BirdSizeCategory | "")}
-                  >
-                    <option value="">Bármilyen</option>
-                    {SIZE_OPTIONS.map((opt) => (
-                      <option key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </label>
-
-              <label className="form-field" style={{ minWidth: 180 }}>
-                <span className="form-field__label">Észlelhetőség</span>
-                <div className="form-field__row">
-                  <select
-                    className="input"
-                    value={visibilityCategory}
-                    onChange={(e) => setVisibilityCategory(e.target.value as BirdVisibilityCategory | "")}
-                  >
-                    <option value="">Bármilyen</option>
-                    {VISIBILITY_OPTIONS.map((opt) => (
-                      <option key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </label>
-            </div>
-
-            <div>
-              <p className="form-field__label">Színek</p>
-              <div className={styles.colorPills}>
-                {COLOR_OPTIONS.map((opt) => {
-                  const active = colorTags.includes(opt.tag);
-                  return (
-                    <label key={opt.tag} className={styles.colorPill}>
-                      <input
-                        type="checkbox"
-                        checked={active}
-                        onChange={() => setColorTags((prev) => toggleInList(prev, opt.tag))}
-                      />
-                      {opt.label}
-                    </label>
-                  );
-                })}
-              </div>
-            </div>
-
-            {selectedBirds.length > 0 ? (
-              <div>
-                <p className="admin-subheading">Kijelölve</p>
-                <p className="admin-note-small" style={{ marginTop: "0.5rem" }}>
-                  {selectedBirds.map((b) => b.name_hu).join(", ")}
+        <div className="yoga-overlay birdwatch-overlay" role="dialog" aria-modal="true">
+          <button type="button" className="yoga-overlay__backdrop" onClick={close} aria-label="Bezárás" />
+          <div className="yoga-overlay__panel birdwatch-overlay__panel">
+            <div className="yoga-overlay__header">
+              <button
+                type="button"
+                className="btn btn--ghost yoga-overlay__back"
+                onClick={selectedPlace ? resetPlace : close}
+              >
+                {selectedPlace ? "Helyszín" : "Bezár"}
+              </button>
+              <div className="yoga-overlay__title">
+                <p className="yoga-overlay__label">Birdwatch</p>
+                <p className="admin-heading__title admin-heading__title--large" style={{ margin: 0 }}>
+                  {selectedPlace ? selectedPlace.name : "Helyszín kiválasztása"}
                 </p>
               </div>
-            ) : null}
-          </div>
+              <div className="yoga-overlay__actions">
+                <button type="button" className="btn btn--ghost yoga-overlay__close" onClick={close}>
+                  Close
+                </button>
+              </div>
+            </div>
 
-          <div className={styles.results}>
-            <p className="admin-subheading">Találatok</p>
-            {loading ? <p className="admin-stat-note mt-2">Betöltés…</p> : null}
-            {error ? <p className="admin-message admin-message--error mt-2">{error}</p> : null}
-            {message ? <p className="admin-message admin-message--success mt-2">{message}</p> : null}
-
-            <div style={{ marginTop: "0.5rem" }}>
-              {!loading && birds.length === 0 ? (
-                <p className="admin-stat-note">Nincs találat.</p>
-              ) : null}
-
-              {birds.slice(0, 30).map((bird) => (
-                <div key={bird.id} className={styles.birdRow}>
-                  <input
-                    type="checkbox"
-                    checked={selectedSet.has(bird.id)}
-                    onChange={() =>
-                      setSelectedBirdIds((prev) =>
-                        prev.includes(bird.id)
-                          ? prev.filter((id) => id !== bird.id)
-                          : [...prev, bird.id]
-                      )
-                    }
+            {!selectedPlace ? (
+              <div className="stack" style={{ gap: "1rem" }}>
+                <Card className="stack">
+                  <header className="admin-heading">
+                    <p className="admin-heading__label admin-text-accent">1) Helyszín</p>
+                    <p className="admin-heading__description">Először válassz egy Place-t, aztán ajánlunk madarakat.</p>
+                  </header>
+                  <Input
+                    label="Keresés"
+                    value={placeSearch}
+                    onChange={(e) => setPlaceSearch(e.target.value)}
+                    placeholder="pl. fertő, tata"
                   />
-                  <div className={styles.birdNames}>
-                    <div style={{ fontWeight: 600 }}>{bird.name_hu}</div>
-                    {bird.name_latin ? <div className="admin-text-muted">{bird.name_latin}</div> : null}
-                  </div>
-                </div>
-              ))}
-            </div>
+                </Card>
 
-            <div className={styles.actionsRow}>
-              <p className="admin-note-small">{selectedBirdIds.length} kijelölve</p>
-              <button type="button" className={styles.saveButton} disabled={!canSave} onClick={onSave}>
-                {saving ? "Mentés…" : "Rögzítés"}
-              </button>
-            </div>
+                <Card className="stack">
+                  <p className="admin-subheading">Találatok</p>
+                  {placesLoading ? <p className="admin-stat-note">Betöltés…</p> : null}
+                  {error ? <p className="admin-message admin-message--error">{error}</p> : null}
+                  {places.length === 0 && !placesLoading ? <p className="admin-stat-note">Nincs találat.</p> : null}
+                  <div className="space-y-2">
+                    {places.slice(0, 20).map((place) => (
+                      <button
+                        key={place.id}
+                        type="button"
+                        className="admin-list-link"
+                        onClick={() => {
+                          setSelectedPlace(place);
+                          setError(null);
+                          setMessage(null);
+                        }}
+                      >
+                        <div className="admin-list-details">
+                          <p className="admin-list-title">{place.name}</p>
+                          <p className="admin-list-meta">
+                            {place.county ? `${place.county} · ` : ""}
+                            {place.nearest_city ?? place.slug}
+                          </p>
+                        </div>
+                        <span className="admin-list-action">Select</span>
+                      </button>
+                    ))}
+                  </div>
+                </Card>
+              </div>
+            ) : (
+              <div className="stack" style={{ gap: "1rem" }}>
+                <Card className="stack">
+                  <header className="admin-heading">
+                    <p className="admin-heading__label admin-text-accent">2) Madarak</p>
+                    <p className="admin-heading__description">
+                      A listában előre kerülnek azok, amik a helyszínen honosak lehetnek (nem kizáró feltétel).
+                    </p>
+                  </header>
+
+                  {selectedBirdIcons.length > 0 ? (
+                    <div className={styles.selectedIcons}>
+                      {selectedBirdIcons.map((icon) => (
+                        <BirdIcon
+                          key={icon.id}
+                          habitatSrc={icon.habitatSrc}
+                          iconicSrc={icon.iconicSrc}
+                          showHabitatBackground
+                          size={54}
+                          className=""
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="admin-stat-note">Még nincs kijelölt madár.</p>
+                  )}
+                </Card>
+
+                <Card className="stack">
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <Input
+                      label="Keresés"
+                      value={birdSearch}
+                      onChange={(e) => setBirdSearch(e.target.value)}
+                      placeholder="pl. széncinege"
+                    />
+                    <div className="grid gap-4 grid-cols-2">
+                      <label className="form-field">
+                        <span className="form-field__label">Méret</span>
+                        <div className="form-field__row">
+                          <select
+                            className="input"
+                            value={sizeCategory}
+                            onChange={(e) => setSizeCategory(e.target.value as BirdSizeCategory | "")}
+                          >
+                            <option value="">Bármilyen</option>
+                            {SIZE_OPTIONS.map((opt) => (
+                              <option key={opt.value} value={opt.value}>
+                                {opt.label}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      </label>
+                      <label className="form-field">
+                        <span className="form-field__label">Észlelhetőség</span>
+                        <div className="form-field__row">
+                          <select
+                            className="input"
+                            value={visibilityCategory}
+                            onChange={(e) => setVisibilityCategory(e.target.value as BirdVisibilityCategory | "")}
+                          >
+                            <option value="">Bármilyen</option>
+                            {VISIBILITY_OPTIONS.map((opt) => (
+                              <option key={opt.value} value={opt.value}>
+                                {opt.label}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      </label>
+                    </div>
+                  </div>
+
+                  <div>
+                    <p className="form-field__label">Szín</p>
+                    <div className={styles.swatches}>
+                      {COLOR_OPTIONS.map((opt) => {
+                        const active = colorTags.includes(opt.tag);
+                        return (
+                          <button
+                            key={opt.tag}
+                            type="button"
+                            className={`${styles.swatch} ${active ? styles.swatchActive : ""}`}
+                            onClick={() => setColorTags((prev) => toggleInList(prev, opt.tag))}
+                            aria-pressed={active}
+                            aria-label={opt.label}
+                            title={opt.label}
+                          >
+                            <span className={styles.swatchInner} style={{ background: opt.swatch }} />
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </Card>
+
+                <Card className="stack">
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="admin-subheading">Ajánlott</p>
+                    <p className="admin-note-small">{selectedBirdIds.length} kijelölve</p>
+                  </div>
+
+                  {birdsLoading ? <p className="admin-stat-note">Betöltés…</p> : null}
+                  {error ? <p className="admin-message admin-message--error">{error}</p> : null}
+                  {message ? <p className="admin-message admin-message--success">{message}</p> : null}
+
+                  {sortedBirds.length === 0 && !birdsLoading ? <p className="admin-stat-note">Nincs találat.</p> : null}
+
+                  <div className="space-y-2">
+                    {sortedBirds.slice(0, 30).map((bird) => {
+                      const icon = iconsByBirdId[bird.id];
+                      const selected = selectedBirdSet.has(bird.id);
+                      const isPlacePriority = placeRankByBirdId.has(bird.id);
+                      return (
+                        <button
+                          key={bird.id}
+                          type="button"
+                          className="admin-list-link"
+                          onClick={() =>
+                            setSelectedBirdIds((prev) =>
+                              prev.includes(bird.id) ? prev.filter((id) => id !== bird.id) : [...prev, bird.id]
+                            )
+                          }
+                        >
+                          <div className="admin-list-details">
+                            <div className="admin-bird-list-grid" style={{ gridTemplateColumns: "auto 1fr" }}>
+                              <BirdIcon
+                                habitatSrc={icon?.habitatSrc ?? null}
+                                iconicSrc={icon?.iconicSrc ?? null}
+                                showHabitatBackground
+                                size={64}
+                              />
+                              <div className="admin-bird-text-cell">
+                                <p className="admin-list-title">{bird.name_hu}</p>
+                                <p className="admin-list-meta">
+                                  {isPlacePriority ? "Place-priority · " : ""}
+                                  {bird.slug}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                          <span className="admin-list-action">{selected ? "Selected" : "Add"}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <div className="flex items-center justify-end gap-3">
+                    <Button type="button" variant="secondary" onClick={() => setSelectedBirdIds([])} disabled={saving}>
+                      Clear
+                    </Button>
+                    <Button type="button" variant="primary" onClick={onSave} disabled={!canSave}>
+                      {saving ? "Mentés…" : "Rögzítés"}
+                    </Button>
+                  </div>
+                </Card>
+              </div>
+            )}
           </div>
         </div>
       ) : null}
@@ -287,16 +549,9 @@ export default function BirdSightingFab() {
         type="button"
         className={styles.fabButton}
         aria-label="Birdwatch rögzítés megnyitása"
-        onClick={() => setOpen((prev) => !prev)}
+        onClick={() => setOpen(true)}
       >
-        <Image
-          src="/icon_birdwatch.svg"
-          alt=""
-          width={28}
-          height={28}
-          className={styles.fabIcon}
-          priority={false}
-        />
+        <Image src="/icon_birdwatch.svg" alt="" width={28} height={28} className={styles.fabIcon} />
       </button>
     </div>
   );

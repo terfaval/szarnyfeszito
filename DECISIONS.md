@@ -617,7 +617,7 @@ Indok: a Place rendszer publikálása után gyors, vizuális ellenőrző felüle
 
 ## D39 – Leaflet display maps: static view + minimal basemap v1
 
-- Cél: a display-only Leaflet térképek (public `/places`, Admin Dashboard Places map, Bird distribution maps, Bird leaflets mini maps) egységesen statikus nézetet adjanak: nincs zoom/pan, nem „elviszi” a görgetést, és vizuálisan minimalista.
+- Cél: a display-only Leaflet térképek (public `/places`, Admin Dashboard Places map, Bird distribution maps, Bird leaflets mini maps) egységesen statikus nézetet adjanak: nincs zoom/pan, nem “elviszi” a görgetést, és vizuálisan minimalista.
 - Basemap: `basemap="bird"` (CARTO no-label tiles: `light_nolabels` / `dark_nolabels` a rendszer color scheme-je szerint).
 - Interakciók tiltása: `zoomControl=false`, `scrollWheelZoom=false`, `doubleClickZoom=false`, `dragging=false`, `keyboard=false`, `boxZoom=false`, `touchZoom=false` (és ahol releváns: `tap=false`).
 - Kamera rögzítés: map-specifikus center+zoom; szükség esetén `minZoom=maxZoom` (react-leaflet) vagy `setMinZoom/setMaxZoom` (vanilla Leaflet) használható.
@@ -627,6 +627,27 @@ Indok: a Place rendszer publikálása után gyors, vizuális ellenőrző felüle
 Indok: következetes UX (scroll/zoom konfliktus elkerülése), olvasható UI overlayk, és auditálható, specelt map baseline.
 
 ---
+
+## D40 – Public `/places` brand map: Hungary outline + water mask (no tiles)
+
+**Status:** Accepted  
+**Date:** 2026-03-10  
+**Scope:** Explorer public `/places` only.
+
+### Decision
+- Add a tile-less basemap mode (`basemap="brand"`) for the public Places map:
+  - Page background is used as land “paper”.
+  - A theme-aware water fill is rendered as a mask outside the Hungary outline.
+  - Only the Hungary border is drawn in `--brand-ink`; no roads, county borders, or other cartography.
+  - Leaflet attribution control is hidden (no third-party tile content is used in this mode).
+- Admin/Studio maps remain on the D39 `basemap="bird"` CARTO tiles.
+
+### Data source
+- Hungary outline geometry is embedded from Natural Earth Admin-0 Countries (110m) feature `ISO_A3="HUN"` (public domain).
+
+### Rationale
+- Brand-forward, deterministic rendering without external basemap dependencies.
+- Avoids OSM/CARTO attribution requirements by not loading their tiles on `/places`.
 
 ## D37 – Birdwatch sightings log v1 (Studio-only)
 
@@ -665,9 +686,31 @@ The Bird registry needs a deterministic, queryable color facet to support sighti
 
 ### Decision
 - Add `birds.color_tags` as an enum-array field (`bird_color_tag[]`) with a small curated palette (v1).
-- Admin UX can edit `color_tags` manually on the Bird editor (no AI generation).
+- `color_tags` are initialized during Bird dossier generation (server-side) via `dossier.pill_meta.color_bg` (single tag), so Studio cards/filters have a deterministic default without manual General-tab editing.
 - Filtering uses canonical `birds` fields only (no dossier text reinterpretation in UI).
 
 ### Out of scope (v1)
 - Automated extraction of colors from images/text.
 - A separate audited artifact table for color suggestions.
+
+---
+
+## D39 – Birdwatch sightings: Place-first picker + soft recommendations
+
+**Status:** Accepted  
+**Date:** 2026-03-10  
+**Scope:** Studio Birdwatch panel UX only. Explorer out of scope.
+
+### Context
+Birdwatch logging should reflect “I saw X at place Y”, and help selection by prioritizing birds that are already linked to the chosen Place, without hiding other matches.
+
+### Decision
+- The Birdwatch popup requires selecting a Place first, then selecting Birds.
+- The “recommended” list is a single filtered list where ordering is boosted by Place links:
+  - Place-linked birds (approved `place_birds`) appear first (rank order),
+  - followed by other matches (name order).
+- Color filter UI uses square swatches and updates the recommended list reactively.
+
+### Out of scope (v1)
+- Hard exclusion based on Place links (it remains a soft priority).
+- Seasonality-aware ranking (can be added later).

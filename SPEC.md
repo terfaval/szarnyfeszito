@@ -58,6 +58,7 @@ Applies to **display-only** maps (public `/places`, Admin Dashboard Places map, 
 - Background: light = near-white, dark = dark UI-compatible. (Container may use transparent/white fallback while tiles load.)
 - Overlay styling (marker / polygon colors) remains module-owned (per page/menu), as today.
 - Exception: editor pickers (e.g. Place location picker) remain interactive.
+- Exception (public `/places`, D40): `basemap="brand"` shows only Hungary border (brand-ink) on page-bg, with a theme-aware water fill; no roads/county borders; attribution hidden.
 
 ---
 
@@ -85,7 +86,7 @@ Kiegészítő meta (D18):
 - A Studio `/admin/birds` oldalon a madarak szűrhetők/rendezhetők `size_category` (méret) és `visibility_category` (észlelhetőség) alapján.
 - A kategóriák nem publish-gate feltételek (nem blokkolják a publish-t), kizárólag admin taxonómia / registry célokra szolgálnak.
 - Ha bármelyik hiányzik, a madár bekerül a “Classification queue” listába, ahol AI-javaslat generálható és/vagy kézzel jóváhagyható.
-- A Studio `/admin/birds` listaelemei a (ha elérhető) dossier `blocks_json.pill_meta.habitat_class` alapján megjelenítik a habitat ikont, és ha van current `fixed_pose_icon_v1` (iconic) asset, akkor overlay-ként azt is (placeholder nélkül).
+- A Studio `/admin/birds` listaelemei a (ha elérhető) dossier `blocks_json.pill_meta.habitat_class` alapján megjelenítik a habitat ikont, és a `blocks_json.pill_meta.color_bg` alapján egy soft háttérszínt kapnak; ha van current `fixed_pose_icon_v1` (iconic) asset, akkor overlay-ként azt is (placeholder nélkül).
 - A Studio `/admin` dashboard “Recent birds” listája ugyanazt a kétoszlopos (ikon + szöveg) megjelenítést használja.
 - `visibility_category` jelentése Magyarországra értendő (D20). Kategóriák:
   - `common_hu`: általában gyakori Magyarországon (releváns évszakban/élőhelyen)
@@ -187,7 +188,7 @@ Struktúra (`blocks_json`):
 - Field-Guide Dossier `schema_version: "v2.3"` (lásd D12, D28)
 - `signature_trait`
 - `header` (name_hu, name_latin, subtitle, short_summary)
-- `pill_meta` (habitat_class, region_teaser, size_cm, wingspan_cm, diet_short, lifespan_years)
+- `pill_meta` (habitat_class, color_bg, region_teaser, size_cm, wingspan_cm, diet_short, lifespan_years)
 - `short_options` (pontos három rövid opció / tagline)
 - `long_paragraphs` (pontos két bekezdés)
 - `identification` (key_features: 4 item, mindegyikhez `axis` (csor/tollazat/hang/mozgas) + dinamikus `title` + hosszabb `description`, + identification_paragraph) (lásd D28)
@@ -315,11 +316,14 @@ Tabs:
   - Icon: `public/icon_birdwatch.svg`.
   - Opens a popup panel for recording sightings.
 - The popup panel (v1) supports:
-  - Selecting one or more Birds from the registry via a searchable, filterable list.
-  - Filters include: `color_tags` (multi), `size_category`, `visibility_category`, plus free-text search on bird name.
+  - First: selecting a Place from the registry (searchable list).
+  - Then: selecting one or more Birds via a searchable, filterable list.
+    - Filters include: `color_tags` (multi), `size_category`, `visibility_category`, plus free-text search on bird name.
+    - Recommendation ordering: Birds linked to the selected Place (approved links) are prioritized, but not exclusive.
 - Saving a sighting stores:
   - `seen_at` timestamp (defaults to now),
   - `created_by` (admin user id),
+  - `place_id` (selected Place),
   - selected `bird_id` links (with optional per-bird quantity later; v1 defaults to 1).
 - The `/admin` Dashboard shows the most recent “My sightings” list for the current admin.
 

@@ -36,6 +36,7 @@ const baseDossier: BirdDossier = {
   },
   pill_meta: {
     habitat_class: "vízpart",
+    color_bg: "blue",
     region_teaser: "A Balaton partján él",
     size_cm: { min: 36, max: 42 },
     wingspan_cm: { min: 70, max: 90 },

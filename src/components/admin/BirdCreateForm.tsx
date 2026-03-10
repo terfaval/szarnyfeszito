@@ -17,6 +17,8 @@ export default function BirdCreateForm() {
   const prefillNameHu = searchParams.get("prefill_name_hu")?.trim() ?? "";
   const prefillSource = searchParams.get("source")?.trim() ?? "";
   const prefillPlaceName = searchParams.get("place_name")?.trim() ?? "";
+  const linkPlaceId = searchParams.get("link_place_id")?.trim() ?? "";
+  const linkPlaceBirdId = searchParams.get("link_place_bird_id")?.trim() ?? "";
 
   const [formValues, setFormValues] = useState(() => ({
     ...initialFormState,
@@ -40,6 +42,8 @@ export default function BirdCreateForm() {
     const payload = {
       name_latin: formValues.name_latin.trim(),
       name_hu: formValues.name_hu.trim() || undefined,
+      link_place_id: linkPlaceId || undefined,
+      link_place_bird_id: linkPlaceBirdId || undefined,
     };
 
     const response = await fetch("/api/birds/quick-create", {

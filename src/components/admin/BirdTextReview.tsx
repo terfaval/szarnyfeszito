@@ -705,6 +705,7 @@ export default function BirdTextReview({
                   habitatSrc={habitatIcon?.icon ?? null}
                   iconicSrc={iconicPreviewUrl}
                   showHabitatBackground
+                  background={dossier.pill_meta.color_bg}
                   size={120}
                 />
               </div>

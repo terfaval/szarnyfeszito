@@ -195,6 +195,8 @@ const JSON_TEMPLATE = `{
     "short_summary": "Ä‚ËĂ˘â€šÂ¬Ă‚Â¦"
   },
   "pill_meta": {
+    "habitat_class": "erdő",
+    "color_bg": "grey",
     "region_teaser": "Ä‚ËĂ˘â€šÂ¬Ă‚Â¦",
     "size_cm": { "min": null, "max": null },
     "wingspan_cm": { "min": null, "max": null },
@@ -248,6 +250,7 @@ const JSON_TEMPLATE_V2_3 = `{
   },
   "pill_meta": {
     "habitat_class": "erdĹ‘",
+    "color_bg": "grey",
     "region_teaser": "...",
     "size_cm": { "min": null, "max": null },
     "wingspan_cm": { "min": null, "max": null },
@@ -310,7 +313,8 @@ ${JSON_TEMPLATE_V2_3}
 HARD RULES:
   - Top-level keys must be present: header, pill_meta, short_options, long_paragraphs, identification, distribution, nesting, migration, fun_fact, did_you_know, ethics_tip, typical_places, leaflets.
 - pill_meta.habitat_class must be exactly one of: erdĹ‘, vĂ­zpart, puszta, hegy, vĂˇros (pick the strongest).
-- distribution/nesting/migration MUST be objects (never strings).
+ - pill_meta.color_bg must be exactly one of: white, black, grey, brown, yellow, orange, red, green, blue.
+ - distribution/nesting/migration MUST be objects (never strings).
 - Use null for nullable fields when unknown; when you do provide numbers keep ranges conservative and avoid false precision (no spans < ~2 units unless null).
 - Identity lock: header.name_hu must equal the normalized Hungarian name provided as input, and header.name_latin must match the provided Latin name exactly.
 - short_options: exactly 3 strings, 90-170 chars, each a complete sentence ending in punctuation; across the 3 sentences cover at least two different axes (morphology/plumage/beak/sound/movement/habitat/behavior); no trailing conjunctions, no shared openings, no reliance on sensory suffix templates.
@@ -412,6 +416,7 @@ export async function generateBirdDossier(
   Content expectations (Hungarian):
   - Identity lock: use the provided names exactly; do not substitute another species.
   - pill_meta.habitat_class: pick 1 from (erdĹ‘/vĂ­zpart/puszta/hegy/vĂˇros) as the strongest fit for this bird.
+  - pill_meta.color_bg: pick 1 from (white/black/grey/brown/yellow/orange/red/green/blue) as a background color tag for bird cards/icons.
   - short_options: exactly 3 sentences, 90-170 chars, end punctuation; across the 3 sentences cover at least two different axes (morphology/plumage/beak/sound/movement/habitat/behavior) but do not force axis keywords.
   - short_summary: 1-2 sentences can lean Durrell/Adams but must include at least one concrete observable detail and avoid generic phrases.
   - long_paragraphs: exactly two paragraphs; Paragraph 1 is a concrete field encounter scene, Paragraph 2 is context (habitat/migration/behavior) without repeating Paragraph 1; at most one witty sentence per paragraph; avoid hearsay/records; do not invent digits or citations.
@@ -436,6 +441,9 @@ Do not switch dominant focus mid-text.
 
 pill_meta.habitat_class:
 - Pick from the fixed set (erdĹ‘/vĂ­zpart/puszta/hegy/vĂˇros) as the strongest fit.
+
+pill_meta.color_bg:
+- Pick from the fixed set (white/black/grey/brown/yellow/orange/red/green/blue) as a background color tag.
 
 short_options:
 - exactly 3 standalone sentences

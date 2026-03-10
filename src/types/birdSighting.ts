@@ -6,6 +6,7 @@ export type BirdSightingBird = {
 
 export type BirdSighting = {
   id: string;
+  place_id: string | null;
   seen_at: string;
   notes: string | null;
   birds: BirdSightingBird[];
@@ -13,8 +14,8 @@ export type BirdSighting = {
 
 export type BirdSightingCreateInput = {
   createdBy: string;
+  placeId: string;
   birdIds: string[];
   seenAt?: string;
   notes?: string | null;
 };
-

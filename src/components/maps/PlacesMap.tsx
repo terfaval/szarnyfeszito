@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { CircleMarker, MapContainer, TileLayer } from "react-leaflet";
+import { CircleMarker, GeoJSON, MapContainer, TileLayer } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import styles from "./PlacesMap.module.css";
 import { DEFAULT_BASEMAP, getBasemapTileLayerArgs } from "./basemaps";
 import type { BasemapId } from "./basemaps";
 import type { PlaceMarker } from "@/types/place";
+import { HUNGARY_BORDER_110M, HUNGARY_WATER_MASK_110M } from "./hungaryBorder110m";
 
 export type PlacesMapProps = {
   markers: PlaceMarker[];
@@ -32,10 +33,10 @@ export default function PlacesMap({
   }, []);
 
   const center = useMemo<[number, number]>(() => [47.16, 19.5], []);
-  const tileLayerArgs = useMemo(
-    () => getBasemapTileLayerArgs({ basemap, isDark }),
-    [basemap, isDark]
-  );
+  const tileLayerArgs = useMemo(() => {
+    if (basemap === "brand") return null;
+    return getBasemapTileLayerArgs({ basemap, isDark });
+  }, [basemap, isDark]);
 
   return (
     <div className={`places-map ${styles.layout}`}>
@@ -50,8 +51,31 @@ export default function PlacesMap({
         keyboard={false}
         boxZoom={false}
         touchZoom={false}
+        attributionControl={false}
       >
-        <TileLayer url={tileLayerArgs.url} attribution={tileLayerArgs.attribution} />
+        {tileLayerArgs ? (
+          <TileLayer url={tileLayerArgs.url} attribution={tileLayerArgs.attribution} />
+        ) : null}
+        {basemap === "brand" ? (
+          <>
+            <GeoJSON
+              data={HUNGARY_WATER_MASK_110M}
+              style={{
+                fillColor: "var(--sf-map-water)",
+                fillOpacity: 1,
+                stroke: false,
+              }}
+            />
+            <GeoJSON
+              data={HUNGARY_BORDER_110M}
+              style={{
+                color: "var(--brand-ink)",
+                weight: 2,
+                fillOpacity: 0,
+              }}
+            />
+          </>
+        ) : null}
         {markers.map((marker) => {
           if (marker.lat === null || marker.lng === null) return null;
           const isSelected = selectedSlug === marker.slug;

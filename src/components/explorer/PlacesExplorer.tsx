@@ -131,7 +131,12 @@ export default function PlacesExplorer() {
           {loadingMarkers ? (
             <div className="place-panel admin-stat-card admin-stat-card--note">Loading map…</div>
           ) : (
-            <PlacesMap markers={markers} selectedSlug={selectedSlug} onSelect={(slug) => selectSlug(slug)} />
+            <PlacesMap
+              markers={markers}
+              selectedSlug={selectedSlug}
+              onSelect={(slug) => selectSlug(slug)}
+              basemap="brand"
+            />
           )}
         </section>
 
