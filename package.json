@@ -8,7 +8,9 @@
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
-    "supabase:smoke": "node scripts/supabase-smoke.mjs"
+    "supabase:smoke": "node scripts/supabase-smoke.mjs",
+    "region:catalog:import": "node scripts/import-region-catalog.mjs",
+    "region:catalog:verify": "node scripts/verify-region-catalog.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.97.0",

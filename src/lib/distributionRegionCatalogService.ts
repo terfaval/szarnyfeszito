@@ -73,3 +73,27 @@ export async function getDistributionRegionGeometriesById(regionIds: string[]): 
   return out;
 }
 
+export async function getDistributionRegionBboxesById(regionIds: string[]): Promise<
+  Record<string, DistributionRegionCatalogItemMeta["bbox"]>
+> {
+  const unique = Array.from(new Set(regionIds.map((id) => id.trim()).filter(Boolean)));
+  if (unique.length === 0) return {};
+
+  const { data, error } = await supabaseServerClient
+    .from("distribution_region_catalog_items")
+    .select("region_id,bbox")
+    .in("region_id", unique);
+
+  if (error) {
+    throw error;
+  }
+
+  const rows = (data ?? []) as Array<Record<string, unknown>>;
+  const out: Record<string, DistributionRegionCatalogItemMeta["bbox"]> = {};
+  rows.forEach((row) => {
+    const id = String(row.region_id ?? "");
+    if (!id) return;
+    out[id] = parseBbox(row.bbox);
+  });
+  return out;
+}

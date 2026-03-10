@@ -9,6 +9,7 @@ import {
   PLACE_STATUS_VALUES,
   PLACE_TYPE_VALUES,
 } from "@/types/place";
+import { getDistributionRegionBboxesById } from "@/lib/distributionRegionCatalogService";
 
 type ListPlacesOptions = {
   search?: string;
@@ -19,7 +20,7 @@ type ListPlacesOptions = {
 };
 
 const PLACE_SELECT =
-  "id,slug,name,place_type,place_types,status,region_landscape,county,district,nearest_city,distance_from_nearest_city_km,settlement,location_precision,sensitivity_level,is_beginner_friendly,access_note,parking_note,best_visit_note,notable_units_json,generation_input,published_at,published_revision,created_at,updated_at";
+  "id,slug,name,place_type,place_types,status,leaflet_region_id,region_landscape,county,district,nearest_city,distance_from_nearest_city_km,settlement,location_precision,sensitivity_level,is_beginner_friendly,access_note,parking_note,best_visit_note,notable_units_json,generation_input,published_at,published_revision,created_at,updated_at";
 
 export async function listPlaces(options: ListPlacesOptions = {}): Promise<Place[]> {
   const { search, status, place_type, county, region_landscape } = options;
@@ -98,6 +99,7 @@ export async function createPlace(input: {
         ? Array.from(new Set(input.place_types))
         : [input.place_type],
     status: "draft" as const,
+    leaflet_region_id: null,
     region_landscape: input.region_landscape?.trim() || null,
     county: input.county?.trim() || null,
     district: input.district?.trim() || null,
@@ -130,6 +132,7 @@ export async function updatePlace(input: {
   place_type?: PlaceType;
   place_types?: PlaceType[] | null;
   status?: PlaceStatus;
+  leaflet_region_id?: string | null;
   region_landscape?: string | null;
   county?: string | null;
   district?: string | null;
@@ -200,6 +203,10 @@ export async function updatePlace(input: {
     mutablePayload.settlement = mutablePayload.settlement.trim() || null;
   }
 
+  if (typeof mutablePayload.leaflet_region_id === "string") {
+    mutablePayload.leaflet_region_id = mutablePayload.leaflet_region_id.trim() || null;
+  }
+
   if (typeof mutablePayload.generation_input === "string") {
     mutablePayload.generation_input = mutablePayload.generation_input.trim() || null;
   }
@@ -253,6 +260,63 @@ export async function listPublishedPlaceMarkers(): Promise<PlaceMarker[]> {
   }
 
   return (data ?? []) as PlaceMarker[];
+}
+
+export async function listPublishedPlaceDashboardMarkers(): Promise<PlaceMarker[]> {
+  const { data, error } = await supabaseServerClient
+    .from("place_markers_v1")
+    .select(
+      "id,slug,name,place_type,status,location_precision,sensitivity_level,is_beginner_friendly,leaflet_region_id,lat,lng,updated_at"
+    )
+    .eq("status", "published")
+    .order("name", { ascending: true });
+
+  if (error) {
+    throw error;
+  }
+
+  const rows = (data ?? []) as Array<Record<string, unknown>>;
+  const regionIds = Array.from(
+    new Set(rows.map((r) => String(r.leaflet_region_id ?? "").trim()).filter(Boolean))
+  );
+  let bboxById: Record<string, { south: number; west: number; north: number; east: number }> = {};
+  try {
+    bboxById = await getDistributionRegionBboxesById(regionIds);
+  } catch {
+    bboxById = {};
+  }
+
+  const out: PlaceMarker[] = [];
+  rows.forEach((row) => {
+    const leafletRegionId = String(row.leaflet_region_id ?? "").trim();
+    const bbox = leafletRegionId ? bboxById[leafletRegionId] : undefined;
+    const pinLat =
+      bbox && Number.isFinite(bbox.south) && Number.isFinite(bbox.north)
+        ? (bbox.south + bbox.north) / 2
+        : (typeof row.lat === "number" ? row.lat : null);
+    const pinLng =
+      bbox && Number.isFinite(bbox.west) && Number.isFinite(bbox.east)
+        ? (bbox.west + bbox.east) / 2
+        : (typeof row.lng === "number" ? row.lng : null);
+
+    if (pinLat === null || pinLng === null) return;
+
+    out.push({
+      id: String(row.id ?? ""),
+      slug: String(row.slug ?? ""),
+      name: String(row.name ?? ""),
+      place_type: row.place_type as PlaceType,
+      status: row.status as PlaceStatus,
+      location_precision: row.location_precision as PlaceMarker["location_precision"],
+      sensitivity_level: row.sensitivity_level as PlaceMarker["sensitivity_level"],
+      is_beginner_friendly: Boolean(row.is_beginner_friendly),
+      lat: pinLat,
+      lng: pinLng,
+      updated_at: String(row.updated_at ?? ""),
+    });
+  });
+
+  return out;
 }
 
 export async function getPlaceMarkerById(placeId: string): Promise<PlaceMarker | null> {

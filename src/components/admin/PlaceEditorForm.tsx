@@ -19,6 +19,7 @@ import PlaceLocationPicker from "@/components/maps/PlaceLocationPicker";
 type PlaceEditorFormProps = {
   place: Place;
   marker: PlaceMarker | null;
+  leafletRegions: Array<{ region_id: string; name: string; type: string }>;
 };
 
 function toNumberOrNull(value: string) {
@@ -28,7 +29,7 @@ function toNumberOrNull(value: string) {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
-export default function PlaceEditorForm({ place, marker }: PlaceEditorFormProps) {
+export default function PlaceEditorForm({ place, marker, leafletRegions }: PlaceEditorFormProps) {
   const router = useRouter();
   const [values, setValues] = useState(() => ({
     slug: place.slug,
@@ -49,6 +50,7 @@ export default function PlaceEditorForm({ place, marker }: PlaceEditorFormProps)
     location_precision: place.location_precision as PlaceLocationPrecision,
     sensitivity_level: place.sensitivity_level as PlaceSensitivityLevel,
     is_beginner_friendly: place.is_beginner_friendly,
+    leaflet_region_id: place.leaflet_region_id ?? "",
     lat: typeof marker?.lat === "number" ? String(marker.lat) : "",
     lng: typeof marker?.lng === "number" ? String(marker.lng) : "",
     access_note: place.access_note ?? "",
@@ -97,6 +99,7 @@ export default function PlaceEditorForm({ place, marker }: PlaceEditorFormProps)
         location_precision: values.location_precision,
         sensitivity_level: values.sensitivity_level,
         is_beginner_friendly: values.is_beginner_friendly,
+        leaflet_region_id: values.leaflet_region_id.trim() || null,
         location_wkt: derivedLocationWkt,
         access_note: values.access_note.trim() || null,
         parking_note: values.parking_note.trim() || null,
@@ -302,6 +305,27 @@ export default function PlaceEditorForm({ place, marker }: PlaceEditorFormProps)
         <p className="admin-note-small">
           Marker is for a general destination point only. Avoid sensitive micro-locations; use <code className="rounded bg-zinc-100 px-1 text-xs">hidden</code> to keep it off the public map.
         </p>
+
+        <label className="form-field">
+          <span className="form-field__label">Leaflet region (HU Natura / microregion)</span>
+          <p className="admin-note-small">
+            Used for Leaflet overlays and for dashboard pinning when the place location is hidden or approximate. Prefer Natura 2000 SPA when available; use microregion as fallback.
+          </p>
+          <div className="form-field__row">
+            <select
+              className="input"
+              value={values.leaflet_region_id}
+              onChange={(event) => setValues((p) => ({ ...p, leaflet_region_id: event.target.value }))}
+            >
+              <option value="">(none)</option>
+              {leafletRegions.map((r) => (
+                <option key={r.region_id} value={r.region_id}>
+                  {r.name} · {r.type} · {r.region_id}
+                </option>
+              ))}
+            </select>
+          </div>
+        </label>
 
         <div className="grid gap-4 md:grid-cols-2">
           <Input

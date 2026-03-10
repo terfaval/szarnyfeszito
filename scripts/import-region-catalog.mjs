@@ -1,9 +1,9 @@
 import dotenv from "dotenv";
-dotenv.config({ path: ".env.local" });
-dotenv.config();
 
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
+import zlib from "node:zlib";
 import { createClient } from "@supabase/supabase-js";
 
 import StreamJson from "stream-json";
@@ -14,21 +14,16 @@ const { parser } = StreamJson;
 const { pick } = PickPkg;
 const { streamArray } = StreamArrayPkg;
 
+const scriptsDir = path.dirname(fileURLToPath(import.meta.url));
+const repoRoot = path.resolve(scriptsDir, "..");
+dotenv.config({ path: path.join(repoRoot, ".env.local") });
+dotenv.config({ path: path.join(repoRoot, ".env") });
+
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-if (!supabaseUrl || !supabaseServiceRoleKey) {
-  throw new Error(
-    "SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be defined to import region catalogs."
-  );
-}
-
-const supabase = createClient(supabaseUrl, supabaseServiceRoleKey, {
-  auth: { persistSession: false, detectSessionInUrl: false },
-});
-
-const MAX_BATCH_ROWS = 20;
-const MAX_BATCH_BYTES = 5 * 1024 * 1024;
+const DEFAULT_BATCH_ROWS = 20;
+const DEFAULT_BATCH_BYTES = 5 * 1024 * 1024;
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -77,7 +72,38 @@ function getJsonSizeBytes(value) {
   return Buffer.byteLength(JSON.stringify(value), "utf8");
 }
 
-async function upsertBatch(batch, batchIndex, totalImported, catalog) {
+function formatCause(err) {
+  const anyErr = err ?? null;
+  const cause = anyErr && typeof anyErr === "object" && "cause" in anyErr ? anyErr.cause : null;
+  if (!cause) return null;
+
+  if (cause instanceof Error) {
+    const extra = [];
+    if ("code" in cause && typeof cause.code === "string") extra.push(`code=${cause.code}`);
+    if ("errno" in cause && (typeof cause.errno === "number" || typeof cause.errno === "string")) {
+      extra.push(`errno=${cause.errno}`);
+    }
+    if ("syscall" in cause && typeof cause.syscall === "string") extra.push(`syscall=${cause.syscall}`);
+    return extra.length ? `${cause.name}: ${cause.message} (${extra.join(", ")})` : `${cause.name}: ${cause.message}`;
+  }
+
+  if (typeof cause === "string") return cause;
+  try {
+    return JSON.stringify(cause);
+  } catch {
+    return String(cause);
+  }
+}
+
+function createJsonReadStream(fullPath) {
+  const input = fs.createReadStream(fullPath);
+  if (fullPath.toLowerCase().endsWith(".gz")) {
+    return { stream: input.pipe(zlib.createGunzip()), destroy: () => input.destroy() };
+  }
+  return { stream: input, destroy: () => input.destroy() };
+}
+
+async function upsertBatch(batch, batchIndex, totalImported, catalog, supabase) {
   let lastErr;
 
   for (let attempt = 1; attempt <= 3; attempt += 1) {
@@ -108,7 +134,9 @@ async function upsertBatch(batch, batchIndex, totalImported, catalog) {
       console.error("Batch size:", batch.length);
       console.error("First region_id:", batch[0]?.region_id);
       console.error("Last region_id:", batch[batch.length - 1]?.region_id);
-      console.error("Cause:", err?.cause ?? err);
+      const nested = formatCause(err);
+      console.error("Cause:", err);
+      if (nested) console.error("Cause (nested):", nested);
 
       if (attempt < 3) {
         await sleep(1000 * attempt);
@@ -126,10 +154,10 @@ async function readCatalogFromFile(fullPath) {
     let resolved = false;
     let expectCatalogValue = false;
 
-    const input = fs.createReadStream(fullPath);
+    const { stream, destroy } = createJsonReadStream(fullPath);
     const jsonParser = parser();
 
-    input.on("error", reject);
+    stream.on("error", reject);
     jsonParser.on("error", reject);
 
     jsonParser.on("data", ({ name, value }) => {
@@ -141,7 +169,7 @@ async function readCatalogFromFile(fullPath) {
       if (expectCatalogValue && name === "stringValue") {
         resolved = true;
         resolve(value);
-        input.destroy();
+        destroy();
       }
     });
 
@@ -151,18 +179,109 @@ async function readCatalogFromFile(fullPath) {
       }
     });
 
-    input.pipe(jsonParser);
+    stream.pipe(jsonParser);
   });
 }
 
-async function main() {
-  const file = process.argv[2];
-  if (!file) {
-    throw new Error(
-      "Usage: node scripts/import-region-catalog.mjs <globalRegions.json|hungaryRegions.json>"
-    );
+function parseArgs(argv) {
+  const out = {
+    files: [],
+    batchRows: DEFAULT_BATCH_ROWS,
+    batchBytes: DEFAULT_BATCH_BYTES,
+    sleepMs: 0,
+    dryRun: false,
+  };
+
+  for (let i = 2; i < argv.length; i += 1) {
+    const arg = argv[i];
+
+    if (arg === "--") {
+      out.files.push(...argv.slice(i + 1));
+      break;
+    }
+    if (arg === "--dry-run") {
+      out.dryRun = true;
+      continue;
+    }
+    if (arg === "--batch-rows") {
+      const value = Number(argv[i + 1]);
+      if (!Number.isFinite(value) || value <= 0) {
+        throw new Error(`Invalid --batch-rows: ${String(argv[i + 1])}`);
+      }
+      out.batchRows = Math.floor(value);
+      i += 1;
+      continue;
+    }
+    if (arg === "--batch-mb") {
+      const value = Number(argv[i + 1]);
+      if (!Number.isFinite(value) || value <= 0) {
+        throw new Error(`Invalid --batch-mb: ${String(argv[i + 1])}`);
+      }
+      out.batchBytes = Math.floor(value * 1024 * 1024);
+      i += 1;
+      continue;
+    }
+    if (arg === "--sleep-ms") {
+      const value = Number(argv[i + 1]);
+      if (!Number.isFinite(value) || value < 0) {
+        throw new Error(`Invalid --sleep-ms: ${String(argv[i + 1])}`);
+      }
+      out.sleepMs = Math.floor(value);
+      i += 1;
+      continue;
+    }
+
+    if (arg.startsWith("--")) {
+      throw new Error(`Unknown option: ${arg}`);
+    }
+
+    out.files.push(arg);
   }
 
+  return out;
+}
+
+async function scanCatalog(fullPath, catalog) {
+  let count = 0;
+  let maxRowBytes = 0;
+  let maxRegionId = "";
+  let maxType = "";
+
+  await new Promise((resolve, reject) => {
+    const { stream } = createJsonReadStream(fullPath);
+    const pipeline = stream.pipe(parser()).pipe(pick({ filter: "regions" })).pipe(streamArray());
+
+    pipeline.on("error", reject);
+    pipeline.on("data", ({ value }) => {
+      count += 1;
+      const row = mapRow(value, catalog, "now");
+      const rowBytes = getJsonSizeBytes(row);
+      if (rowBytes > maxRowBytes) {
+        maxRowBytes = rowBytes;
+        maxRegionId = row.region_id;
+        maxType = row.type;
+      }
+    });
+    pipeline.on("end", resolve);
+  });
+
+  console.log(
+    JSON.stringify(
+      {
+        catalog,
+        count,
+        max_row_mb: Number((maxRowBytes / 1024 / 1024).toFixed(2)),
+        max_row_region_id: maxRegionId,
+        max_row_type: maxType,
+      },
+      null,
+      2
+    )
+  );
+}
+
+async function importCatalogFile(args) {
+  const { file, supabase, batchRows, batchByteLimit, sleepMs, dryRun } = args;
   const fullPath = path.resolve(process.cwd(), file);
   const now = new Date().toISOString();
 
@@ -174,17 +293,19 @@ async function main() {
   const catalog = await readCatalogFromFile(fullPath);
   validateCatalog(catalog);
 
+  if (dryRun) {
+    await scanCatalog(fullPath, catalog);
+    return;
+  }
+
   let batch = [];
-  let batchBytes = 0;
+  let currentBatchBytes = 0;
   let imported = 0;
   let batchIndex = 0;
 
   await new Promise((resolve, reject) => {
-    const input = fs.createReadStream(fullPath);
-    const pipeline = input
-      .pipe(parser())
-      .pipe(pick({ filter: "regions" }))
-      .pipe(streamArray());
+    const { stream: input } = createJsonReadStream(fullPath);
+    const pipeline = input.pipe(parser()).pipe(pick({ filter: "regions" })).pipe(streamArray());
 
     let processing = Promise.resolve();
     let failed = false;
@@ -195,14 +316,12 @@ async function main() {
       batchIndex += 1;
       const currentBatch = batch;
       batch = [];
-      batchBytes = 0;
+      currentBatchBytes = 0;
 
-      await upsertBatch(
-        currentBatch,
-        batchIndex,
-        imported + currentBatch.length,
-        catalog
-      );
+      await upsertBatch(currentBatch, batchIndex, imported + currentBatch.length, catalog, supabase);
+      if (sleepMs > 0) {
+        await sleep(sleepMs);
+      }
 
       imported += currentBatch.length;
     };
@@ -225,26 +344,24 @@ async function main() {
           const row = mapRow(value, catalog, now);
           const rowBytes = getJsonSizeBytes(row);
 
-          if (rowBytes > MAX_BATCH_BYTES) {
+          if (rowBytes > batchByteLimit) {
             throw new Error(
-              `Single row exceeds MAX_BATCH_BYTES (${(
-                rowBytes /
-                1024 /
-                1024
+              `Single row exceeds batch byte limit (${(
+                rowBytes / 1024 / 1024
               ).toFixed(2)} MB). region_id=${row.region_id}`
             );
           }
 
-          const wouldExceedRowLimit = batch.length >= MAX_BATCH_ROWS;
+          const wouldExceedRowLimit = batch.length >= batchRows;
           const wouldExceedByteLimit =
-            batch.length > 0 && batchBytes + rowBytes > MAX_BATCH_BYTES;
+            batch.length > 0 && currentBatchBytes + rowBytes > batchByteLimit;
 
           if (wouldExceedRowLimit || wouldExceedByteLimit) {
             await flushBatch();
           }
 
           batch.push(row);
-          batchBytes += rowBytes;
+          currentBatchBytes += rowBytes;
         })
         .then(() => {
           if (!failed) pipeline.resume();
@@ -267,6 +384,46 @@ async function main() {
         .catch(reject);
     });
   });
+}
+
+async function main() {
+  const parsed = parseArgs(process.argv);
+  if (parsed.files.length === 0) {
+    throw new Error(
+      [
+        "Usage: node scripts/import-region-catalog.mjs [options] <globalRegions.json(.gz)> [hungaryRegions.json(.gz) ...]",
+        "",
+        "Options:",
+        "  --dry-run              Scan only (no uploads).",
+        "  --batch-rows <n>        Default: 20",
+        "  --batch-mb <mb>         Default: 5",
+        "  --sleep-ms <ms>         Optional delay after each batch (rate-limit friendly).",
+      ].join("\n")
+    );
+  }
+
+  if (!parsed.dryRun && (!supabaseUrl || !supabaseServiceRoleKey)) {
+    throw new Error(
+      "SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be defined to import region catalogs."
+    );
+  }
+
+  const supabase = parsed.dryRun
+    ? null
+    : createClient(supabaseUrl, supabaseServiceRoleKey, {
+        auth: { persistSession: false, detectSessionInUrl: false },
+      });
+
+  for (const file of parsed.files) {
+    await importCatalogFile({
+      file,
+      supabase,
+      batchRows: parsed.batchRows,
+      batchByteLimit: parsed.batchBytes,
+      sleepMs: parsed.sleepMs,
+      dryRun: parsed.dryRun,
+    });
+  }
 }
 
 main().catch((err) => {

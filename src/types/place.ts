@@ -53,6 +53,7 @@ export type Place = {
   place_type: PlaceType;
   place_types: PlaceType[];
   status: PlaceStatus;
+  leaflet_region_id: string | null;
 
   region_landscape: string | null;
   county: string | null;

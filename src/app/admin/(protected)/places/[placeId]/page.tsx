@@ -3,6 +3,7 @@ import { Card } from "@/ui/components/Card";
 import { isUuid } from "@/lib/birdService";
 import { getPlaceById, getPlaceBySlug, getPlaceMarkerById } from "@/lib/placeService";
 import PlaceEditorForm from "@/components/admin/PlaceEditorForm";
+import { listDistributionRegionCatalogMeta } from "@/lib/distributionRegionCatalogService";
 
 export const metadata = {
   title: "Admin place editor",
@@ -33,11 +34,15 @@ export default async function PlaceEditorPage({
   }
 
   const marker = await getPlaceMarkerById(place.id);
+  const regionMeta = await listDistributionRegionCatalogMeta("hungaryRegions").catch(() => []);
+  const leafletRegions = regionMeta
+    .filter((r) => r.scope === "hungary" && (r.type === "spa" || r.type === "microregion"))
+    .sort((a, b) => `${a.type}:${a.name}`.localeCompare(`${b.type}:${b.name}`))
+    .map((r) => ({ region_id: r.region_id, name: r.name, type: r.type }));
 
   return (
     <Card className="place-panel place-panel-general">
-      <PlaceEditorForm place={place} marker={marker} />
+      <PlaceEditorForm place={place} marker={marker} leafletRegions={leafletRegions} />
     </Card>
   );
 }
-

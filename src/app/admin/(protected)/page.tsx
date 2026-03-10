@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { getAdminUserFromCookies } from "@/lib/auth";
 import { listBirds } from "@/lib/birdService";
-import { listPlaces, listPublishedPlaceMarkers, listPublishedPlacesByPrimaryType } from "@/lib/placeService";
+import { listPlaces, listPublishedPlaceDashboardMarkers, listPublishedPlacesByPrimaryType } from "@/lib/placeService";
 import { listLatestDossierBlocksForBirds } from "@/lib/contentService";
 import { supabaseServerClient } from "@/lib/supabaseServerClient";
 import { getSignedImageUrl, listCurrentIconicImagesForBirds } from "@/lib/imageService";
@@ -45,7 +45,7 @@ export default async function AdminPage() {
   const admin = await getAdminUserFromCookies();
   const birds = await listBirds();
   const places = await listPlaces();
-  const publishedMarkers = await listPublishedPlaceMarkers();
+  const publishedMarkers = await listPublishedPlaceDashboardMarkers();
   const currentSeason = getCurrentSeasonKey();
   const currentSeasonLabel =
     currentSeason === "spring"

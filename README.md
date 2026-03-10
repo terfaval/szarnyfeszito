@@ -43,6 +43,23 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 - Initialize the `birds`, `content_blocks`, and `images` tables via `supabase/init.sql` (it also declares the expected enums).
 - Run `npm run supabase:smoke` once you have a Supabase project and the tables created. The script inserts a bird, reads it back, and then deletes it so you can confirm both insert and fetch succeed.
 
+## Distribution region catalogs (D26)
+
+These catalogs back deterministic bird distribution map generation (the AI selects `region_id`s only; the server expands them to geometries).
+
+- Build catalogs offline from shapefiles via `TICKETS/leaflet shapefile builder/build_region_catalogs.py` (outputs `globalRegions.json` + `hungaryRegions.json`, optionally `*.json.gz` with `--gzip`).
+- Avoid the legacy repo-root `out/globalRegions.json` (~600MB, huge single-row geometries) — it will likely exceed Supabase request limits. Prefer the builder output under `TICKETS/leaflet shapefile builder/out/` with simplification enabled (defaults are safe).
+- Import catalogs into Supabase in small batches (streamed; avoids “file too big” issues in dashboards):
+  - `npm run region:catalog:import -- --dry-run "TICKETS/leaflet shapefile builder/out/globalRegions.json"`
+  - `npm run region:catalog:import -- "TICKETS/leaflet shapefile builder/out/globalRegions.json" "TICKETS/leaflet shapefile builder/out/hungaryRegions.json"`
+
+If you prefer running from inside the builder folder, relative paths work too:
+- `cd "TICKETS/leaflet shapefile builder"`
+- `node ../../scripts/import-region-catalog.mjs --dry-run "out/globalRegions.json"`
+
+Optional post-import sanity check (counts + type breakdown):
+- `npm run region:catalog:verify`
+
 ## Dossier generation API
 
 - The admin-only route `POST /api/generate-bird-dossier` replaces the older `generate-text` endpoint with the Field-Guide D1 workflow. Provide `bird_id` in the JSON body and the route will call `AI_MODEL_TEXT` (configured through `src/lib/config.ts`) to generate the dossier.

@@ -4,6 +4,7 @@ import { getPlaceById, updatePlace } from "@/lib/placeService";
 import { getLatestApprovedContentBlockForPlace } from "@/lib/placeContentService";
 import { normalizePlaceNotableUnits } from "@/lib/placeNotableUnits";
 import { PLACE_STATUS_VALUES, PLACE_TYPE_VALUES, type PlaceNotableUnit, type PlaceStatus, type PlaceType } from "@/types/place";
+import { supabaseServerClient } from "@/lib/supabaseServerClient";
 
 function asString(value: unknown) {
   return typeof value === "string" ? value.trim() : "";
@@ -41,6 +42,7 @@ export async function PATCH(request: Request, ctx: { params: Promise<{ id: strin
   const body = await request.json().catch(() => ({}));
   const notableUnitsRaw = body?.notable_units_json;
   const hasNotableUnitsUpdate = Object.prototype.hasOwnProperty.call(body ?? {}, "notable_units_json");
+  const hasLeafletRegionUpdate = Object.prototype.hasOwnProperty.call(body ?? {}, "leaflet_region_id");
 
   let notableUnitsUpdate: PlaceNotableUnit[] | null | undefined = undefined;
   if (hasNotableUnitsUpdate) {
@@ -53,6 +55,42 @@ export async function PATCH(request: Request, ctx: { params: Promise<{ id: strin
         { error: "notable_units_json must be a JSON array (or null)." },
         { status: 400 }
       );
+    }
+  }
+
+  let leafletRegionUpdate: string | null | undefined = undefined;
+  if (hasLeafletRegionUpdate) {
+    const raw = asString(body?.leaflet_region_id);
+    leafletRegionUpdate = raw ? raw : null;
+
+    if (leafletRegionUpdate) {
+      const { data, error } = await supabaseServerClient
+        .from("distribution_region_catalog_items")
+        .select("catalog,scope,type")
+        .eq("region_id", leafletRegionUpdate)
+        .maybeSingle();
+
+      if (error) {
+        return NextResponse.json(
+          { error: "Unable to validate leaflet_region_id." },
+          { status: 500 }
+        );
+      }
+
+      const catalog = String(data?.catalog ?? "");
+      const scope = String(data?.scope ?? "");
+      const type = String(data?.type ?? "");
+      const ok =
+        catalog === "hungaryRegions" &&
+        scope === "hungary" &&
+        (type === "spa" || type === "microregion");
+
+      if (!ok) {
+        return NextResponse.json(
+          { error: "leaflet_region_id must reference a HU Natura SPA or HU microregion catalog item." },
+          { status: 400 }
+        );
+      }
     }
   }
 
@@ -165,6 +203,7 @@ export async function PATCH(request: Request, ctx: { params: Promise<{ id: strin
     best_visit_note: typeof body?.best_visit_note === "string" ? body.best_visit_note : body?.best_visit_note === null ? null : undefined,
     notable_units_json: hasNotableUnitsUpdate ? notableUnitsUpdate : undefined,
     generation_input: typeof body?.generation_input === "string" ? body.generation_input : body?.generation_input === null ? null : undefined,
+    leaflet_region_id: hasLeafletRegionUpdate ? leafletRegionUpdate : undefined,
     published_at: requestedStatus === "published" ? new Date().toISOString() : undefined,
     published_revision: requestedStatus === "published" ? nextRevision : undefined,
   });
