@@ -25,7 +25,7 @@
   display: flex;
   align-items: flex-start;
   justify-content: flex-start;
-  padding: 18px clamp(18px, 4vw, 32px);
+  padding: 96px clamp(18px, 4vw, 32px) 18px;
 }
 
 .overlayCard {
@@ -162,4 +162,3 @@
 .tooltipFooterLink:hover {
   text-decoration: underline;
 }
-

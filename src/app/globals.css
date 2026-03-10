@@ -293,10 +293,21 @@ svg {
 .admin-topbar {
   border-radius: 18px;
   border: 1px solid var(--line);
-  background: transparent;
+  background: var(--panel-2);
   padding: clamp(0.75rem, 2.5vw, 0.9rem) clamp(0.75rem, 3vw, 1rem);
   box-shadow: 0 30px 40px rgba(5, 118, 141, 0.12);
   color: var(--brand-warm);
+}
+
+.admin-topbar--dashboard-overlay {
+  position: fixed;
+  top: clamp(12px, 2.5vw, 24px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(calc(100vw - (2 * var(--shell-side-pad, 24px))), var(--shell-main-max));
+  z-index: 1100;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 
 .admin-topbar__inner {

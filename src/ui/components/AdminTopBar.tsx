@@ -25,6 +25,7 @@ export function AdminTopBar({ action }: AdminTopBarProps) {
   const navId = useId();
   const [menuOpenForPath, setMenuOpenForPath] = useState<string | null>(null);
   const menuOpen = menuOpenForPath === pathname;
+  const overlayOnDashboard = pathname === "/admin";
 
   const isActive = (href: string) => {
     if (href === "/admin") {
@@ -35,7 +36,7 @@ export function AdminTopBar({ action }: AdminTopBarProps) {
   };
 
   return (
-    <div className="admin-topbar">
+    <div className={`admin-topbar ${overlayOnDashboard ? "admin-topbar--dashboard-overlay" : ""}`}>
       <div className="admin-topbar__inner">
         <div className="admin-topbar__brand">
           <Link
