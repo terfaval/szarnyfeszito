@@ -48,6 +48,17 @@ and persists `bird_distribution_maps.ranges[]`.
 Explorer skeleton is a future phase, but a minimal, read-only Place map + panel is now in scope (D31) so Place entities can be previewed and published without waiting for the full Explorer buildout.
 Current active scope: Studio generative engine for Bird content + Place system foundation (CRUD, AI text generation, review, publish gating) + minimal public Place map surface. Phenomenon workstream remains limited to planning until its data contracts and rendering are formally scoped.
 
+### 2.x Leaflet map defaults (D39)
+
+Applies to **display-only** maps (public `/places`, Admin Dashboard Places map, Bird distribution maps, Bird leaflets mini maps), unless explicitly noted.
+
+- Static camera: fixed center+zoom per map surface; no user zoom/pan.
+- Interactions disabled: zoom controls, scroll-wheel zoom, dragging, double-click zoom, touch zoom, keyboard, box zoom.
+- Basemap: `basemap="bird"` (CARTO no-label tiles: `light_nolabels` / `dark_nolabels` chosen from system color scheme).
+- Background: light = near-white, dark = dark UI-compatible. (Container may use transparent/white fallback while tiles load.)
+- Overlay styling (marker / polygon colors) remains module-owned (per page/menu), as today.
+- Exception: editor pickers (e.g. Place location picker) remain interactive.
+
 ---
 
 ## 3. Entitások
@@ -241,12 +252,13 @@ Nincs stílusválasztás.
 
 ### 7.2 Dashboard
 
-- Full-screen Hungary map (Leaflet + OSM) showing **published** Places as markers.
+- Full-screen Hungary map (Leaflet; D39 static map defaults) showing **published** Places as markers.
   - Hover opens a popup card with: place name, location (place_type + county/nearest_city), `variants.short`, the **current season** snippet, and the **top 5** seasonal birds for that place.
   - Birds shown here are derived from `place_birds` **approved** links only (no suggested rows), and only **published** Bird entities are allowed to appear in the card.
   - Map shows only Places that are `status="published"` and not `location_precision="hidden"`.
 - Under the map: “Habitat spotlights” in 3 columns: **vízpart**, **erdő**, **hegység**.
   - Each column lists ~7 birds (habitat icon + bird name), and links to one or more published Places where the bird is visible in the current season.
+- “My sightings” panel: recent Bird sightings recorded by the current admin (timestamp + selected birds).
 - Birds count by status (pipeline)
 - Places count
 - Phenomena count
@@ -293,6 +305,23 @@ Tabs:
 - Alul “Accept” gombbal a recept rögzíthető (review_status: `approved`). A lista alapértelmezetten csak az approved recepteket mutatja: név + elkészítési idő pill + top 5 hozzávaló.
 - A recept adatlapon van külön “review note” mező: a jegyzet mentése után a rendszer regenerálja a receptet (review_status: `draft`), majd “Accept”-tel ismét jóváhagyható. Mentés felülírható (A), de minden művelet auditálható metadatával (model + időbélyeg).
 - Explorer nem fogyaszt Chef tartalmat (Admin-only).
+
+---
+
+### 7.7 Birdwatch sightings (Admin)
+
+- Studio-only quick logging for “I saw this bird” records (Explorer is out of scope).
+- A fixed sticky button is available in the bottom-left corner on all protected Studio admin pages.
+  - Icon: `public/icon_birdwatch.svg`.
+  - Opens a popup panel for recording sightings.
+- The popup panel (v1) supports:
+  - Selecting one or more Birds from the registry via a searchable, filterable list.
+  - Filters include: `color_tags` (multi), `size_category`, `visibility_category`, plus free-text search on bird name.
+- Saving a sighting stores:
+  - `seen_at` timestamp (defaults to now),
+  - `created_by` (admin user id),
+  - selected `bird_id` links (with optional per-bird quantity later; v1 defaults to 1).
+- The `/admin` Dashboard shows the most recent “My sightings” list for the current admin.
 
 ---
 

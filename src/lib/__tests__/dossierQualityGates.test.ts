@@ -18,6 +18,7 @@ const baseBird: Bird = {
   size_category: null,
   visibility_category: null,
   classification_status: "none",
+  color_tags: [],
   created_at: "2026-01-01T00:00:00.000Z",
   updated_at: "2026-01-01T00:00:00.000Z",
 };

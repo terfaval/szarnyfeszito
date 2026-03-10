@@ -565,6 +565,10 @@ svg {
   color: var(--brand-warm);
 }
 
+.admin-text-accent {
+  color: var(--brand-accent);
+}
+
 .admin-inline-code {
   display: inline-flex;
   align-items: center;

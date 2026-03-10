@@ -19,6 +19,17 @@ export type BirdVisibilityCategory =
 
 export type BirdVisibilityCategoryLegacy = "frequent" | "seasonal" | "rare";
 
+export type BirdColorTag =
+  | "white"
+  | "black"
+  | "grey"
+  | "brown"
+  | "yellow"
+  | "orange"
+  | "red"
+  | "green"
+  | "blue";
+
 export type Bird = {
   id: string;
   slug: string;
@@ -32,6 +43,7 @@ export type Bird = {
   size_category: BirdSizeCategory | null;
   visibility_category: BirdVisibilityCategory | null;
   classification_status: BirdSubStatus;
+  color_tags: BirdColorTag[];
   created_at: string;
   updated_at: string;
 };
@@ -55,6 +67,7 @@ export type BirdUpdateInput = {
   size_category?: BirdSizeCategory | null;
   visibility_category?: BirdVisibilityCategory | null;
   classification_status?: BirdSubStatus;
+  color_tags?: BirdColorTag[];
 };
 
 export const BIRD_STATUS_VALUES: BirdStatus[] = [

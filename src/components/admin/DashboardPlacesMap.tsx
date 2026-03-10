@@ -114,7 +114,18 @@ export default function DashboardPlacesMap({
   return (
     <section className={styles.section} aria-label="Published places map">
       <div className={styles.layout} style={{ position: "relative" }}>
-        <MapContainer className={styles.map} center={center} zoom={7} scrollWheelZoom>
+        <MapContainer
+          className={styles.map}
+          center={center}
+          zoom={7}
+          zoomControl={false}
+          scrollWheelZoom={false}
+          doubleClickZoom={false}
+          dragging={false}
+          keyboard={false}
+          boxZoom={false}
+          touchZoom={false}
+        >
           <TileLayer url={tileLayerArgs.url} attribution={tileLayerArgs.attribution} />
           {markers.map((marker) => {
             if (marker.lat === null || marker.lng === null) return null;

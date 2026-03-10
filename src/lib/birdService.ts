@@ -1,24 +1,30 @@
 import { supabaseServerClient } from "@/lib/supabaseServerClient";
 import {
   Bird,
+  BirdColorTag,
   BirdCreateInput,
   BirdStatus,
+  BirdSizeCategory,
   BirdUpdateInput,
   BIRD_STATUS_VALUES,
+  BirdVisibilityCategory,
 } from "@/types/bird";
 import { normalizeHungarianName } from "@/lib/stringUtils";
 
 type ListBirdsOptions = {
   search?: string;
   status?: BirdStatus;
+  sizeCategory?: BirdSizeCategory;
+  visibilityCategory?: BirdVisibilityCategory;
+  colorTags?: BirdColorTag[];
 };
 
 export async function listBirds(options: ListBirdsOptions = {}): Promise<Bird[]> {
-  const { search, status } = options;
+  const { search, status, sizeCategory, visibilityCategory, colorTags } = options;
   let query = supabaseServerClient
     .from("birds")
     .select(
-      "id,slug,name_hu,name_latin,status,published_at,published_revision,science_dossier_status,visual_brief_status,size_category,visibility_category,classification_status,created_at,updated_at"
+      "id,slug,name_hu,name_latin,status,published_at,published_revision,science_dossier_status,visual_brief_status,size_category,visibility_category,classification_status,color_tags,created_at,updated_at"
     )
     .order("updated_at", { ascending: false })
     .limit(100);
@@ -27,9 +33,21 @@ export async function listBirds(options: ListBirdsOptions = {}): Promise<Bird[]>
     query = query.eq("status", status);
   }
 
+  if (sizeCategory) {
+    query = query.eq("size_category", sizeCategory);
+  }
+
+  if (visibilityCategory) {
+    query = query.eq("visibility_category", visibilityCategory);
+  }
+
+  if (colorTags && colorTags.length > 0) {
+    query = query.overlaps("color_tags", colorTags);
+  }
+
   if (search) {
     const normalized = `%${search.trim().toLowerCase()}%`;
-    query = query.ilike("name_hu", normalized);
+    query = query.or(`name_hu.ilike.${normalized},name_latin.ilike.${normalized}`);
   }
 
   const { data, error } = await query;
@@ -45,7 +63,7 @@ export async function listBirdsMissingClassification(): Promise<Bird[]> {
   const { data, error } = await supabaseServerClient
     .from("birds")
     .select(
-      "id,slug,name_hu,name_latin,status,published_at,published_revision,science_dossier_status,visual_brief_status,size_category,visibility_category,classification_status,created_at,updated_at"
+      "id,slug,name_hu,name_latin,status,published_at,published_revision,science_dossier_status,visual_brief_status,size_category,visibility_category,classification_status,color_tags,created_at,updated_at"
     )
     .or("size_category.is.null,visibility_category.is.null")
     .order("updated_at", { ascending: false })
@@ -62,7 +80,7 @@ export async function getBirdById(id: string): Promise<Bird | null> {
   const { data, error } = await supabaseServerClient
     .from("birds")
     .select(
-      "id,slug,name_hu,name_latin,status,published_at,published_revision,science_dossier_status,visual_brief_status,size_category,visibility_category,classification_status,created_at,updated_at"
+      "id,slug,name_hu,name_latin,status,published_at,published_revision,science_dossier_status,visual_brief_status,size_category,visibility_category,classification_status,color_tags,created_at,updated_at"
     )
     .eq("id", id)
     .maybeSingle();
@@ -78,7 +96,7 @@ export async function getBirdBySlug(slug: string): Promise<Bird | null> {
   const { data, error } = await supabaseServerClient
     .from("birds")
     .select(
-      "id,slug,name_hu,name_latin,status,published_at,published_revision,science_dossier_status,visual_brief_status,size_category,visibility_category,classification_status,created_at,updated_at"
+      "id,slug,name_hu,name_latin,status,published_at,published_revision,science_dossier_status,visual_brief_status,size_category,visibility_category,classification_status,color_tags,created_at,updated_at"
     )
     .eq("slug", slug)
     .maybeSingle();

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { getAdminUserFromCookies } from "@/lib/auth";
 import { listBirds } from "@/lib/birdService";
 import { listPlaces, listPublishedPlaceMarkers, listPublishedPlacesByPrimaryType } from "@/lib/placeService";
 import { listLatestDossierBlocksForBirds } from "@/lib/contentService";
@@ -7,6 +8,7 @@ import { getSignedImageUrl, listCurrentIconicImagesForBirds } from "@/lib/imageS
 import { BirdStatus, BIRD_STATUS_VALUES } from "@/types/bird";
 import type { PlaceType } from "@/types/place";
 import { getCurrentSeasonKey } from "@/lib/season";
+import { listBirdSightingsForUser } from "@/lib/birdSightingService";
 import { Card } from "@/ui/components/Card";
 import { StatusPill } from "@/ui/components/StatusPill";
 import BirdIcon from "@/components/admin/BirdIcon";
@@ -40,6 +42,7 @@ const habitatIconForClass = (habitatClass: unknown) => {
 };
 
 export default async function AdminPage() {
+  const admin = await getAdminUserFromCookies();
   const birds = await listBirds();
   const places = await listPlaces();
   const publishedMarkers = await listPublishedPlaceMarkers();
@@ -223,6 +226,9 @@ export default async function AdminPage() {
     spotlightBirdsByGroup.set(group.key, list);
   }
 
+  const mySightings = admin ? await listBirdSightingsForUser(admin.id, { limit: 8 }) : [];
+  const formatter = new Intl.DateTimeFormat("hu-HU", { dateStyle: "medium", timeStyle: "short" });
+
   return (
     <section className="admin-stack">
       <DashboardPlacesMap markers={publishedMarkers} />
@@ -285,6 +291,44 @@ export default async function AdminPage() {
             );
           })}
         </div>
+      </Card>
+
+      <Card className="stack">
+        <header className="admin-heading">
+          <p className="admin-heading__label admin-text-accent">Birdwatch</p>
+          <h2 className="admin-heading__title admin-heading__title--large">My sightings</h2>
+          <p className="admin-heading__description">
+            Your latest quick logs from the sticky Birdwatch button.
+          </p>
+        </header>
+
+        {mySightings.length === 0 ? (
+          <p className="admin-stat-note">No sightings recorded yet.</p>
+        ) : (
+          <div className="space-y-3">
+            {mySightings.map((sighting) => (
+              <div key={sighting.id} className="admin-list-link" style={{ padding: "0.9rem 1rem" }}>
+                <div className="admin-list-details">
+                  <div className="admin-bird-list-grid" style={{ gridTemplateColumns: "1fr" }}>
+                    <div className="min-w-0">
+                      <p className="admin-stat-label">{formatter.format(new Date(sighting.seen_at))}</p>
+                      <p className="admin-note-small mt-2">
+                        {sighting.birds.map((bird, idx) => (
+                          <span key={bird.id}>
+                            <Link href={`/admin/birds/${bird.id}`} className="admin-nav-link">
+                              {bird.name_hu}
+                            </Link>
+                            {idx < sighting.birds.length - 1 ? ", " : ""}
+                          </span>
+                        ))}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </Card>
 
       <Card className="stack">

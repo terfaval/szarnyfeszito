@@ -137,6 +137,8 @@ export default function BirdDistributionMap({
         doubleClickZoom={false}
         dragging={false}
         keyboard={false}
+        boxZoom={false}
+        touchZoom={false}
         attributionControl={false}
       >
         <TileLayer url={tileLayerArgs.url} attribution={tileLayerArgs.attribution} />

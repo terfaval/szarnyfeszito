@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/ui/components/Button";
 import { Card } from "@/ui/components/Card";
 import { Input } from "@/ui/components/Input";
@@ -34,11 +35,18 @@ type DraftValues = Pick<
 > & { link_bird_id_input: string };
 
 export default function PlaceBirdsEditor({ placeId }: PlaceBirdsEditorProps) {
+  const router = useRouter();
   const [placeName, setPlaceName] = useState("");
   const [links, setLinks] = useState<PlaceBirdLinkRow[]>([]);
   const [draftById, setDraftById] = useState<Record<string, DraftValues>>({});
   const [loading, setLoading] = useState(true);
   const [suggesting, setSuggesting] = useState(false);
+  const [createBirdTarget, setCreateBirdTarget] = useState<{
+    link_id: string;
+    name_latin: string;
+    name_hu: string;
+  } | null>(null);
+  const [creatingBird, setCreatingBird] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [sortMode, setSortMode] = useState<"rank" | "status" | "name">("rank");
@@ -274,6 +282,44 @@ export default function PlaceBirdsEditor({ placeId }: PlaceBirdsEditorProps) {
       return;
     }
     await updateLink(link.id, { bird_id: birdId, pending_bird_name_hu: null });
+  };
+
+  const generateBirdFromPending = async (event: FormEvent) => {
+    event.preventDefault();
+    if (!createBirdTarget) return;
+
+    setCreatingBird(true);
+    setError(null);
+    setMessage(null);
+
+    const response = await fetch(`/api/places/${placeId}/birds/generate-bird`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        link_id: createBirdTarget.link_id,
+        name_latin: createBirdTarget.name_latin.trim(),
+        name_hu: createBirdTarget.name_hu.trim() || undefined,
+      }),
+    });
+
+    const body = await response.json().catch(() => null);
+    if (!response.ok) {
+      setError(body?.error ?? "Unable to generate a bird from this pending link.");
+      setCreatingBird(false);
+      return;
+    }
+
+    const birdId = body?.data?.bird?.id;
+    if (birdId) {
+      router.push(`/admin/birds/${birdId}/text`);
+      setCreatingBird(false);
+      return;
+    }
+
+    setMessage("Bird generated. Refreshing...");
+    setCreateBirdTarget(null);
+    await refresh();
+    setCreatingBird(false);
   };
 
   return (
@@ -579,14 +625,67 @@ export default function PlaceBirdsEditor({ placeId }: PlaceBirdsEditorProps) {
                     </Button>
 
                     {isPending && link.pending_bird_name_hu ? (
-                      <Link
-                        className="btn btn--ghost"
-                        href={`/admin/birds?prefill_name_hu=${encodeURIComponent(
-                          link.pending_bird_name_hu
-                        )}&source=place_suggestion&place_name=${encodeURIComponent(placeName || "")}`}
-                      >
-                        Generate bird page
-                      </Link>
+                      <div className="flex flex-col items-end gap-2">
+                        {createBirdTarget?.link_id === link.id ? (
+                          <form className="w-full max-w-sm space-y-3" onSubmit={generateBirdFromPending}>
+                            <Input
+                              label="Latin name (required)"
+                              required
+                              value={createBirdTarget.name_latin}
+                              onChange={(e) =>
+                                setCreateBirdTarget((p) => (p ? { ...p, name_latin: e.target.value } : p))
+                              }
+                              placeholder="Grus grus"
+                            />
+                            <Input
+                              label="Hungarian name"
+                              value={createBirdTarget.name_hu}
+                              onChange={(e) =>
+                                setCreateBirdTarget((p) => (p ? { ...p, name_hu: e.target.value } : p))
+                              }
+                              placeholder={link.pending_bird_name_hu}
+                              helperText="Prefilled from the pending Place link; you can override."
+                            />
+                            <div className="flex flex-wrap items-center justify-end gap-2">
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                disabled={creatingBird}
+                                onClick={() => setCreateBirdTarget(null)}
+                              >
+                                Cancel
+                              </Button>
+                              <Button type="submit" variant="accent" disabled={creatingBird || !createBirdTarget.name_latin.trim()}>
+                                {creatingBird ? "Generating..." : "Create + generate"}
+                              </Button>
+                            </div>
+                          </form>
+                        ) : (
+                          <>
+                            <Button
+                              type="button"
+                              variant="accent"
+                              onClick={() =>
+                                setCreateBirdTarget({
+                                  link_id: link.id,
+                                  name_latin: "",
+                                  name_hu: link.pending_bird_name_hu ?? "",
+                                })
+                              }
+                            >
+                              Create + generate bird
+                            </Button>
+                            <Link
+                              className="btn btn--ghost"
+                              href={`/admin/birds?prefill_name_hu=${encodeURIComponent(
+                                link.pending_bird_name_hu
+                              )}&source=place_suggestion&place_name=${encodeURIComponent(placeName || "")}`}
+                            >
+                              Open quick-create page
+                            </Link>
+                          </>
+                        )}
+                      </div>
                     ) : null}
 
                     {isPending ? (

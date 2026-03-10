@@ -1,5 +1,6 @@
 import { ReactNode } from "react";
 import { AdminTopBar } from "./AdminTopBar";
+import BirdSightingFab from "@/components/admin/BirdSightingFab";
 
 export type AdminShellProps = {
   children: ReactNode;
@@ -35,6 +36,7 @@ export function AdminShell({
           <main className="space-y-6">{children}</main>
         </div>
       </div>
+      <BirdSightingFab />
     </div>
   );
 }

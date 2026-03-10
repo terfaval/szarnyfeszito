@@ -46,6 +46,7 @@ Studio pages should treat the `/admin` Dashboard as the canonical reference for 
 | Bird pipeline statuses | Draft → Published badges | `StatusPill` | `status-pill--*` rules | Canonical palette; never ad-hoc |
 | Publish gate items | Gate checklist rows | `.gate-checklist__item--complete/pending` | fixed colors in globals | Uppercase micro-labels |
 | Review warning callout | “Heads up” notes during review | `.admin-review-note` | fixed color in globals | Bordered callout block |
+| Accent highlight | Personal modules (“My sightings”) | `.admin-text-accent` | `--brand-accent` | Use sparingly for emphasis |
 | Form labels | Field labels | `.form-field__label` / `.form-field` | `--muted` | Uppercase micro-label; wide tracking |
 | Form helper text | Under inputs | `.form-helper` | token-backed (or add helper) | Sentence case; smaller |
 | Error message | Validation/API error | `.admin-message.admin-message--error` | global helper | Must not be `text-rose-*` in pages |

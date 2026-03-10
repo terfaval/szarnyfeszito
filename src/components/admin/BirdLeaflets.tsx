@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import type { BirdDossierLeaflets } from "@/types/dossier";
+import { getBasemapTileLayerArgs } from "@/components/maps/basemaps";
 import { getHungaryRegionDef, getWorldRegionDef } from "@/lib/leafletsRegions";
 import { getHungaryRegionV2Def, getWorldRegionV2Def } from "@/lib/leafletsRegionsV2";
 
@@ -12,8 +13,6 @@ type LeafletMiniMapProps = {
   leaflets: BirdDossierLeaflets | null | undefined;
   className?: string;
 };
-
-const tileUrl = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
 
 const intensityColor = (value: number) => {
   const clamped = Math.max(0, Math.min(1, value));
@@ -25,6 +24,16 @@ export default function BirdLeaflets({ kind, leaflets, className }: LeafletMiniM
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<L.Map | null>(null);
   const overlayRef = useRef<L.LayerGroup | null>(null);
+  const tileLayerRef = useRef<L.TileLayer | null>(null);
+  const [isDark, setIsDark] = useState(false);
+
+  useEffect(() => {
+    const media = window.matchMedia("(prefers-color-scheme: dark)");
+    const update = () => setIsDark(media.matches);
+    update();
+    media.addEventListener("change", update);
+    return () => media.removeEventListener("change", update);
+  }, []);
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) {
@@ -48,10 +57,14 @@ export default function BirdLeaflets({ kind, leaflets, className }: LeafletMiniM
       map.setView([47.1625, 19.5033], 6);
     }
 
-    L.tileLayer(tileUrl, {
+    const initialIsDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const tileLayerArgs = getBasemapTileLayerArgs({ basemap: "bird", isDark: initialIsDark });
+    const tileLayer = L.tileLayer(tileLayerArgs.url, {
       maxZoom: 8,
       minZoom: 1,
-    }).addTo(map);
+    });
+    tileLayer.addTo(map);
+    tileLayerRef.current = tileLayer;
 
     mapRef.current = map;
     overlayRef.current = L.layerGroup().addTo(map);
@@ -59,10 +72,18 @@ export default function BirdLeaflets({ kind, leaflets, className }: LeafletMiniM
     return () => {
       overlayRef.current?.clearLayers();
       overlayRef.current = null;
+      tileLayerRef.current = null;
       map.remove();
       mapRef.current = null;
     };
   }, [kind]);
+
+  useEffect(() => {
+    const layer = tileLayerRef.current;
+    if (!layer) return;
+    const next = getBasemapTileLayerArgs({ basemap: "bird", isDark });
+    layer.setUrl(next.url);
+  }, [isDark]);
 
   useEffect(() => {
     const overlay = overlayRef.current;

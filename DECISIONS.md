@@ -547,7 +547,7 @@ Indok: minimál, gyors admin workflow, de determinisztikus contracttal és kontr
 - A Place szöveges tartalmak UI-variánsai (teaser/short/long/seasonal_snippet/ethics_tip/...) a `content_blocks` rekordban, strukturált JSON payloadként tárolódnak, szigorú Zod-validációval; AI generálás kizárólag szerver oldalon történik.
 - Publish gate (Place): kötelező meta (name/slug/place_type/region_landscape/county/nearest_city) + kötelező content variánsok (short + seasonal_snippet + ethics_tip) approved.
 - Etikai védelem: `location_precision (exact|approximate|hidden)` + `sensitivity_level (normal|sensitive)` mezők; `hidden` esetén a helynek nincs publikus térképes jelölője.
-- Minimal public surface: `/places` read-only map + panel (Leaflet) csak published+approved Place rekordokat jelenít meg; nincs runtime AI, nincs service role key kliens oldalon.
+- Minimal public surface: `/places` read-only map + panel (Leaflet; D39 static map defaults) csak published+approved Place rekordokat jelenít meg; nincs runtime AI, nincs service role key kliens oldalon.
 
 Indok: a Place entitások hamar publikus UI elemek lesznek, ezért most kell a stabil adatmodell + workflow + szerver oldali publish gating, miközben a teljes Explorer buildout továbbra is későbbi fázis.
 
@@ -600,7 +600,7 @@ Indok: a publish-ready, approved asseteket védeni kell a véletlen felülírás
 
 ## D36 – Admin Dashboard: published Places map + seasonal bird hover cards
 
-- A Studio `/admin` Dashboard tetején megjelenik egy full-screen Magyarország térkép (Leaflet + OSM), amely csak **published** Place-eket jelöl (rejtett location nem jelenhet meg).
+- A Studio `/admin` Dashboard tetején megjelenik egy full-screen Magyarország térkép (Leaflet; D39 static map defaults), amely csak **published** Place-eket jelöl (rejtett location nem jelenhet meg).
 - Hoverre egy popup kártya jelenik meg a helyhez, amely a Place canonical UI contractját használja:
   - `variants.short`
   - `variants.seasonal_snippet[currentSeason]`
@@ -612,3 +612,62 @@ Indok: a publish-ready, approved asseteket védeni kell a véletlen felülírás
 - A Dashboard alatt “Habitat spotlights” blokk 3 oszloppal (vízpart/erdő/hegység), oszloponként ~7 madárral (habitat ikon + név + linkelt helyszín(ek)).
 
 Indok: a Place rendszer publikálása után gyors, vizuális ellenőrző felület kell a dashboardon a publikált helyekről, az aktuális szezon tartalmáról, és a publikálásban szereplő madár-kapcsolatokról.
+
+---
+
+## D39 – Leaflet display maps: static view + minimal basemap v1
+
+- Cél: a display-only Leaflet térképek (public `/places`, Admin Dashboard Places map, Bird distribution maps, Bird leaflets mini maps) egységesen statikus nézetet adjanak: nincs zoom/pan, nem „elviszi” a görgetést, és vizuálisan minimalista.
+- Basemap: `basemap="bird"` (CARTO no-label tiles: `light_nolabels` / `dark_nolabels` a rendszer color scheme-je szerint).
+- Interakciók tiltása: `zoomControl=false`, `scrollWheelZoom=false`, `doubleClickZoom=false`, `dragging=false`, `keyboard=false`, `boxZoom=false`, `touchZoom=false` (és ahol releváns: `tap=false`).
+- Kamera rögzítés: map-specifikus center+zoom; szükség esetén `minZoom=maxZoom` (react-leaflet) vagy `setMinZoom/setMaxZoom` (vanilla Leaflet) használható.
+- Kontrakt: a jelölések / overlayk színe és legendája modulonként marad (ahogy most is), csak a basemap és az interakciós defaultok közösek.
+- Kivétel: szerkesztő jellegű picker térképek (pl. PlaceLocationPicker) interaktívak maradnak.
+
+Indok: következetes UX (scroll/zoom konfliktus elkerülése), olvasható UI overlayk, és auditálható, specelt map baseline.
+
+---
+
+## D37 – Birdwatch sightings log v1 (Studio-only)
+
+**Status:** Accepted  
+**Date:** 2026-03-10  
+**Scope:** Studio admin surfaces. Explorer out of scope.
+
+### Context
+Need a fast way to record “I saw this bird” events during content work / field use, and show them on the Studio dashboard.
+
+### Decision
+- Introduce a Studio-only “sightings” module:
+  - A sticky button on protected admin pages opens a small popup panel for recording sightings.
+  - The `/admin` dashboard shows the latest sightings for the current admin (timestamp + selected birds).
+- Persist sightings in a dedicated table pair:
+  - `bird_sightings` (who + when + optional notes)
+  - `bird_sighting_birds` (join table for one-or-more selected birds; extensible for per-bird quantity later)
+- Server-side gating:
+  - All writes and reads are authenticated via `getAdminUserFromCookies`.
+  - DB RLS policies allow `service_role` for all operations (matching existing server-only patterns).
+
+### Out of scope (v1)
+- Explorer rendering or public sharing of sightings.
+- Location capture, media uploads, or AI-assisted identification.
+
+---
+
+## D38 – Bird color tags v1 (Studio filters)
+
+**Status:** Accepted  
+**Date:** 2026-03-10  
+**Scope:** Studio Bird metadata + admin picker filters. Explorer out of scope.
+
+### Context
+The Bird registry needs a deterministic, queryable color facet to support sightings picker filtering (and future public surfaces) without client-side inference.
+
+### Decision
+- Add `birds.color_tags` as an enum-array field (`bird_color_tag[]`) with a small curated palette (v1).
+- Admin UX can edit `color_tags` manually on the Bird editor (no AI generation).
+- Filtering uses canonical `birds` fields only (no dossier text reinterpretation in UI).
+
+### Out of scope (v1)
+- Automated extraction of colors from images/text.
+- A separate audited artifact table for color suggestions.

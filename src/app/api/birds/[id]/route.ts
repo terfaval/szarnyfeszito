@@ -2,6 +2,32 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAdminUserFromCookies } from "@/lib/auth";
 import { getBirdById, updateBird } from "@/lib/birdService";
 import { supabaseServerClient } from "@/lib/supabaseServerClient";
+import { BirdColorTag } from "@/types/bird";
+
+const BIRD_COLOR_TAGS: BirdColorTag[] = [
+  "white",
+  "black",
+  "grey",
+  "brown",
+  "yellow",
+  "orange",
+  "red",
+  "green",
+  "blue",
+];
+
+function parseColorTags(value: unknown): BirdColorTag[] | undefined {
+  if (!Array.isArray(value)) {
+    return undefined;
+  }
+
+  const cleaned = value
+    .filter((item) => typeof item === "string")
+    .map((item) => item.trim())
+    .filter((item) => BIRD_COLOR_TAGS.includes(item as BirdColorTag)) as BirdColorTag[];
+
+  return Array.from(new Set(cleaned));
+}
 
 export async function PATCH(
   request: NextRequest,
@@ -79,6 +105,7 @@ export async function PATCH(
     name_hu: body.name_hu,
     name_latin: body.name_latin,
     status: requestedStatus,
+    color_tags: parseColorTags(body.color_tags),
     published_at:
       requestedStatus === "published" ? new Date().toISOString() : undefined,
     published_revision:
