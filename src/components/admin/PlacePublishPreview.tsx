@@ -175,14 +175,15 @@ export default function PlacePublishPreview({
 
             {hasDidYouKnow ? (
               <div className={styles.didYouKnowCard} aria-label="Tudtad-e">
-                <Image
-                  src="/icon_didyouknow.svg"
-                  alt=""
-                  aria-hidden="true"
-                  className={styles.didYouKnowIcon}
-                  width={44}
-                  height={44}
-                />
+                <div className={styles.didYouKnowBadge} aria-hidden="true">
+                  <Image
+                    src="/icon_didyouknow.svg"
+                    alt=""
+                    className={styles.didYouKnowIcon}
+                    width={44}
+                    height={44}
+                  />
+                </div>
                 <p className={styles.didYouKnowText}>{variants.did_you_know}</p>
               </div>
             ) : null}
@@ -205,4 +206,3 @@ export default function PlacePublishPreview({
     </section>
   );
 }
-

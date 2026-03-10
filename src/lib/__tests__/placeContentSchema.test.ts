@@ -11,7 +11,6 @@ describe("placeUiVariantsSchemaV1", () => {
     expect(payload.variants.teaser).toBe("");
     expect(payload.variants.short).toBe("");
     expect(payload.variants.seasonal_snippet.spring).toBe("");
-    expect(payload.variants.notable_units).toEqual([]);
   });
 
   it("rejects non-string variant values", () => {
@@ -24,4 +23,3 @@ describe("placeUiVariantsSchemaV1", () => {
     ).toThrow();
   });
 });
-

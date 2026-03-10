@@ -563,14 +563,28 @@ Indok: a Place entitások hamar publikus UI elemek lesznek, ezért most kell a s
 ## D34 – Place: UI variants output schema (place_ui_variants_v1)
 
 - A Place panel szöveges tartalma strukturált JSON-ként tárolódik a `content_blocks.blocks_json` mezőben, `schema_version="place_ui_variants_v1"` és `language="hu"` mellett.
-- Canonical UI variant blokkok a `variants` objektumban: `teaser`, `short`, `long`, `seasonal_snippet`, `ethics_tip`, `did_you_know`, `practical_tip`, `when_to_go`, `who_is_it_for`, `nearby_protection_context`, `notable_units`.
+- Canonical UI variant blokkok a `variants` objektumban: `teaser`, `short`, `long`, `seasonal_snippet`, `ethics_tip`, `did_you_know`, `practical_tip`, `when_to_go`, `who_is_it_for`, `nearby_protection_context`.
 - Kötelező mentési/publish feltételek (v1): `short`, `ethics_tip`, valamint a `seasonal_snippet.spring/summer/autumn/winter` mindegyike (nem üres).
-- Opcionális mezők lehetnek üres stringek; `notable_units` opcionális tömb `{ name, type?, note }` elemekkel (ha van elem, `name` + `note` kötelező).
+- Opcionális mezők lehetnek üres stringek.
 - Forward-compat: a payload enged extra kulcsokat (unknown catchall) a root és `variants` szinten; breaking változásnál schema verzió bump szükséges.
 
 Indok: konzisztens, UI-barát Place panel contract, ami egyszerre AI-kompatibilis és manuálisan szerkeszthető, miközben megőrzi a publish gating egyszerűségét.
 
 ---
+
+## D41 – Place: notable units (places.notable_units_json)
+
+- A Place-en belüli, névvel rendelkező alegységek (pl. halastórendszer egy tava, sziget, ösvény-szakasz) **nem** külön Place entitások v1-ben; csak tájékoztató, látogatói szintű struktúra.
+- Canonical tárolás: `places.notable_units_json` (jsonb, nullable), a public felület erről olvas.
+- Séma (v1): tömb (0–8 elem), elem: `{ name, unit_type?, distance_text?, short_note, order_index }`.
+  - `unit_type` opcionális technikai enum: wetland | fishpond | lake_section | reedbed | lookout | trail | island | shoreline | grassland_section | forest_section | other
+  - `distance_text` opcionális, emberi relatív szöveg (nem koordináta, nem pusztán szám)
+  - `short_note` kötelező, 1–2 mondat, nem túl magabiztos, nem érzékeny
+  - `order_index` kötelező, 1-től indul
+- AI generálás kizárólag szerver oldalon, validált és normalizált outputtal; bizonytalanság esetén üres lista az alapértelmezett (hallucináció kerülése).
+- Regenerálás explicit editor művelet (Place Notable Units panel): nem írjuk felül a kézzel szerkesztett listát a normál content regenerálás során.
+
+Indok: a Place panelben hasznos belső tájékozódási struktúra, miközben nem csúszunk át precíz megfigyelési pont / monitoring jellegű granularitásba.
 
 ## D35 – Place → Bird suggestion engine (editor-assist, non-publishing)
 

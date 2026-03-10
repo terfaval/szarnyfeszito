@@ -22,6 +22,30 @@ export type PlaceType = (typeof PLACE_TYPE_VALUES)[number];
 export type PlaceLocationPrecision = "exact" | "approximate" | "hidden";
 export type PlaceSensitivityLevel = "normal" | "sensitive";
 
+export const PLACE_NOTABLE_UNIT_TYPE_VALUES = [
+  "wetland",
+  "fishpond",
+  "lake_section",
+  "reedbed",
+  "lookout",
+  "trail",
+  "island",
+  "shoreline",
+  "grassland_section",
+  "forest_section",
+  "other",
+] as const;
+
+export type PlaceNotableUnitType = (typeof PLACE_NOTABLE_UNIT_TYPE_VALUES)[number];
+
+export type PlaceNotableUnit = {
+  name: string;
+  unit_type: PlaceNotableUnitType | null;
+  distance_text: string | null;
+  short_note: string;
+  order_index: number;
+};
+
 export type Place = {
   id: string;
   slug: string;
@@ -45,7 +69,7 @@ export type Place = {
   parking_note: string | null;
   best_visit_note: string | null;
 
-  notable_units_json: unknown | null;
+  notable_units_json: PlaceNotableUnit[] | null;
   generation_input: string | null;
 
   published_at: string | null;

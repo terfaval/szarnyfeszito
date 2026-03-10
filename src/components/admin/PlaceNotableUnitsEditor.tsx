@@ -1,13 +1,19 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/ui/components/Button";
 import { Card } from "@/ui/components/Card";
 import { ReviewStatusPill } from "@/ui/components/ReviewStatusPill";
-import type { Place } from "@/types/place";
+import {
+  PLACE_NOTABLE_UNIT_TYPE_VALUES,
+  type Place,
+  type PlaceNotableUnit,
+  type PlaceNotableUnitType,
+} from "@/types/place";
 import type { PlaceContentBlockRecord } from "@/lib/placeContentService";
 import type { ReviewStatus } from "@/types/content";
+import { normalizePlaceNotableUnits } from "@/lib/placeNotableUnits";
 
 type PlaceNotableUnitsEditorProps = {
   place: Place;
@@ -15,68 +21,125 @@ type PlaceNotableUnitsEditorProps = {
   latestApproved: PlaceContentBlockRecord | null;
 };
 
-function prettyJson(value: unknown) {
-  if (value === null || value === undefined) return "";
+type EditableUnit = PlaceNotableUnit & { client_id: string };
+
+function newClientId() {
   try {
-    return JSON.stringify(value, null, 2);
+    return globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`;
   } catch {
-    return "";
+    return `${Date.now()}-${Math.random()}`;
   }
 }
 
-function parseJsonOrError(input: string): { ok: true; value: unknown } | { ok: false; error: string } {
-  const trimmed = input.trim();
-  if (!trimmed) return { ok: true, value: null };
-  try {
-    return { ok: true, value: JSON.parse(trimmed) };
-  } catch {
-    return { ok: false, error: "Must be valid JSON." };
-  }
+function withClientIds(units: PlaceNotableUnit[]): EditableUnit[] {
+  return units.map((unit) => ({ ...unit, client_id: newClientId() }));
 }
 
-export default function PlaceNotableUnitsEditor({ place, latest, latestApproved }: PlaceNotableUnitsEditorProps) {
+function normalizeForClient(units: EditableUnit[]): EditableUnit[] {
+  const payload = units.map((unit) => ({
+    name: unit.name,
+    unit_type: unit.unit_type,
+    distance_text: unit.distance_text,
+    short_note: unit.short_note,
+    order_index: unit.order_index,
+  }));
+  return withClientIds(normalizePlaceNotableUnits(payload));
+}
+
+function isMeaningfullyEdited(unit: EditableUnit): boolean {
+  return Boolean(
+    unit.name.trim() ||
+      unit.unit_type ||
+      (unit.distance_text ?? "").trim() ||
+      unit.short_note.trim()
+  );
+}
+
+function unitTypeLabel(value: PlaceNotableUnitType) {
+  return value.replaceAll("_", " ");
+}
+
+function legacyUnitsFromBlock(block: PlaceContentBlockRecord | null): unknown[] | null {
+  const rawBlocks = block?.blocks_json as unknown;
+  if (!rawBlocks || typeof rawBlocks !== "object") return null;
+  const variants = (rawBlocks as Record<string, unknown>).variants;
+  if (!variants || typeof variants !== "object") return null;
+  const notableUnits = (variants as Record<string, unknown>).notable_units;
+  return Array.isArray(notableUnits) ? notableUnits : null;
+}
+
+export default function PlaceNotableUnitsEditor({
+  place,
+  latest,
+  latestApproved,
+}: PlaceNotableUnitsEditorProps) {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
-  const [reviewComment, setReviewComment] = useState(
-    typeof latest?.generation_meta?.review_comment === "string" ? latest.generation_meta.review_comment : ""
-  );
+  const legacyNotableUnits = useMemo(() => {
+    return legacyUnitsFromBlock(latest);
+  }, [latest]);
 
-  const [publicJson, setPublicJson] = useState(() =>
-    prettyJson(latest?.blocks_json?.variants?.notable_units ?? [])
-  );
+  const [reviewNote, setReviewNote] = useState("");
+  const [showDebugJson, setShowDebugJson] = useState(false);
 
-  const [internalJson, setInternalJson] = useState(() => prettyJson(place.notable_units_json ?? null));
+  const [units, setUnits] = useState<EditableUnit[]>(() =>
+    withClientIds(normalizePlaceNotableUnits(place.notable_units_json ?? []))
+  );
 
   const latestStatus = (latest?.review_status ?? "draft") as ReviewStatus;
   const latestApprovedAt = latestApproved?.created_at ?? null;
 
-  const savePublic = async (event: FormEvent) => {
+  const saveUnits = async (event: FormEvent) => {
     event.preventDefault();
     setSaving(true);
     setError(null);
     setMessage(null);
 
-    const parsed = parseJsonOrError(publicJson);
-    if (!parsed.ok) {
-      setError(parsed.error);
-      setSaving(false);
-      return;
+    const drafted = units
+      .map((unit) => ({
+        name: unit.name,
+        unit_type: unit.unit_type,
+        distance_text: unit.distance_text,
+        short_note: unit.short_note,
+        order_index: unit.order_index,
+      }))
+      .map((row) => ({
+        ...row,
+        name: row.name.trim(),
+        distance_text: row.distance_text ? row.distance_text.trim() : null,
+        short_note: row.short_note.trim(),
+      }));
+
+    for (const row of drafted) {
+      const meaningful = Boolean(row.name || row.unit_type || row.distance_text || row.short_note);
+      if (!meaningful) continue;
+
+      if (!row.name) {
+        setError("Each unit needs a name (or remove the row).");
+        setSaving(false);
+        return;
+      }
+      if (!row.short_note) {
+        setError("Each unit needs a short note (or remove the row).");
+        setSaving(false);
+        return;
+      }
+      if (typeof row.order_index !== "number" || !Number.isFinite(row.order_index) || row.order_index < 1) {
+        setError("order_index must be an integer starting at 1.");
+        setSaving(false);
+        return;
+      }
     }
 
-    const notableUnits = parsed.value === null ? [] : parsed.value;
-    if (!Array.isArray(notableUnits)) {
-      setError("notable_units must be a JSON array (or empty).");
-      setSaving(false);
-      return;
-    }
+    const payloadUnits = normalizePlaceNotableUnits(drafted);
 
-    const response = await fetch(`/api/places/${place.id}/content`, {
+    const response = await fetch(`/api/places/${place.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ variants: { notable_units: notableUnits } }),
+      body: JSON.stringify({ notable_units_json: payloadUnits }),
     });
 
     const payload = await response.json().catch(() => null);
@@ -86,61 +149,8 @@ export default function PlaceNotableUnitsEditor({ place, latest, latestApproved 
       return;
     }
 
+    setUnits((prev) => normalizeForClient(prev));
     setMessage("Saved notable units. Refreshing…");
-    router.refresh();
-    setSaving(false);
-  };
-
-  const saveInternal = async (event: FormEvent) => {
-    event.preventDefault();
-    setSaving(true);
-    setError(null);
-    setMessage(null);
-
-    const parsed = parseJsonOrError(internalJson);
-    if (!parsed.ok) {
-      setError(parsed.error);
-      setSaving(false);
-      return;
-    }
-
-    const response = await fetch(`/api/places/${place.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ notable_units_json: parsed.value }),
-    });
-
-    const payload = await response.json().catch(() => null);
-    if (!response.ok) {
-      setError(payload?.error ?? "Unable to save internal notable units.");
-      setSaving(false);
-      return;
-    }
-
-    setMessage("Saved internal notable units. Refreshing…");
-    router.refresh();
-    setSaving(false);
-  };
-
-  const requestFix = async () => {
-    setSaving(true);
-    setError(null);
-    setMessage(null);
-
-    const response = await fetch(`/api/places/${place.id}/content/request-fix`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ review_comment: reviewComment.trim() }),
-    });
-
-    const payload = await response.json().catch(() => null);
-    if (!response.ok) {
-      setError(payload?.error ?? "Unable to save review note.");
-      setSaving(false);
-      return;
-    }
-
-    setMessage("Review note saved. Regenerate to apply it.");
     router.refresh();
     setSaving(false);
   };
@@ -150,46 +160,81 @@ export default function PlaceNotableUnitsEditor({ place, latest, latestApproved 
     setError(null);
     setMessage(null);
 
-    const response = await fetch(`/api/places/${place.id}/content/generate`, { method: "POST" });
+    const response = await fetch(`/api/places/${place.id}/notable-units/generate`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ review_note: reviewNote.trim() || null }),
+    });
+
     const payload = await response.json().catch(() => null);
     if (!response.ok) {
-      setError(payload?.error ?? "Unable to regenerate place content.");
+      setError(payload?.error ?? "Unable to regenerate notable units.");
       setSaving(false);
       return;
     }
 
-    setMessage("Generated new draft content. Refreshing…");
+    const nextUnits = normalizePlaceNotableUnits(payload?.data?.place?.notable_units_json ?? []);
+    setUnits(withClientIds(nextUnits));
+    setMessage("Regenerated notable units. Refreshing…");
     router.refresh();
     setSaving(false);
   };
 
-  const approve = async () => {
-    setSaving(true);
-    setError(null);
-    setMessage(null);
+  const addRow = () => {
+    setUnits((prev) => [
+      ...prev,
+      {
+        client_id: newClientId(),
+        name: "",
+        unit_type: null,
+        distance_text: null,
+        short_note: "",
+        order_index: prev.length + 1,
+      },
+    ]);
+  };
 
-    const response = await fetch(`/api/places/${place.id}/content/approve`, { method: "POST" });
-    const payload = await response.json().catch(() => null);
-    if (!response.ok) {
-      setError(payload?.error ?? "Unable to approve content.");
-      setSaving(false);
-      return;
+  const moveRow = (clientId: string, direction: -1 | 1) => {
+    setUnits((prev) => {
+      const index = prev.findIndex((row) => row.client_id === clientId);
+      if (index < 0) return prev;
+      const nextIndex = index + direction;
+      if (nextIndex < 0 || nextIndex >= prev.length) return prev;
+      const copy = [...prev];
+      const [item] = copy.splice(index, 1);
+      copy.splice(nextIndex, 0, item);
+      return copy.map((row, idx) => ({ ...row, order_index: idx + 1 }));
+    });
+  };
+
+  const removeRow = (clientId: string) => {
+    setUnits((prev) =>
+      prev.filter((row) => row.client_id !== clientId).map((row, idx) => ({ ...row, order_index: idx + 1 }))
+    );
+  };
+
+  const debugJson = useMemo(() => {
+    const payload = units.map((unit) => ({
+      name: unit.name,
+      unit_type: unit.unit_type,
+      distance_text: unit.distance_text,
+      short_note: unit.short_note,
+      order_index: unit.order_index,
+    }));
+    try {
+      return JSON.stringify(payload, null, 2);
+    } catch {
+      return "";
     }
-
-    setMessage("Approved latest content. Refreshing…");
-    router.refresh();
-    setSaving(false);
-  };
+  }, [units]);
 
   return (
-    <section className="space-y-6">
+    <section id="place-editor-notable-units" className="place-editor-notable-units space-y-5">
       <header className="admin-heading">
-        <p className="admin-heading__label">Place content</p>
         <h2 className="admin-heading__title admin-heading__title--large">Notable units</h2>
         <p className="admin-heading__description">
-          Public panel content is stored in{" "}
-          <code className="rounded bg-zinc-100 px-1 text-xs">content_blocks.blocks_json.variants.notable_units</code>.
-          Optional internal JSON lives on the Place record.
+          Structured list of internal sub-locations for the Place panel. Stored as{" "}
+          <code className="rounded bg-zinc-100 px-1 text-xs">places.notable_units_json</code>.
         </p>
         <div className="flex flex-wrap items-center gap-3">
           <ReviewStatusPill status={latestStatus} />
@@ -199,82 +244,199 @@ export default function PlaceNotableUnitsEditor({ place, latest, latestApproved 
             <span className="text-sm text-zinc-500">No approved content yet.</span>
           )}
         </div>
+        {legacyNotableUnits && legacyNotableUnits.length ? (
+          <p className="admin-note-small">
+            Note: this Place has legacy <code className="rounded bg-zinc-100 px-1 text-xs">variants.notable_units</code>{" "}
+            data in content blocks. Canonical source is{" "}
+            <code className="rounded bg-zinc-100 px-1 text-xs">places.notable_units_json</code>.
+          </p>
+        ) : null}
       </header>
 
       <Card className="place-content stack">
-        <p className="admin-subheading">Public notable units (Explorer contract)</p>
-        <p className="admin-note-small">
-          JSON array of <code className="rounded bg-zinc-100 px-1 text-xs">{"{ name, type?, note }"}</code> objects.
-          Empty array is OK.
-        </p>
-
-        <form className="space-y-4" onSubmit={savePublic}>
-          <label className="form-field">
-            <span className="form-field__label">variants.notable_units</span>
-            <div className="form-field__row">
-              <textarea
-                className="input min-h-[180px] font-mono text-xs"
-                value={publicJson}
-                onChange={(event) => setPublicJson(event.target.value)}
-                placeholder='[{"name":"Nyirkai-Hany","type":"wetland","note":"Important restoration site."}]'
-              />
+        <form className="space-y-4" onSubmit={saveUnits}>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p className="admin-subheading">Units</p>
+            <div className="flex flex-wrap gap-3">
+              <Button type="button" variant="ghost" onClick={addRow} disabled={saving}>
+                Add unit
+              </Button>
+              <Button type="button" variant="ghost" onClick={() => setUnits((p) => normalizeForClient(p))} disabled={saving}>
+                Normalize
+              </Button>
+              <Button type="submit" variant="accent" disabled={saving}>
+                Save notable units
+              </Button>
             </div>
-          </label>
-
-          <div className="flex flex-wrap gap-3">
-            <Button type="button" variant="ghost" onClick={regenerate} disabled={saving}>
-              Regenerate content
-            </Button>
-            <Button type="submit" variant="accent" disabled={saving}>
-              Save notable units (draft)
-            </Button>
-            <Button type="button" variant="primary" onClick={approve} disabled={saving}>
-              Approve latest content
-            </Button>
           </div>
+
+          {units.length ? (
+            <div className="space-y-4">
+              {units.map((unit) => (
+                <Card key={unit.client_id} className="place-editor-notable-units-row space-y-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className="text-sm font-semibold text-zinc-900">
+                      #{unit.order_index} {unit.name.trim() ? unit.name.trim() : "New unit"}
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      <Button type="button" variant="ghost" onClick={() => moveRow(unit.client_id, -1)} disabled={saving}>
+                        Up
+                      </Button>
+                      <Button type="button" variant="ghost" onClick={() => moveRow(unit.client_id, 1)} disabled={saving}>
+                        Down
+                      </Button>
+                      <Button type="button" variant="ghost" onClick={() => removeRow(unit.client_id)} disabled={saving}>
+                        Remove
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="grid gap-3 md:grid-cols-2">
+                    <label className="form-field">
+                      <span className="form-field__label">name</span>
+                      <div className="form-field__row">
+                        <input
+                          className="input"
+                          value={unit.name}
+                          onChange={(event) =>
+                            setUnits((prev) =>
+                              prev.map((row) =>
+                                row.client_id === unit.client_id ? { ...row, name: event.target.value } : row
+                              )
+                            )
+                          }
+                          placeholder="Nyirkai-Hany"
+                        />
+                      </div>
+                    </label>
+
+                    <label className="form-field">
+                      <span className="form-field__label">unit_type</span>
+                      <div className="form-field__row">
+                        <select
+                          className="input"
+                          value={unit.unit_type ?? ""}
+                          onChange={(event) =>
+                            setUnits((prev) =>
+                              prev.map((row) =>
+                                row.client_id === unit.client_id
+                                  ? {
+                                      ...row,
+                                      unit_type: event.target.value
+                                        ? (event.target.value as PlaceNotableUnitType)
+                                        : null,
+                                    }
+                                  : row
+                              )
+                            )
+                          }
+                        >
+                          <option value="">(none)</option>
+                          {PLACE_NOTABLE_UNIT_TYPE_VALUES.map((value) => (
+                            <option key={value} value={value}>
+                              {unitTypeLabel(value)}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </label>
+
+                    <label className="form-field">
+                      <span className="form-field__label">distance_text</span>
+                      <div className="form-field__row">
+                        <input
+                          className="input"
+                          value={unit.distance_text ?? ""}
+                          onChange={(event) =>
+                            setUnits((prev) =>
+                              prev.map((row) =>
+                                row.client_id === unit.client_id ? { ...row, distance_text: event.target.value || null } : row
+                              )
+                            )
+                          }
+                          placeholder="kb. 5 km-re"
+                        />
+                      </div>
+                    </label>
+
+                    <label className="form-field">
+                      <span className="form-field__label">order_index</span>
+                      <div className="form-field__row">
+                        <input
+                          className="input"
+                          type="number"
+                          min={1}
+                          value={unit.order_index}
+                          onChange={(event) =>
+                            setUnits((prev) =>
+                              prev.map((row) =>
+                                row.client_id === unit.client_id ? { ...row, order_index: Number(event.target.value) || 1 } : row
+                              )
+                            )
+                          }
+                        />
+                      </div>
+                    </label>
+                  </div>
+
+                  <label className="form-field">
+                    <span className="form-field__label">short_note</span>
+                    <div className="form-field__row">
+                      <textarea
+                        className="input min-h-[90px]"
+                        value={unit.short_note}
+                        onChange={(event) =>
+                          setUnits((prev) =>
+                            prev.map((row) =>
+                              row.client_id === unit.client_id ? { ...row, short_note: event.target.value } : row
+                            )
+                          )
+                        }
+                        placeholder="1–2 sentences about why this sub-location is interesting."
+                      />
+                    </div>
+                  </label>
+
+                  {isMeaningfullyEdited(unit) && (!unit.name.trim() || !unit.short_note.trim()) ? (
+                    <p className="admin-note-small text-red-600">Name + short note are required.</p>
+                  ) : null}
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <p className="admin-note-small">No notable units yet. Add one or regenerate.</p>
+          )}
         </form>
       </Card>
 
       <Card className="place-content stack">
-        <p className="admin-subheading">Review note (for regeneration)</p>
+        <p className="admin-subheading">Regenerate notable units</p>
+        <p className="admin-note-small">
+          Only updates <code className="rounded bg-zinc-100 px-1 text-xs">places.notable_units_json</code>. Does not regenerate the main place text.
+        </p>
         <textarea
           className="input min-h-[90px] w-full"
-          value={reviewComment}
-          onChange={(event) => setReviewComment(event.target.value)}
-          placeholder="Please add 3–5 notable sub-areas, keep them general and non-sensitive…"
+          value={reviewNote}
+          onChange={(event) => setReviewNote(event.target.value)}
+          placeholder='Optional review note, e.g. "Adj több konkrét alegységet a halastórendszerhez"'
         />
         <div className="flex flex-wrap gap-3">
-          <Button type="button" variant="ghost" onClick={requestFix} disabled={saving || !reviewComment.trim()}>
-            Save review note
+          <Button type="button" variant="ghost" onClick={regenerate} disabled={saving}>
+            Regenerate notable units
           </Button>
         </div>
       </Card>
 
       <Card className="place-content stack">
-        <p className="admin-subheading">Internal notable units (Place meta)</p>
-        <p className="admin-note-small">
-          Stored as <code className="rounded bg-zinc-100 px-1 text-xs">places.notable_units_json</code>. Not required for
-          publishing.
-        </p>
-
-        <form className="space-y-4" onSubmit={saveInternal}>
-          <label className="form-field">
-            <span className="form-field__label">notable_units_json</span>
-            <div className="form-field__row">
-              <textarea
-                className="input min-h-[160px] font-mono text-xs"
-                value={internalJson}
-                onChange={(event) => setInternalJson(event.target.value)}
-                placeholder='[{"name":"Nyirkai-Hany","type":"wetland","note":"Important restoration site."}]'
-              />
-            </div>
-          </label>
-          <div className="flex flex-wrap gap-3">
-            <Button type="submit" variant="accent" disabled={saving}>
-              Save internal JSON
-            </Button>
-          </div>
-        </form>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p className="admin-subheading">Debug JSON</p>
+          <Button type="button" variant="ghost" onClick={() => setShowDebugJson((p) => !p)} disabled={saving}>
+            {showDebugJson ? "Hide" : "Show"}
+          </Button>
+        </div>
+        {showDebugJson ? (
+          <textarea className="input min-h-[160px] font-mono text-xs" readOnly value={debugJson} />
+        ) : null}
       </Card>
 
       {error && (

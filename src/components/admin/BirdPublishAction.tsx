@@ -68,10 +68,13 @@ export function BirdPublishAction({
       {publishedAt && (
         <p className="admin-note-small">
           Last published{" "}
-          {new Date(publishedAt).toLocaleString(undefined, {
-            dateStyle: "medium",
-            timeStyle: "short",
-          })}
+          <time dateTime={publishedAt} suppressHydrationWarning>
+            {new Date(publishedAt).toLocaleString("hu-HU", {
+              dateStyle: "medium",
+              timeStyle: "short",
+              timeZone: "Europe/Budapest",
+            })}
+          </time>
           {typeof publishedRevision === "number" ? ` · rev ${publishedRevision}` : ""}
         </p>
       )}

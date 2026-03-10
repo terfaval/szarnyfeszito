@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { getAdminUserFromCookies } from "@/lib/auth";
 import { getPlaceById, updatePlace } from "@/lib/placeService";
 import { getLatestApprovedContentBlockForPlace } from "@/lib/placeContentService";
-import { PLACE_STATUS_VALUES, PLACE_TYPE_VALUES, type PlaceStatus, type PlaceType } from "@/types/place";
+import { normalizePlaceNotableUnits } from "@/lib/placeNotableUnits";
+import { PLACE_STATUS_VALUES, PLACE_TYPE_VALUES, type PlaceNotableUnit, type PlaceStatus, type PlaceType } from "@/types/place";
 
 function asString(value: unknown) {
   return typeof value === "string" ? value.trim() : "";
@@ -38,6 +39,22 @@ export async function PATCH(request: Request, ctx: { params: Promise<{ id: strin
   }
 
   const body = await request.json().catch(() => ({}));
+  const notableUnitsRaw = body?.notable_units_json;
+  const hasNotableUnitsUpdate = Object.prototype.hasOwnProperty.call(body ?? {}, "notable_units_json");
+
+  let notableUnitsUpdate: PlaceNotableUnit[] | null | undefined = undefined;
+  if (hasNotableUnitsUpdate) {
+    if (notableUnitsRaw === null) {
+      notableUnitsUpdate = null;
+    } else if (Array.isArray(notableUnitsRaw)) {
+      notableUnitsUpdate = normalizePlaceNotableUnits(notableUnitsRaw);
+    } else {
+      return NextResponse.json(
+        { error: "notable_units_json must be a JSON array (or null)." },
+        { status: 400 }
+      );
+    }
+  }
 
   const requestedStatusRaw = asString(body?.status);
   const requestedStatus = requestedStatusRaw || undefined;
@@ -146,7 +163,7 @@ export async function PATCH(request: Request, ctx: { params: Promise<{ id: strin
     access_note: typeof body?.access_note === "string" ? body.access_note : body?.access_note === null ? null : undefined,
     parking_note: typeof body?.parking_note === "string" ? body.parking_note : body?.parking_note === null ? null : undefined,
     best_visit_note: typeof body?.best_visit_note === "string" ? body.best_visit_note : body?.best_visit_note === null ? null : undefined,
-    notable_units_json: body?.notable_units_json !== undefined ? body.notable_units_json : undefined,
+    notable_units_json: hasNotableUnitsUpdate ? notableUnitsUpdate : undefined,
     generation_input: typeof body?.generation_input === "string" ? body.generation_input : body?.generation_input === null ? null : undefined,
     published_at: requestedStatus === "published" ? new Date().toISOString() : undefined,
     published_revision: requestedStatus === "published" ? nextRevision : undefined,

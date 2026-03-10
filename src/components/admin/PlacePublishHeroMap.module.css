@@ -3,14 +3,14 @@
   border-radius: 18px;
   overflow: hidden;
   border: 1px solid rgba(var(--brand-ink-rgb), 0.18);
-  background: var(--brand-paper);
+  background: var(--sf-map-water);
   box-shadow: 0 22px 40px rgba(var(--brand-ink-rgb), 0.12);
 }
 
 .map {
   height: 360px;
   width: 100%;
-  background: var(--brand-paper);
+  background: var(--sf-map-water);
 }
 
 .overlayNote {
@@ -27,4 +27,3 @@
   letter-spacing: 0.18em;
   text-transform: uppercase;
 }
-

@@ -451,10 +451,13 @@ export default function BirdImageReview({
                       </span>
                       <span className="text-xs admin-text-muted">
                         Generated{" "}
-                        {new Date(image.created_at).toLocaleString(undefined, {
-                          dateStyle: "medium",
-                          timeStyle: "short",
-                        })}
+                        <time dateTime={image.created_at} suppressHydrationWarning>
+                          {new Date(image.created_at).toLocaleString("hu-HU", {
+                            dateStyle: "medium",
+                            timeStyle: "short",
+                            timeZone: "Europe/Budapest",
+                          })}
+                        </time>
                       </span>
                     </div>
                   </div>

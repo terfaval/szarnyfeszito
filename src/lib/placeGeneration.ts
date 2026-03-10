@@ -5,6 +5,7 @@ import { AI_MODEL_TEXT } from "@/lib/aiConfig";
 import { extractJsonPayload, AIJsonParseError, AISchemaMismatchError } from "@/lib/aiUtils";
 import { hashPrompt } from "@/lib/promptHash";
 import { placeUiVariantsSchemaV1, type PlaceUiVariantsV1 } from "@/lib/placeContentSchema";
+import { normalizePlaceNotableUnits } from "@/lib/placeNotableUnits";
 import { PLACE_TYPE_VALUES, type PlaceType } from "@/types/place";
 
 const placeTypeEnum = PLACE_TYPE_VALUES as unknown as [PlaceType, ...PlaceType[]];
@@ -29,19 +30,65 @@ A JSON pontos sémája:
   - short: string (rövid panel szöveg, 2-4 mondat)
   - long: string (2-4 bekezdés, barátságos, informatív)
   - seasonal_snippet: object { spring, summer, autumn, winter } (mindegyik 2-4 mondat)
+
+  SEASONAL SNIPPET STYLE (spring/summer/autumn/winter):
+  - Each season text must read like Bird long_paragraphs[0]: a concrete field-encounter vignette at this Place in that season (present tense, specific, observable).
+  - Keep it grounded and non-generic; avoid hearsay/record phrases; do not invent digits/measurements.
+  - Safety: no exact directions, no coordinates, no nest sites, no hidden paths; keep it destination-level.
   - ethics_tip: string (rövid etikai tipp)
   - did_you_know: string (rövid érdekesség)
   - practical_tip: string (gyakorlati tanács)
   - when_to_go: string (mikor érdemes menni)
   - who_is_it_for: string (kezdő/haladó, család, fotós, stb.)
   - nearby_protection_context: string (közeli védelem / természetvédelmi kontextus; csak publikus, általános)
-  - notable_units: array of { name, type?, note } (0-8 elem; csak tájékoztató jellegű, nem érzékeny mikro-helyek)
+  - notable_units: array (0-8 elem) of { name, unit_type?, distance_text?, short_note, order_index }
+
+  NOTABLE UNITS GENERATION RULES
+  - Egyes nagyobb helyszínek belsejében vannak ismert, névvel rendelkező alegységek / részek (pl. tavak egy része, sziget, kilátó környezete, ösvény-szakasz).
+  - Ha a Place természetesen tartalmaz ilyeneket, adj vissza 3-8 tételt.
+  - Ha nem vagy biztos valós, ismert nevekből, akkor add vissza: "notable_units": [] (ne találj ki neveket).
+  - Kerüld a generikus filler neveket ("északi rész", "tópart") kivéve, ha tényleg így ismert a hely.
+  - Ne adj pontos koordinátát, fészkelőhelyet, rejtett ösvényt vagy zavarásra alkalmas mikrotippet.
+  - short_note: 1-2 mondat, informatív, nem túl biztos, nincs ritka faj "bait", nincs precíz irányítás.
+  - distance_text: emberi, relatív (pl. "kb. 5 km-re", "a déli részen"); nem koordináta, nem pusztán szám.
+  - order_index: egész szám, 1-től indul, megjelenítési sorrend.
 `;
 
 function zodIssuesToStrings(error: ZodError) {
   return error.issues
     .slice(0, 25)
     .map((issue) => `${issue.path.join(".") || "(root)"}: ${issue.message}`);
+}
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === "object" ? (value as Record<string, unknown>) : null;
+}
+
+function notableUnitsFromPlaceUiPayload(payload: unknown): unknown {
+  const obj = asRecord(payload);
+  if (!obj) return undefined;
+  if (Object.prototype.hasOwnProperty.call(obj, "notable_units")) {
+    return obj.notable_units;
+  }
+  const variants = asRecord(obj.variants);
+  if (variants && Object.prototype.hasOwnProperty.call(variants, "notable_units")) {
+    return variants.notable_units;
+  }
+  return undefined;
+}
+
+function notableUnitsFromDraftPayload(payload: unknown): unknown {
+  const obj = asRecord(payload);
+  if (!obj) return undefined;
+  if (Object.prototype.hasOwnProperty.call(obj, "notable_units")) {
+    return obj.notable_units;
+  }
+  const content = asRecord(obj.content);
+  const variants = content ? asRecord(content.variants) : null;
+  if (variants && Object.prototype.hasOwnProperty.call(variants, "notable_units")) {
+    return variants.notable_units;
+  }
+  return undefined;
 }
 
 export async function generatePlaceUiVariantsV1(args: {
@@ -57,6 +104,7 @@ export async function generatePlaceUiVariantsV1(args: {
   review_note?: string | null;
 }): Promise<{
   payload: PlaceUiVariantsV1;
+  notable_units: ReturnType<typeof normalizePlaceNotableUnits>;
   model: string;
   request_id: string;
   finish_reason: string;
@@ -111,8 +159,10 @@ export async function generatePlaceUiVariantsV1(args: {
   const rawJson = parsedResult.raw;
   try {
     const payload = placeUiVariantsSchemaV1.parse(parsedResult.payload);
+    const notableUnits = normalizePlaceNotableUnits(notableUnitsFromPlaceUiPayload(parsedResult.payload));
     return {
       payload,
+      notable_units: notableUnits,
       model: modelId,
       request_id: requestId,
       finish_reason: finishReason,
@@ -205,12 +255,14 @@ Válasz JSON sémája:
   sensitivity_level: "normal"|"sensitive"
 }
   - content: Place UI variants JSON (schema_version="place_ui_variants_v1", language="hu", variants: {...})
-    - variants.notable_units: JSON array (can be empty) of { name, type?, note }`;
+    - seasonal_snippet: for each season 2-4 sentences, in the same "field encounter" vignette tone as Bird long_paragraphs[0] (concrete, observable, non-generic); avoid hearsay/record phrases; do not invent digits/measurements.
+  - notable_units: JSON array (0-8 elem; ha bizonytalan: []) of { name, unit_type?, distance_text?, short_note, order_index }`;
 
 export async function generatePlaceDraftFromNameV1(args: {
   place_name: string;
 }): Promise<{
   payload: PlaceDraftFromNameV1;
+  notable_units: ReturnType<typeof normalizePlaceNotableUnits>;
   model: string;
   request_id: string;
   finish_reason: string;
@@ -251,8 +303,10 @@ export async function generatePlaceDraftFromNameV1(args: {
   const rawJson = parsedResult.raw;
   try {
     const payload = placeDraftFromNameSchemaV1.parse(parsedResult.payload);
+    const notableUnits = normalizePlaceNotableUnits(notableUnitsFromDraftPayload(parsedResult.payload));
     return {
       payload,
+      notable_units: notableUnits,
       model: modelId,
       request_id: requestId,
       finish_reason: finishReason,

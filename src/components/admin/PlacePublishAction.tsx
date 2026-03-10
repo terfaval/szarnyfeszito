@@ -69,10 +69,13 @@ export default function PlacePublishAction({ place, missing }: PlacePublishActio
       {place.published_at ? (
         <p className="admin-note-small">
           Last published{" "}
-          {new Date(place.published_at).toLocaleString(undefined, {
-            dateStyle: "medium",
-            timeStyle: "short",
-          })}
+          <time dateTime={place.published_at} suppressHydrationWarning>
+            {new Date(place.published_at).toLocaleString("hu-HU", {
+              dateStyle: "medium",
+              timeStyle: "short",
+              timeZone: "Europe/Budapest",
+            })}
+          </time>
           {typeof place.published_revision === "number" ? ` · rev ${place.published_revision}` : ""}
         </p>
       ) : null}

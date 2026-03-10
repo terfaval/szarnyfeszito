@@ -2,6 +2,7 @@ import { supabaseServerClient } from "@/lib/supabaseServerClient";
 import { normalizeHungarianName } from "@/lib/stringUtils";
 import {
   Place,
+  PlaceNotableUnit,
   PlaceMarker,
   PlaceStatus,
   PlaceType,
@@ -142,7 +143,7 @@ export async function updatePlace(input: {
   access_note?: string | null;
   parking_note?: string | null;
   best_visit_note?: string | null;
-  notable_units_json?: unknown | null;
+  notable_units_json?: PlaceNotableUnit[] | null;
   generation_input?: string | null;
   published_at?: string | null;
   published_revision?: number;

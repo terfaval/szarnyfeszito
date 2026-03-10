@@ -1161,10 +1161,13 @@ export default function BirdTextReview({
                 {reviewRequestedAt && (
                   <p className="text-xs admin-text-muted">
                     Requested on{" "}
-                    {new Date(reviewRequestedAt).toLocaleString(undefined, {
-                      dateStyle: "medium",
-                      timeStyle: "short",
-                    })}
+                    <time dateTime={reviewRequestedAt} suppressHydrationWarning>
+                      {new Date(reviewRequestedAt).toLocaleString("hu-HU", {
+                        dateStyle: "medium",
+                        timeStyle: "short",
+                        timeZone: "Europe/Budapest",
+                      })}
+                    </time>
                   </p>
                 )}
               </blockquote>

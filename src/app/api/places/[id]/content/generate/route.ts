@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAdminUserFromCookies } from "@/lib/auth";
-import { getPlaceById } from "@/lib/placeService";
+import { getPlaceById, updatePlace } from "@/lib/placeService";
 import {
   getLatestContentBlockForPlace,
   createPlaceUiVariantsBlock,
@@ -10,7 +10,7 @@ import { suggestPlaceBirdLinksV1 } from "@/lib/placeBirdSuggestion";
 import { AIJsonParseError, AISchemaMismatchError } from "@/lib/aiUtils";
 import { AI_MODEL_TEXT } from "@/lib/aiConfig";
 
-export async function POST(_request: Request, ctx: { params: Promise<{ id: string }> }) {
+export async function POST(request: Request, ctx: { params: Promise<{ id: string }> }) {
   const user = await getAdminUserFromCookies();
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -21,6 +21,9 @@ export async function POST(_request: Request, ctx: { params: Promise<{ id: strin
   if (!place) {
     return NextResponse.json({ error: "Place not found." }, { status: 404 });
   }
+
+  const body = await request.json().catch(() => ({}));
+  const regenerateNotableUnits = body?.regenerate_notable_units === true;
 
   const existingBlock = await getLatestContentBlockForPlace(place.id);
   const existingPayload = existingBlock?.blocks_json ?? null;
@@ -55,6 +58,10 @@ export async function POST(_request: Request, ctx: { params: Promise<{ id: strin
       review_status: "draft",
     });
 
+    const updatedPlace = regenerateNotableUnits
+      ? await updatePlace({ id: place.id, notable_units_json: generationResult.notable_units })
+      : place;
+
     let birdSuggestions:
       | { inserted_count: number; generation_meta: Record<string, unknown> }
       | { error: string }
@@ -78,7 +85,12 @@ export async function POST(_request: Request, ctx: { params: Promise<{ id: strin
     }
 
     return NextResponse.json({
-      data: { place, content_block: updatedBlock, generation_meta: generationMeta, bird_suggestions: birdSuggestions },
+      data: {
+        place: updatedPlace,
+        content_block: updatedBlock,
+        generation_meta: generationMeta,
+        bird_suggestions: birdSuggestions,
+      },
     });
   } catch (error) {
     if (error instanceof AIJsonParseError) {

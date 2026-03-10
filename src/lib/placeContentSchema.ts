@@ -25,14 +25,6 @@ export const seasonalSnippetSchema = seasonalSnippetInputSchema
     winter: asTrimmedString(input?.winter),
   }));
 
-const notableUnitSchema = z
-  .object({
-    name: trimmedText.min(1),
-    type: trimmedText.min(1).optional(),
-    note: trimmedText.min(1),
-  })
-  .passthrough();
-
 const placeVariantsInputSchema = z
   .object({
     teaser: optionalText,
@@ -45,12 +37,10 @@ const placeVariantsInputSchema = z
     when_to_go: optionalText,
     who_is_it_for: optionalText,
     nearby_protection_context: optionalText,
-    notable_units: z.array(notableUnitSchema).nullable().optional(),
   })
   .passthrough()
   .partial()
   .transform((input) => ({
-    ...input,
     teaser: asTrimmedString(input.teaser),
     short: asTrimmedString(input.short),
     long: asTrimmedString(input.long),
@@ -61,7 +51,6 @@ const placeVariantsInputSchema = z
     who_is_it_for: asTrimmedString(input.who_is_it_for),
     nearby_protection_context: asTrimmedString(input.nearby_protection_context),
     seasonal_snippet: seasonalSnippetSchema.parse(input.seasonal_snippet),
-    notable_units: input.notable_units ?? [],
   }));
 
 export const placeUiVariantsSchemaV1 = z
@@ -72,7 +61,8 @@ export const placeUiVariantsSchemaV1 = z
   })
   .passthrough()
   .transform((input) => ({
-    ...input,
+    schema_version: "place_ui_variants_v1" as const,
+    language: "hu" as const,
     variants: placeVariantsInputSchema.parse(input.variants ?? {}),
   }));
 

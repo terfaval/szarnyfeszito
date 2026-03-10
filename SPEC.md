@@ -125,7 +125,11 @@ KiegĂ©szĂ­tĹ‘ mezĹ‘k (D31):
 Place UI content (Explorer panel contract, D34):
 - Stored in `content_blocks.blocks_json` as versioned JSON with `schema_version="place_ui_variants_v1"`, `language="hu"`.
 - Required blocks for publish: `variants.short`, `variants.ethics_tip`, and all `variants.seasonal_snippet.*` seasons (non-empty).
-- Other variant strings may be empty; `variants.notable_units` is optional structured list of sub-areas.
+- Other variant strings may be empty.
+
+Place notable units (internal sub-locations, D41):
+- Stored on the Place record as `places.notable_units_json` (structured array, optional).
+- Explorer panel uses this field to render the "Helyszínek" section when present.
 
 Place → Birds relations (D35):
 - Stored in `place_birds` (join table), using either:

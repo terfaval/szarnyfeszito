@@ -118,12 +118,17 @@ export default function PlaceContentReview({ place, latest, latestApproved }: Pl
     setSaving(false);
   };
 
-  const regenerate = async () => {
+  const regenerate = async (options?: { regenerate_notable_units?: boolean }) => {
     setSaving(true);
     setError(null);
     setMessage(null);
 
-    const response = await fetch(`/api/places/${place.id}/content/generate`, { method: "POST" });
+    const includeUnits = options?.regenerate_notable_units === true;
+    const response = await fetch(`/api/places/${place.id}/content/generate`, {
+      method: "POST",
+      headers: includeUnits ? { "Content-Type": "application/json" } : undefined,
+      body: includeUnits ? JSON.stringify({ regenerate_notable_units: true }) : undefined,
+    });
     const payload = await response.json().catch(() => null);
     if (!response.ok) {
       setError(payload?.error ?? "Unable to regenerate content.");
@@ -171,8 +176,16 @@ export default function PlaceContentReview({ place, latest, latestApproved }: Pl
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <ReviewStatusPill status={latestStatus} />
-          <Button type="button" variant="ghost" onClick={regenerate} disabled={saving}>
+          <Button type="button" variant="ghost" onClick={() => regenerate()} disabled={saving}>
             Regenerate
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={() => regenerate({ regenerate_notable_units: true })}
+            disabled={saving}
+          >
+            Regenerate + units
           </Button>
           <Button type="button" variant="primary" onClick={approve} disabled={saving || !hasAnyContent}>
             Approve

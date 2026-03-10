@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import PlacesMap from "@/components/maps/PlacesMap";
-import type { PlaceMarker } from "@/types/place";
+import type { PlaceMarker, PlaceNotableUnit } from "@/types/place";
+import { normalizePlaceNotableUnits } from "@/lib/placeNotableUnits";
 
 type PublicPlaceDetail = {
   place: {
@@ -22,7 +23,7 @@ type PublicPlaceDetail = {
     access_note: string | null;
     parking_note: string | null;
     best_visit_note: string | null;
-    notable_units_json: unknown | null;
+    notable_units_json: PlaceNotableUnit[] | null;
   };
   content: {
     schema_version: string;
@@ -112,6 +113,10 @@ export default function PlacesExplorer() {
     return marker?.name ?? selectedSlug;
   }, [markers, selectedDetail, selectedSlug]);
 
+  const notableUnits = useMemo(() => {
+    return normalizePlaceNotableUnits(selectedDetail?.place?.notable_units_json ?? []);
+  }, [selectedDetail]);
+
   return (
     <main className="places-explorer mx-auto w-full max-w-6xl px-6 py-10">
       <header className="mb-6">
@@ -200,6 +205,39 @@ export default function PlacesExplorer() {
                       ))}
                     </ul>
                   </div>
+                ) : null}
+
+                {notableUnits.length ? (
+                  <section id="place-notable-units" className="place-notable-units">
+                    <p className="text-xs uppercase tracking-[0.3em] text-zinc-500">Helyszínek</p>
+                    <ul className="mt-2 space-y-3">
+                      {notableUnits.map((unit) => (
+                        <li
+                          key={`${unit.order_index}:${unit.name}`}
+                          className="place-notable-units-item rounded-lg bg-zinc-50 p-3"
+                        >
+                          <p className="place-notable-units-name text-sm font-semibold text-zinc-900">
+                            {unit.name}
+                          </p>
+                          <p className="place-notable-units-note mt-1 text-sm text-zinc-700 whitespace-pre-wrap">
+                            {unit.short_note}
+                          </p>
+                          <div className="mt-2 flex flex-wrap gap-2 text-xs text-zinc-500">
+                            {unit.unit_type ? (
+                              <span className="rounded bg-white px-2 py-1">
+                                {unit.unit_type.replaceAll("_", " ")}
+                              </span>
+                            ) : null}
+                            {unit.distance_text ? (
+                              <span className="place-notable-units-distance rounded bg-white px-2 py-1">
+                                {unit.distance_text}
+                              </span>
+                            ) : null}
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  </section>
                 ) : null}
               </section>
             </div>

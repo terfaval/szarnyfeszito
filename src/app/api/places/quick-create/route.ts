@@ -73,6 +73,7 @@ export async function POST(request: Request) {
       access_note: placeMeta.access_note,
       parking_note: placeMeta.parking_note,
       best_visit_note: placeMeta.best_visit_note,
+      notable_units_json: draftResult.notable_units,
     });
 
     const generationMeta = {

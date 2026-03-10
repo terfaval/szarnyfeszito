@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import { CircleMarker, GeoJSON, MapContainer } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
-import { HUNGARY_BORDER_110M, HUNGARY_WATER_MASK_110M } from "@/components/maps/hungaryBorder110m";
+import { HUNGARY_BORDER_110M } from "@/components/maps/hungaryBorder110m";
 import styles from "./PlacePublishHeroMap.module.css";
 
 const FALLBACK_CENTER: [number, number] = [47.16, 19.5];
@@ -29,7 +29,7 @@ export default function PlacePublishHeroMap({
       <MapContainer
         className={styles.map}
         center={center}
-        zoom={hasPosition ? 10 : 7}
+        zoom={8}
         zoomControl={false}
         scrollWheelZoom={false}
         doubleClickZoom={false}
@@ -40,19 +40,12 @@ export default function PlacePublishHeroMap({
         attributionControl={false}
       >
         <GeoJSON
-          data={HUNGARY_WATER_MASK_110M}
-          style={{
-            fillColor: "var(--sf-map-water)",
-            fillOpacity: 1,
-            stroke: false,
-          }}
-        />
-        <GeoJSON
           data={HUNGARY_BORDER_110M}
           style={{
             color: "var(--brand-ink)",
             weight: 2,
-            fillOpacity: 0,
+            fillColor: "var(--brand-paper)",
+            fillOpacity: 1,
           }}
         />
         {hasPosition ? (
@@ -71,4 +64,3 @@ export default function PlacePublishHeroMap({
     </div>
   );
 }
-
