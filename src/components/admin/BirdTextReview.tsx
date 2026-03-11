@@ -367,6 +367,12 @@ export default function BirdTextReview({
     const parsed = distributionRangeSchema.array().safeParse(distributionMap.ranges);
     return parsed.success ? parsed.data : [];
   }, [distributionMap]);
+  const usedDistributionStatuses = useMemo(() => {
+    const set = new Set<DistributionStatus>();
+    distributionRanges.forEach((range) => set.add(range.status));
+    const order: DistributionStatus[] = ["resident", "breeding", "wintering", "passage"];
+    return order.filter((status) => set.has(status));
+  }, [distributionRanges]);
   const paragraphs = dossier?.long_paragraphs ?? [];
   const paragraph1 = paragraphs[0] ?? "Awaiting generated paragraph.";
   const paragraph2 = paragraphs[1] ?? "Awaiting generated paragraph.";
@@ -954,7 +960,15 @@ export default function BirdTextReview({
                   <p className={styles.distributionError}>{distributionError}</p>
                 )}
                 <div className={styles.legendFrame}>
-                  <DistributionLegend active={activeStatuses} onToggle={toggleDistributionStatus} />
+                  {usedDistributionStatuses.length ? (
+                    <DistributionLegend
+                      active={activeStatuses}
+                      onToggle={toggleDistributionStatus}
+                      items={usedDistributionStatuses}
+                    />
+                  ) : (
+                    <p className={styles.distributionNote}>Nincs elérhető jelmagyarázat.</p>
+                  )}
                 </div>
               </div>
 

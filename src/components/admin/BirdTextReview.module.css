@@ -435,11 +435,8 @@
   flex: 1;
   min-height: 220px;
   width: 100%;
-  border-radius: 20px;
-  border: 1px solid var(--line);
-  background: var(--panel);
-  padding: 0.9rem 1rem;
-  overflow: auto;
+  display: flex;
+  flex-direction: column;
 }
 
 .distributionInfoRowFull {

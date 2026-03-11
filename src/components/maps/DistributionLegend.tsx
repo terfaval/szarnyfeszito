@@ -20,10 +20,17 @@ const STATUS_COLORS: Record<DistributionStatus, string> = {
 export type DistributionLegendProps = {
   active: Record<DistributionStatus, boolean>;
   onToggle: (status: DistributionStatus) => void;
+  items?: DistributionStatus[];
 };
 
-export default function DistributionLegend({ active, onToggle }: DistributionLegendProps) {
-  const items: DistributionStatus[] = ["resident", "breeding", "wintering", "passage"];
+export default function DistributionLegend({
+  active,
+  onToggle,
+  items = ["resident", "breeding", "wintering", "passage"],
+}: DistributionLegendProps) {
+  if (!items.length) {
+    return null;
+  }
 
   return (
     <div className={styles.legend}>
