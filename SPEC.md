@@ -305,7 +305,7 @@ Tabs:
 ### 7.5 Yoga naplózó felület (Admin)
 
 - Az admin felületen egy nap akár négy tevékenységet is tud fogadni: jógát (relax/strong), erősítést (könnyű/intenzív), ACL stabilitást (aktiváló rutin vagy stabilitási blokk) és futást. A heti sor ezekre egy-egy apró jelöléssel mutatja, mit logoltunk, a havi rács pedig színes pontokkal vagy ikonokkal az egyes napokban szereplő aktivitásokat; az ikonokat (ill. a pontok színeit) az `activity_logs` rekordokhoz kapcsolódó `activity_type` + kategória adja.
-- A logokat a Supabase `activity_logs` táblája tárolja (D16): a `date` + `activity_type` egyediség biztosítja, hogy naponta csak egy bejegyzés létezzen az adott tevékenységhez; a rekordban van `category`, `label`, `exercise_id`, `duration_minutes`, `distance_km`, `intensity`, `notes`, és opcionálisan `metadata`.
+- A logokat a Supabase `activity_logs` táblája tárolja (D16): egy nap/tevékenység **több bejegyzést is** tartalmazhat (insert alapú naplózás); a rekordban van `category`, `label`, `exercise_id`, `duration_minutes`, `distance_km`, `intensity`, `notes`, és opcionálisan `metadata`.
 - A Yoga kártya dropdownja a statikus könyvtárból és az előző napi logokból épül; a már meglévő jóga kiválasztása esetén csak megjegyzést adunk meg (a cím/hossz/intenzitás már ismert), az „Új jóga hozzáadása” gombra megnyíló formban viszont manualisan megadható cím, percben kerekített hossz, 1–3 csillagos intenzitás és komment. Új tételként bekerül a dropdownba, következő logolásnál már ebből lehet választani.
 - Az ACL és erősítés kártyák a `TICKETS/yoga/acl_stabilitas_erosito_program.md` dokumentációban definiált rutint/gyakorlatokat használják; mindkét felület kártyákban jeleníti meg az egyes témákat (aktiváló rutin / stabilitási blokk és könnyű / intenzív), egy kártya kiválasztása után az adott sor a `details`-ban lévő gyakorlatlistát mutatja (gyakorlat neve + ismétlés, részletes leírás a lenyílóban), és a log gomb rögzíti a kiválasztott blokk címét+kategóriáját.
 - A futás blokk csak azt rögzíti, hogy futottunk: egy opcionális `distance` (km) és/vagy `duration` (perc) mező, valamint egy jegyzet. Amennyiben nincs megadva méret, akkor a log is csak a „kijelölt futás” című rekordot menti.
@@ -316,12 +316,14 @@ Tabs:
 ### 7.5.1 Yoga Guru (tervezett)
 
 - A Yoga felületen (`/admin/yoga`) egy új `Yoga Guru` gomb/menüpont vezet egy “vezetett” ajánló flow-ra.
+- A Guru külön oldalként készül (v1: `/admin/yoga/guru`).
 - A Guru **server-side AI** segítségével a napra javaslatot ad a felhasználónak az előzmények (logok), a heti terv és a megjegyzések alapján.
 - A javaslat több formában érkezhet:
   - DB-ből választott jóga template/kártya,
   - YouTube link (`url + title + hossz`),
   - vagy YouTube kereső kulcsszavak.
 - A felhasználó a javaslatok közül választ, majd a kiválasztott ajánlás **ugyanazon ActivityLog contract** szerint rögzíthető, mint a normál logolás.
+ - Megengedett, hogy a heti terv és a Guru-kommentek később külön DB táblákban legyenek tárolva (RLS + policyk migrációban rögzítve).
 
 Megjegyzés: a pontos contract és a nyitott döntések a `TICKETS/yoga/yoga_guru.md` fájlban vannak (F0/F2). Build csak governance után.
 

@@ -8,7 +8,7 @@
 
 ### Mit akarunk
 - A Yoga felületen legyen egy `Yoga Guru` gomb, kinézetben/érzetben hasonló a Dashboard `birdwatch` gomb mintájához (sticky action + panel/overlay vagy gyors navigáció).
-- Gombnyomásra megnyílik a `Yoga Guru` oldal/panel, ahol az AI asszisztens:
+- Gombnyomásra megnyílik a **külön `Yoga Guru` oldal** (`/admin/yoga/guru`), ahol az AI asszisztens:
   - figyelembe veszi az **előzményeket** (activity logok),
   - a **heti tervet** (lásd “Nyitott kérdések”),
   - és a **kommenteket** (tipikusan `notes` vagy külön megjegyzés forrás).
@@ -28,7 +28,6 @@ Az AI a következők közül ajánlhat (legalább 2–4 opció):
 
 ### Nyitott kérdések (döntést igényel)
 - **Weekly plan:** hol van a heti terv kanonikusan? (jelenleg a Yoga oldal csak “recommended counts” konstanst tartalmaz; nincs per-user terv tábla a repóban).
-- **Uniqueness:** naponta 1 yoga log legyen, vagy több is lehet? (lásd `TICKETS/yoga/yoga_surface_contract.md` BB-01)
 - **Kommentek forrása:** csak `activity_logs.notes`, vagy van külön komment tábla/mező?
 
 ## F2 – design (kanonikus payload + stop rules)
@@ -78,6 +77,10 @@ A kiválasztott ajánlásból létrejövő `activity_logs` mentés:
   - `source_type`: `"db_template"|"youtube"|"youtube_search"`
   - `search_keywords`: csak youtube_search esetén (opcionális)
 
+### 3.1 Journaling döntés (v1)
+- A logolás **insert** alapú: egy nap/tevékenység több bejegyzést is tartalmazhat.
+- Következmény: a Guru “rögzítés” ugyanúgy új sort hoz létre, mint a normál logolás.
+
 ### 4) Server-side API javaslat (v1)
 - `POST /api/yoga-guru/recommend`
   - input: `{ date, constraints?, include_history_days? }`
@@ -86,6 +89,16 @@ A kiválasztott ajánlásból létrejövő `activity_logs` mentés:
   - output: `{ data: YogaGuruRecommendationV1 }`
 
 Megjegyzés: modell az env-ből jöjjön (új `AI_MODEL_YOGA_GURU` vagy fallback `AI_MODEL_TEXT`).
+
+### 5) Tervezett (opcionális) táblák – ha a heti terv/kommentek nem férnek el a logokban
+
+V1-ben a tényleges “mit csináltam” napló **marad** `activity_logs`, de a Guru-hoz megengedettek új táblák:
+
+- `yoga_week_plans` (v1 javaslat): per hét/per user célok (pl. yoga relax/strong arány, perc cél, ACL/futás cél).
+- `yoga_guru_comments` (v1 javaslat): rövid megjegyzések a naphoz (pain/energy/goal), amiket a Guru figyelembe vesz.
+- `yoga_guru_recommendations` (opcionális): a generált ajánlások audit/tracing célra (request_id, model, prompt_hash, output_json).
+
+RLS: ha új táblák jönnek, a policy döntést migrációban rögzíteni kell (service_role write + admin read, vagy más modell).
 
 ## Implementációs checklist (amikor F3-ba lépünk)
 

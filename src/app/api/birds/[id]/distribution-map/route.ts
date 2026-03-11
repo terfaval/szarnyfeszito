@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { getAdminUserFromCookies } from "@/lib/auth";
 import { getDistributionMapForBird } from "@/lib/distributionMapService";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(
   _request: Request,
   context: { params: Promise<{ id: string }> }
@@ -16,12 +18,14 @@ export async function GET(
 
   try {
     const record = await getDistributionMapForBird(params.id);
-    return NextResponse.json({ data: { distribution_map: record } });
+    return NextResponse.json(
+      { data: { distribution_map: record } },
+      { headers: { "Cache-Control": "no-store" } }
+    );
   } catch (error) {
     return NextResponse.json(
       { error: (error as Error)?.message ?? "Unable to load distribution map." },
-      { status: 400 }
+      { status: 400, headers: { "Cache-Control": "no-store" } }
     );
   }
 }
-

@@ -159,22 +159,48 @@ export default function PlaceBirdsEditor({ placeId }: PlaceBirdsEditorProps) {
     return set;
   }, [links]);
 
+  const linkedBirdNameSet = useMemo(() => {
+    const set = new Set<string>();
+    links.forEach((link) => {
+      const name = typeof link.bird?.name_hu === "string" ? normalizeName(link.bird.name_hu) : "";
+      if (!name) return;
+      set.add(name.toLowerCase());
+    });
+    return set;
+  }, [links]);
+
   const selectedPublishedBirdSet = useMemo(
     () => new Set(selectedPublishedBirdIds),
     [selectedPublishedBirdIds]
   );
 
-  const suggestedUnlinkedNameSet = useMemo(() => {
-    const set = new Set<string>();
-    links.forEach((link) => {
+  const pendingSuggestedLinks = useMemo(() => {
+    const result: PlaceBirdLinkRow[] = [];
+    const seen = new Set<string>();
+    sortedLinks.forEach((link) => {
       if (link.review_status !== "suggested") return;
       if (link.bird_id) return;
+
+      const pending = typeof link.pending_bird_name_hu === "string" ? normalizeName(link.pending_bird_name_hu) : "";
+      const key = pending ? pending.toLowerCase() : `__id:${link.id}`;
+
+      if (pending && linkedBirdNameSet.has(pending.toLowerCase())) return;
+      if (seen.has(key)) return;
+      seen.add(key);
+      result.push(link);
+    });
+    return result;
+  }, [linkedBirdNameSet, sortedLinks]);
+
+  const suggestedUnlinkedNameSet = useMemo(() => {
+    const set = new Set<string>();
+    pendingSuggestedLinks.forEach((link) => {
       const pending = typeof link.pending_bird_name_hu === "string" ? normalizeName(link.pending_bird_name_hu) : "";
       if (!pending) return;
       set.add(pending.toLowerCase());
     });
     return set;
-  }, [links]);
+  }, [pendingSuggestedLinks]);
 
   const visiblePublishedBirds = useMemo(() => {
     const unlinked = publishedBirds.filter((bird) => !linkedBirdIdSet.has(bird.id));
@@ -866,12 +892,10 @@ export default function PlaceBirdsEditor({ placeId }: PlaceBirdsEditorProps) {
           <p className="admin-note-small">No birds linked yet.</p>
         ) : (
           <div className="space-y-4">
-            {sortedLinks.some((link) => link.review_status === "suggested" && !link.bird_id) ? (
+            {pendingSuggestedLinks.length > 0 ? (
               <div className="space-y-2">
                 <p className="admin-subheading">Suggested (pending)</p>
-                {sortedLinks
-                  .filter((link) => link.review_status === "suggested" && !link.bird_id)
-                  .map((link) => renderLinkRow(link))}
+                {pendingSuggestedLinks.map((link) => renderLinkRow(link))}
               </div>
             ) : null}
 

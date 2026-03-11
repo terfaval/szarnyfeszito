@@ -186,7 +186,7 @@ export async function generateBirdDistributionMapV1(args: {
     : hungaryMeta;
 
   const hungarySpa = hungaryCandidates.filter((r) => r.type === "spa");
-  const hungaryMicro = hungaryCandidates.filter((r) => r.type === "microregion");
+  const hungaryAdminFallback = hungaryCandidates.filter((r) => r.type === "admin" || r.type === "microregion");
 
   const candidatesBlock = [
     `Candidate region_ids (pick ONLY from these; do NOT invent IDs):`,
@@ -199,9 +199,9 @@ export async function generateBirdDistributionMapV1(args: {
     hungarySpa.length
       ? `HUNGARY_NATURA_SPA (HU map helper only, preferred):\n${buildCandidateLines(hungarySpa)}`
       : `HUNGARY_NATURA_SPA (HU map helper only, preferred): (none provided)`,
-    hungaryMicro.length
-      ? `HUNGARY_MICROREGIONS (HU coverage fallback):\n${buildCandidateLines(hungaryMicro)}`
-      : `HUNGARY_MICROREGIONS (HU coverage fallback): (none provided)`,
+    hungaryAdminFallback.length
+      ? `HUNGARY_ADMIN (HU coverage fallback):\n${buildCandidateLines(hungaryAdminFallback)}`
+      : `HUNGARY_ADMIN (HU coverage fallback): (none provided)`,
   ].join("\n\n");
 
   const basePrompt = `
@@ -241,7 +241,7 @@ Helpful dossier hints (do not invent beyond these; they are only hints):
   Selection rules:
   - Prefer GLOBAL_ECOREGIONS when confident (more precise).
   - If unsure, use GLOBAL_COUNTRIES as a coarse fallback.
-  - For Hungary detail, prefer HUNGARY_NATURA_SPA; use HUNGARY_MICROREGIONS only to fill gaps/ensure full HU coverage.
+  - For Hungary detail, prefer HUNGARY_NATURA_SPA; use HUNGARY_ADMIN only to fill gaps/ensure full HU coverage.
   - Do NOT output polygon coordinates.
   - Do NOT invent region_ids.
 

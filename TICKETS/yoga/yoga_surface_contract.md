@@ -68,21 +68,19 @@ Ez nem külön DB tábla. A template lista a legutóbbi (limitelt) `activity_log
 
 ## 3) Faulty behaviors (BB-xx) – tünet → gyanú → modul
 
-### BB-01: Spec/Decision vs. implementáció eltérés a “naponta 1 log / activity” szabályban
-**Tünet:** a dokumentáció (SPEC + D16) azt állítja, hogy `(date, activity_type)` egyedi, és “upsert” jellegű mentés van.  
-**Megfigyelés a kódban:** a UI több bejegyzést is kezel tömbként ugyanarra a napra és activity-re, és a mentés alapértelmezésben `POST` (insert), nem upsert.
+### BB-01 (Resolved): “1 log / nap / activity” eltérés
+**Tünet:** a dokumentáció (SPEC + D16) korábban azt állította, hogy `(date, activity_type)` egyedi, és “upsert” jellegű mentés van.  
+**Döntés:** az activity journaling **insert-alapú**, és **több sor/nap/activity megengedett**.
+**Állapot:** SPEC + D16 hozzá lett igazítva ehhez a valós viselkedéshez.
 
 **Bizonyíték (kódrészlet):**
 - `src/app/admin/(protected)/yoga/page.tsx` – a `LogsMap` típusa `ActivityLogRow[]` tömböt tárol activity-ként, és a `saveActivity()` default `POST`.  
 - `src/app/api/activity-logs/route.ts` + `src/lib/activityService.ts` – `createActivityLog()` `insert`, nincs `upsert` vagy `onConflict`.
 
-**Gyanú:** vagy (A) a SPEC/D16 elavult, vagy (B) a DB-ben van unique constraint, és a UI “második mentés” esetén hibára futhat.  
+**Kockázat (DB drift):** ha a Supabase prod DB-ben mégis van `(date, activity_type)` unique constraint, akkor a második mentés hibára futhat.  
 **Érintett modul:** Yoga UI + activity log API + DB schema.
 
-**Prioritás javaslat:**
-- **P0:** döntés kell: *engedünk-e több bejegyzést ugyanarra a napra ugyanarra az activity-re?*  
-  - Ha igen → dokumentációt (SPEC/D16) hozzá kell igazítani.
-  - Ha nem → DB unique + API upsert + UI “edit existing” flow legyen a default.
+**P0 ellenőrzés:** Supabase-ben ellenőrizni a constraint-eket a valós `activity_logs` táblán.
 
 ### BB-02: `activity_logs` DB migration hiányzik a repóból (deterministic build kockázat)
 **Tünet:** a repo nem tartalmaz `create table activity_logs ...` migrációt.  
@@ -93,9 +91,9 @@ Ez nem külön DB tábla. A template lista a legutóbbi (limitelt) `activity_log
 **Prioritás javaslat:**
 - **P0:** hozzunk létre egy `supabase/migrations/` migrációt az `activity_logs` táblára + RLS policy-kra (a repo RLS gyakorlatához igazítva).
 
-**Repo fix (D46):**
-- A hiányzó baseline-t pótolja: `supabase/migrations/20260311_d46_activity_logs_table_v1.sql`.
-- Tudatosan nem rak rá `(date, activity_type)` unique constraintet addig, amíg a “1 vs N log/nap/activity” döntés nincs lezárva.
+**Repo fix (D45a):**
+- A hiányzó baseline-t pótolja: `supabase/migrations/20260311_d45a_activity_logs_table_v1.sql`.
+- Tudatosan nem rak rá `(date, activity_type)` unique constraintet, mert a kanonikus viselkedés a multi-row journaling.
 
 ## 4) Handoff / fejlesztési támpontok
 

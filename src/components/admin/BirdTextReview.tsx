@@ -293,6 +293,7 @@ export default function BirdTextReview({
         const response = await fetch(`/api/birds/${birdId}/distribution-map`, {
           method: "GET",
           headers: { "Content-Type": "application/json" },
+          cache: "no-store",
         });
         const payload = await response.json().catch(() => null);
         if (!response.ok) {

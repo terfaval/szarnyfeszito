@@ -17,6 +17,8 @@ export const IMAGE_STYLE_CONFIG_ID_ICONIC =
   optionalEnv("IMAGE_STYLE_CONFIG_ID_ICONIC", "iconic_v1") ?? "iconic_v1";
 
 export const IMAGE_SIZE = optionalEnv("IMAGE_SIZE", "1024x1024") ?? "1024x1024";
+export const IMAGE_SIZE_PLACE_HERO =
+  optionalEnv("IMAGE_SIZE_PLACE_HERO", "1792x1024") ?? "1792x1024";
 export const IMAGE_QUALITY = optionalEnv("IMAGE_QUALITY", "auto") ?? "auto";
 
 // Controls whether Science Dossier + Visual Brief are used as prompt inputs during image generation.
@@ -33,7 +35,7 @@ export const IMAGE_ACCURACY_INPUTS =
 export const DISTRIBUTION_REGION_CATALOG_SOURCE = enumEnv(
   "DISTRIBUTION_REGION_CATALOG_SOURCE",
   ["supabase", "repo", "auto"] as const,
-  "supabase"
+  "auto"
 );
 
 // D26 region catalog files (used when DISTRIBUTION_REGION_CATALOG_SOURCE is "repo" or "auto").

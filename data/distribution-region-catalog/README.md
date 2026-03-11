@@ -15,7 +15,7 @@ Optional (small/local/dev): you can place repo catalogs here:
 - `data/distribution-region-catalog/v1/globalRegions.json`
 - `data/distribution-region-catalog/v1/hungaryRegions.json`
 
-Catalog source selection is controlled by `DISTRIBUTION_REGION_CATALOG_SOURCE` (default: `supabase`).
+Catalog source selection is controlled by `DISTRIBUTION_REGION_CATALOG_SOURCE` (default: `auto`).
 
 Repo catalogs can also be gzip-compressed (`.json.gz`). If you keep catalogs outside git, set
 `DISTRIBUTION_REGION_CATALOG_REPO_DIR` to the folder containing the files (the loader also checks

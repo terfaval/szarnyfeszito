@@ -1,6 +1,10 @@
 import { supabaseServerClient } from "@/lib/supabaseServerClient";
 import type { PlaceBirdLink, PlaceBirdReviewStatus, PlaceFrequencyBand } from "@/types/place";
 
+function normalizePendingBirdName(name: string) {
+  return name.trim().replace(/\s+/g, " ");
+}
+
 export async function listPlaceBirdLinks(placeId: string): Promise<PlaceBirdLink[]> {
   const { data, error } = await supabaseServerClient
     .from("place_birds")
@@ -179,4 +183,114 @@ export async function deletePlaceBirdLink(id: string): Promise<void> {
   if (error) {
     throw error;
   }
+}
+
+type SuggestedQueueRow = {
+  id: string;
+  place_id: string;
+  pending_bird_name_hu: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type SuggestedBirdQueueItem = {
+  key: string;
+  name_hu: string;
+  suggested_count: number;
+  latest: {
+    place_id: string;
+    place_bird_id: string;
+    place_name: string | null;
+    place_slug: string | null;
+    updated_at: string;
+  };
+};
+
+export async function listSuggestedBirdQueue(): Promise<SuggestedBirdQueueItem[]> {
+  const { data, error } = await supabaseServerClient
+    .from("place_birds")
+    .select("id,place_id,pending_bird_name_hu,created_at,updated_at")
+    .eq("review_status", "suggested")
+    .is("bird_id", null)
+    .not("pending_bird_name_hu", "is", null)
+    .order("updated_at", { ascending: false })
+    .limit(800);
+
+  if (error) {
+    throw error;
+  }
+
+  const rows = (data ?? []) as SuggestedQueueRow[];
+  const groups = new Map<string, { name_hu: string; rows: SuggestedQueueRow[] }>();
+
+  rows.forEach((row) => {
+    const raw = typeof row.pending_bird_name_hu === "string" ? row.pending_bird_name_hu : "";
+    const normalized = normalizePendingBirdName(raw);
+    if (!normalized) return;
+    const key = normalized.toLowerCase();
+
+    const existing = groups.get(key);
+    if (!existing) {
+      groups.set(key, { name_hu: normalized, rows: [row] });
+      return;
+    }
+
+    existing.rows.push(row);
+  });
+
+  const itemsBase = Array.from(groups.entries()).map(([key, group]) => {
+    const latest = group.rows[0]!;
+    return {
+      key,
+      name_hu: group.name_hu,
+      suggested_count: group.rows.length,
+      latest: {
+        place_id: latest.place_id,
+        place_bird_id: latest.id,
+        updated_at: latest.updated_at,
+      },
+    };
+  });
+
+  const placeIds = Array.from(new Set(itemsBase.map((item) => item.latest.place_id))).filter(Boolean);
+  const placeById = new Map<string, { name: string; slug: string }>();
+
+  if (placeIds.length > 0) {
+    const { data: places, error: placesError } = await supabaseServerClient
+      .from("places")
+      .select("id,name,slug")
+      .in("id", placeIds);
+
+    if (placesError) {
+      throw placesError;
+    }
+
+    (places ?? []).forEach((place) => {
+      const id = typeof place?.id === "string" ? place.id : "";
+      const name = typeof place?.name === "string" ? place.name : "";
+      const slug = typeof place?.slug === "string" ? place.slug : "";
+      if (!id || !name) return;
+      placeById.set(id, { name, slug });
+    });
+  }
+
+  const items: SuggestedBirdQueueItem[] = itemsBase
+    .slice(0, 240)
+    .map((item) => {
+      const placeMeta = placeById.get(item.latest.place_id) ?? null;
+      return {
+        ...item,
+        latest: {
+          ...item.latest,
+          place_name: placeMeta?.name ?? null,
+          place_slug: placeMeta?.slug ?? null,
+        },
+      };
+    })
+    .sort((a, b) => {
+      if (a.suggested_count !== b.suggested_count) return b.suggested_count - a.suggested_count;
+      return a.name_hu.localeCompare(b.name_hu, "hu");
+    });
+
+  return items;
 }

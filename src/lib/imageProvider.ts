@@ -2,6 +2,7 @@ import {
   IMAGE_PROVIDER,
   IMAGE_QUALITY,
   IMAGE_SIZE,
+  IMAGE_SIZE_PLACE_HERO,
 } from "@/lib/config";
 import { AI_MODEL_IMAGE, OPENAI_API_KEY } from "@/lib/aiConfig";
 import type { ImageStyleFamily, ImageVariant } from "@/types/image";
@@ -143,7 +144,11 @@ type OpenAIImagesGenerationResponse = {
 export class OpenAIImageProvider implements ImageProvider {
   async generate(input: GenerateImageInput): Promise<GeneratedImage> {
     const prompt = buildOpenAIPrompt(input);
-    const { width, height } = parseSizePx(IMAGE_SIZE);
+    const size =
+      input.entityType === "place" && input.variant === "place_hero_spring_v1"
+        ? IMAGE_SIZE_PLACE_HERO
+        : IMAGE_SIZE;
+    const { width, height } = parseSizePx(size);
 
     const background =
       input.styleFamily === "iconic" ? "transparent" : "opaque";
@@ -164,7 +169,7 @@ export class OpenAIImageProvider implements ImageProvider {
         model: AI_MODEL_IMAGE,
         prompt,
         n: 1,
-        size: IMAGE_SIZE,
+        size,
         background,
         output_format: "png",
         ...(qualityParam ? { quality: qualityParam } : {}),

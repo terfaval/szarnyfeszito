@@ -502,7 +502,7 @@ Indok: ez teszi lehetővé a szigorú validálást, a generációk verifikálás
 ## D16 â€“ Admin-only Activity journaling surface
 
 - The Yoga surface is exposed at `/admin/yoga`, added to the admin nav, and guarded by `getAdminUserFromCookies` so Explorer never sees it, and it now documents four activity types (yoga, strength, acl, running).
-- A generalized `activity_logs` table persists daily entries with `(date, activity_type)` uniqueness; columns include `category`, `label`, `exercise_id`, `duration_minutes`, `distance_km`, `intensity`, `notes`, and optional `metadata`. Logs are upserted via the authenticated `/api/activity-logs` GET/POST endpoints.
+- A generalized `activity_logs` table persists daily entries (insert-based journaling; **multiple rows per day/activity are allowed**); columns include `category`, `label`, `exercise_id`, `duration_minutes`, `distance_km`, `intensity`, `notes`, and optional `metadata`. Logs are managed via the authenticated `/api/activity-logs` GET/POST/PATCH/DELETE endpoints.
 - The frontend consumes static metadata lists (yoga library, ACL routines, strength workouts, running defaults) plus live logs to build dropdowns and card selectors; each saved row is treated as the canonical payload for rendering the weekly selector, dropdown states, and monthly grid so semantics stay centralized in Studio.
 - Indok: this keeps the expanded journaling surface within the Studio guardrails, reuses the existing auth/API flow, and keeps Explorer-free until the feature is finalized while producing a structured activity contract for future Explorer consumers.
 
@@ -784,7 +784,7 @@ Birdwatch logging should reflect “I saw X at place Y”, and help selection by
 
 ## D44 – Yoga Guru (planned): server-side ajánlás + ActivityLog rögzítés
 
-**Status:** Proposed  
+**Status:** Accepted  
 **Date:** 2026-03-11  
 **Scope:** Studio `/admin/yoga` (Admin-only). Explorer out of scope. No runtime AI.
 
@@ -795,12 +795,14 @@ Birdwatch logging should reflect “I saw X at place Y”, and help selection by
 ### Decision (v1 irány)
 - A Yoga Guru AI hívás **csak server-side** történik.
 - A Guru outputja **szigorúan validált JSON contract**, és több javaslatot ad (DB template / YouTube link / YouTube kereső kulcsszavak).
-- A kiválasztott javaslat rögzítése a meglévő `activity_logs` contracton keresztül történik (nem új “guru log” tábla v1-ben); extra információk `metadata` alá kerülhetnek.
+- A Yoga Guru külön oldalként készül (v1: `/admin/yoga/guru`).
+- A kiválasztott javaslat rögzítése a meglévő `activity_logs` contracton keresztül történik (nincs külön “guru log” tábla v1-ben); extra információk `metadata` alá kerülhetnek.
+- A journaling modell insert-alapú: több log/nap/tevékenység engedett (összhangban D16-tal).
 - Modell az env-ből jön (nincs hardcoded model id).
 
 ### Open questions
 - A “heti terv” kanonikus tárolása (jelenleg nincs dedikált terv tábla a repóban).
-- Egy nap/tevékenység: 1 vagy több log? (SPEC/D16 vs implementáció eltérés)
+- A “kommentek” kanonikus tárolása (v1-ben lehet `activity_logs.notes`, de új táblák is megengedettek).
 
 ### Out of scope (v1)
 - Anatómiai és jóga katalógus generálás/pipeline.

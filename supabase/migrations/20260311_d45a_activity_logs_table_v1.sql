@@ -1,4 +1,4 @@
--- D46 — Activity logs baseline table (Studio-only)
+-- D45a — Activity logs baseline table (Studio-only)
 -- Motivation: the app uses `activity_logs` via `/api/activity-logs`, but the table definition
 -- was missing from repo migrations. This migration makes local/CI setups deterministic.
 --
@@ -53,4 +53,3 @@ begin
       with check (true);
   end if;
 end $$;
-

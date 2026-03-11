@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import BirdCreateForm from "@/components/admin/BirdCreateForm";
 import BirdIcon from "@/components/admin/BirdIcon";
+import { Button } from "@/ui/components/Button";
 import { Card } from "@/ui/components/Card";
 import { Input } from "@/ui/components/Input";
 import { StatusPill } from "@/ui/components/StatusPill";
@@ -46,7 +48,21 @@ type SortKey =
   | "visibility_asc"
   | "missing_first";
 
+type SuggestedBirdQueueItem = {
+  key: string;
+  name_hu: string;
+  suggested_count: number;
+  latest: {
+    place_id: string;
+    place_bird_id: string;
+    place_name: string | null;
+    place_slug: string | null;
+    updated_at: string;
+  };
+};
+
 export default function BirdListShell({ birds }: BirdListShellProps) {
+  const router = useRouter();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<BirdStatus | "all">("all");
   const [sizeFilter, setSizeFilter] = useState<BirdSizeCategory | "all" | "missing">("all");
@@ -54,8 +70,103 @@ export default function BirdListShell({ birds }: BirdListShellProps) {
     BirdVisibilityCategory | "all" | "missing"
   >("all");
   const [sortKey, setSortKey] = useState<SortKey>("updated_desc");
+  const [suggestedQueue, setSuggestedQueue] = useState<SuggestedBirdQueueItem[]>([]);
+  const [suggestedQueueLoading, setSuggestedQueueLoading] = useState(true);
+  const [suggestedQueueError, setSuggestedQueueError] = useState<string | null>(null);
+  const [suggestedQueueMessage, setSuggestedQueueMessage] = useState<string | null>(null);
+  const [creatingQueueKey, setCreatingQueueKey] = useState<string | null>(null);
 
   const normalizedSearch = search.trim().toLowerCase();
+
+  const refreshSuggestedQueue = async () => {
+    setSuggestedQueueLoading(true);
+    setSuggestedQueueError(null);
+
+    const response = await fetch("/api/birds/suggested-queue", { method: "GET" });
+    const payload = await response.json().catch(() => null);
+
+    if (!response.ok) {
+      setSuggestedQueue([]);
+      setSuggestedQueueError(payload?.error ?? "Unable to load suggested bird queue.");
+      setSuggestedQueueLoading(false);
+      return;
+    }
+
+    const items = (payload?.data ?? []) as SuggestedBirdQueueItem[];
+    setSuggestedQueue(
+      items.filter(
+        (item) => typeof item?.key === "string" && typeof item?.name_hu === "string" && typeof item?.suggested_count === "number"
+      )
+    );
+    setSuggestedQueueLoading(false);
+  };
+
+  useEffect(() => {
+    refreshSuggestedQueue();
+  }, []);
+
+  const quickCreateFromSuggestion = async (item: SuggestedBirdQueueItem) => {
+    if (!item?.name_hu?.trim()) return;
+
+    setCreatingQueueKey(item.key);
+    setSuggestedQueueError(null);
+    setSuggestedQueueMessage(null);
+
+    try {
+      const lookupResponse = await fetch("/api/birds/latin-lookup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name_hu: item.name_hu }),
+      });
+
+      const lookupBody = await lookupResponse.json().catch(() => null);
+      if (!lookupResponse.ok) {
+        setSuggestedQueueError(lookupBody?.error ?? "Unable to look up Latin name.");
+        return;
+      }
+
+      const nameLatin = lookupBody?.data?.name_latin;
+      if (typeof nameLatin !== "string" || !nameLatin.trim()) {
+        setSuggestedQueueError("Latin lookup returned an empty value.");
+        return;
+      }
+
+      const createResponse = await fetch("/api/birds/quick-create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name_hu: item.name_hu,
+          name_latin: nameLatin.trim(),
+          link_place_id: item.latest.place_id,
+          link_place_bird_id: item.latest.place_bird_id,
+        }),
+      });
+
+      const createBody = await createResponse.json().catch(() => null);
+      if (!createResponse.ok) {
+        setSuggestedQueueError(createBody?.error ?? "Unable to quick-create bird.");
+        return;
+      }
+
+      const birdId = createBody?.data?.bird?.id;
+      setSuggestedQueueMessage(
+        createBody?.data?.slug
+          ? `Bird "${createBody.data.slug}" created. Redirecting to editor...`
+          : "Bird created. Redirecting to editor..."
+      );
+
+      await refreshSuggestedQueue();
+
+      if (typeof birdId === "string" && birdId) {
+        router.push(`/admin/birds/${birdId}`);
+        return;
+      }
+
+      router.refresh();
+    } finally {
+      setCreatingQueueKey(null);
+    }
+  };
 
   const missingClassificationCount = useMemo(() => {
     return birds.reduce((count, bird) => {
@@ -264,6 +375,66 @@ export default function BirdListShell({ birds }: BirdListShellProps) {
         </Card>
 
         <div className="space-y-4">
+          <Card className="space-y-3 text-sm">
+            <div className="space-y-1">
+              <p className="admin-subheading">Place suggestions queue</p>
+              <p className="admin-note-small">
+                Unique pending bird names from Place → Bird suggestions (review_status=suggested, not linked yet).
+              </p>
+            </div>
+
+            {suggestedQueueLoading ? (
+              <p className="admin-note-small">Loading queue…</p>
+            ) : suggestedQueue.length === 0 ? (
+              <p className="admin-note-small">No pending suggestions in queue.</p>
+            ) : (
+              <div className="space-y-2">
+                {suggestedQueue.slice(0, 18).map((item) => (
+                  <div key={item.key} className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="space-y-0.5">
+                      <p className="font-semibold">{item.name_hu}</p>
+                      <p className="admin-note-small">
+                        Suggested in <span className="font-semibold">{item.suggested_count}</span>{" "}
+                        {item.suggested_count === 1 ? "place" : "places"}
+                        {item.latest.place_name ? (
+                          <>
+                            {" "}
+                            · latest:{" "}
+                            <Link className="admin-nav-link" href={`/admin/places/${item.latest.place_id}/birds`}>
+                              {item.latest.place_name}
+                            </Link>
+                          </>
+                        ) : null}
+                      </p>
+                    </div>
+
+                    <Button
+                      type="button"
+                      variant="accent"
+                      disabled={Boolean(creatingQueueKey) || suggestedQueueLoading}
+                      onClick={() => quickCreateFromSuggestion(item)}
+                    >
+                      {creatingQueueKey === item.key ? "Creating…" : "Quick create (AI Latin)"}
+                    </Button>
+                  </div>
+                ))}
+                {suggestedQueue.length > 18 ? (
+                  <p className="admin-note-small">Showing first 18 of {suggestedQueue.length}.</p>
+                ) : null}
+              </div>
+            )}
+
+            {suggestedQueueError ? (
+              <p className="admin-message admin-message--error" aria-live="assertive">
+                {suggestedQueueError}
+              </p>
+            ) : null}
+            {suggestedQueueMessage ? (
+              <p className="admin-message admin-message--success" aria-live="polite">
+                {suggestedQueueMessage}
+              </p>
+            ) : null}
+          </Card>
           <BirdCreateForm />
           <Card className="space-y-3 text-sm">
             <div className="space-y-1">
