@@ -138,7 +138,7 @@ export default function PlacesMap({
         keyboard: false,
         boxZoom: false,
         touchZoom: true,
-        minZoom: 6,
+        minZoom: 1.2,
         maxZoom: 10,
         maxBounds: HUNGARY_MAX_BOUNDS_V1,
         maxBoundsViscosity: 1.0,
@@ -165,7 +165,7 @@ export default function PlacesMap({
       <MapContainer
         className={styles.map}
         center={center}
-        zoom={7}
+        zoom={1.2}
         zoomControl={interactions.zoomControl}
         scrollWheelZoom={interactions.scrollWheelZoom}
         doubleClickZoom={interactions.doubleClickZoom}

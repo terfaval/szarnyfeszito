@@ -625,6 +625,9 @@
   aspect-ratio: auto;
   grid-template-columns: minmax(0, 1fr);
   min-height: 0;
+  background: transparent;
+  border-radius: 0;
+  overflow: visible;
 }
 
 .layerStackPublish .overlayLayer {
@@ -632,8 +635,20 @@
   padding: 1.25rem;
 }
 
+.layerStackPublish .backgroundLayer {
+  overflow: visible;
+}
+
 .layerStackPublish .overlayItem {
   width: 100%;
+}
+
+.layerStackPublish .fullBodyImage {
+  border: none;
+}
+
+.layerStackPublish .fullBodyPlaceholder {
+  border-color: transparent;
 }
 
 .backgroundLayer {
@@ -688,6 +703,25 @@
 
 .fullBodyPlaceholderPublish {
   aspect-ratio: 1 / 1;
+}
+
+@media (min-width: 768px) {
+  .layerStackPublish .fullBodyImagePublish,
+  .layerStackPublish .fullBodyPlaceholderPublish {
+    width: min(820px, 100%);
+  }
+
+  .layerStackPublish .overlayLayer {
+    margin-top: -4rem;
+    padding-top: 0;
+    align-items: flex-end;
+    position: relative;
+    z-index: 2;
+  }
+
+  .layerStackPublish .overlayItem {
+    width: min(420px, 100%);
+  }
 }
 
 .overlayLayer {

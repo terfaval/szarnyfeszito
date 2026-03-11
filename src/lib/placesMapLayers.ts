@@ -121,41 +121,28 @@ export async function buildPlacesMapLayersV1(args: { placeRegionIds: string[] })
     }
   }
 
-  // 2) HU regions (prefer repo hungaryRegions.json; fallback to Supabase for missing IDs).
-  const hungaryRepo = await loadRegionCatalogFromRepo("hungaryRegions");
-  const repoById = new Map((hungaryRepo ?? []).map((r) => [r.region_id, r] as const));
-
-  const repoHits = placeRegionIds
-    .map((id) => repoById.get(id) ?? null)
-    .filter(Boolean) as Array<{ region_id: string; name: string; type: string; geometry: unknown }>;
-
-  const missingIds = placeRegionIds.filter((id) => !repoById.has(id));
-
-  let supabaseHits: Array<{ region_id: string; name: string | null; type: string | null; geometry: unknown }> = [];
-  if (missingIds.length) {
+  // 2) HU regions (Supabase only: distribution_region_catalog_items where catalog="hungaryRegions").
+  let regionFeatures: Feature[] = [];
+  if (placeRegionIds.length) {
     const { data, error } = await supabaseServerClient
       .from("distribution_region_catalog_items")
       .select("region_id,name,type,geometry")
       .eq("catalog", "hungaryRegions")
-      .in("region_id", missingIds);
+      .in("region_id", placeRegionIds);
 
     if (!error) {
       const rows = (data ?? []) as Array<Record<string, unknown>>;
-      supabaseHits = rows.map((row) => ({
-        region_id: String(row.region_id ?? ""),
-        name: typeof row.name === "string" ? row.name : null,
-        type: typeof row.type === "string" ? row.type : null,
-        geometry: row.geometry,
-      }));
+      regionFeatures = rows
+        .map((row) => ({
+          region_id: String(row.region_id ?? "").trim(),
+          name: typeof row.name === "string" ? row.name : null,
+          type: typeof row.type === "string" ? row.type : null,
+          geometry: row.geometry,
+        }))
+        .filter((r) => Boolean(r.region_id) && Boolean(r.geometry))
+        .map((r) => toFeature({ region_id: r.region_id, name: r.name, type: r.type, geometry: r.geometry }));
     }
   }
-
-  const regionFeatures = [
-    ...repoHits.map((r) => toFeature({ region_id: r.region_id, name: r.name, type: r.type, geometry: r.geometry })),
-    ...supabaseHits
-      .filter((r) => Boolean(r.region_id) && Boolean(r.geometry))
-      .map((r) => toFeature({ region_id: r.region_id, name: r.name, type: r.type, geometry: r.geometry })),
-  ];
 
   const out: PlacesMapLayersV1 = {
     schema_version: "places_map_layers_v1",
