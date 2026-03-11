@@ -138,8 +138,8 @@ export default function DashboardPlacesMap({
           interactionMode="bounded_hu_v1"
           toolBarVariant="bottom_right_v1"
           defaultCenter={[47.16, 19.5]}
-          defaultZoom={7.5}
-          defaultPanBy={[0, 84]}
+          defaultZoom={7.1}
+          defaultPanBy={[0, 170]}
           markerColorMode="water_highlight_v1"
           onSelect={(slug) => setPinnedSlug((prev) => (prev === slug ? null : slug))}
           markerEventHandlers={(marker) => ({
