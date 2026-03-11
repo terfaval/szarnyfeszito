@@ -25,6 +25,8 @@
   --foreground: var(--text);
   --shell-main-max: 1120px;
   --shell-side-pad: clamp(16px, 4vw, 24px);
+  --admin-dashboard-topbar-offset: clamp(5.5rem, 8vw, 7rem);
+  --admin-shell-pad-block: clamp(1.25rem, 4vw, 2.5rem);
   --font-display: var(--sf-font-display), "Segoe UI", system-ui, sans-serif;
   --font-body: var(--sf-font-body), system-ui, sans-serif;
   --color-background: var(--background);
@@ -165,8 +167,14 @@ svg {
   gap: 1.5rem;
   width: min(100%, var(--shell-main-max));
   margin: 0 auto;
-  padding-block: clamp(1.25rem, 4vw, 2.5rem);
+  padding-block: var(--admin-shell-pad-block);
   padding-inline: var(--shell-side-pad, 24px);
+  position: relative;
+  z-index: 2;
+}
+
+.admin-topbar--dashboard-overlay + .space-y-6 {
+  padding-top: var(--admin-dashboard-topbar-offset);
 }
 
 .admin-shell__panel {

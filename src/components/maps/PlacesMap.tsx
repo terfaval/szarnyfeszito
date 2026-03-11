@@ -1,13 +1,14 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useEffect, useMemo, useState } from "react";
-import { CircleMarker, GeoJSON, MapContainer, TileLayer } from "react-leaflet";
-import type { LatLngBoundsExpression, LeafletEventHandlerFnMap } from "leaflet";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { CircleMarker, GeoJSON, MapContainer, TileLayer, useMap } from "react-leaflet";
+import type { LatLngBoundsExpression, LeafletEventHandlerFnMap, Map as LeafletMap } from "leaflet";
 import "leaflet/dist/leaflet.css";
 import styles from "./PlacesMap.module.css";
 import { DEFAULT_BASEMAP, getBasemapTileLayerArgs } from "./basemaps";
 import type { BasemapId } from "./basemaps";
+import { Icon } from "@/ui/icons/Icon";
 import type { PlaceMarker, PlaceType } from "@/types/place";
 import { HUNGARY_BORDER_110M, HUNGARY_WATER_MASK_110M } from "./hungaryBorder110m";
 import PlacesRegionVisualization, { type PlacesRegionVisualizationVariant } from "./PlacesRegionVisualization";
@@ -15,6 +16,12 @@ import type { PlacesMapLayersV1 } from "@/types/placesMap";
 
 export type PlacesMapMarkerColorMode = "uniform_v1" | "water_highlight_v1" | "place_type_category_v1";
 export type PlacesMapInteractionMode = "static" | "bounded_hu_v1";
+export type PlacesMapToolBarVariant = "none" | "bottom_right_v1";
+
+const PLACES_DEFAULT_CENTER_V1: [number, number] = [47.16, 19.5];
+const PLACES_DEFAULT_ZOOM_V1 = 6;
+const PLACES_DASHBOARD_MIN_ZOOM_V1 = 6;
+const PLACES_DASHBOARD_MAX_ZOOM_V1 = 10;
 
 const HUNGARY_MAX_BOUNDS_V1: LatLngBoundsExpression = [
   [45.3, 15.7],
@@ -53,9 +60,17 @@ function buildMarkerPathOptions(args: {
   const { marker, isSelected, isDimmed, isDark, markerColorMode } = args;
 
   const uniform = {
-    color: isSelected ? "#0f172a" : "#0b3b8c",
+    color: isSelected
+      ? "rgba(var(--brand-warm-rgb), 0.95)"
+      : isDark
+      ? "rgba(var(--brand-ink-rgb), 0.9)"
+      : "rgba(var(--brand-ink-rgb), 0.92)",
     weight: isSelected ? 2 : 1,
-    fillColor: isSelected ? "#2563eb" : "#60a5fa",
+    fillColor: isSelected
+      ? "rgba(var(--brand-accent-rgb), 0.75)"
+      : isDark
+      ? "rgba(var(--brand-ink-rgb), 0.45)"
+      : "rgba(var(--brand-ink-rgb), 0.35)",
     fillOpacity: isDimmed ? 0.55 : 0.9,
     opacity: isDimmed ? 0.55 : 1,
   };
@@ -66,14 +81,18 @@ function buildMarkerPathOptions(args: {
     return uniform;
   }
   const palette = {
-    waterfront: { fill: "#38bdf8", fillSelected: "#0284c7" },
-    forest: { fill: "#4ade80", fillSelected: "#16a34a" },
-    mountains: { fill: "#fb923c", fillSelected: "#ea580c" },
-    other: { fill: "#a78bfa", fillSelected: "#7c3aed" },
+    waterfront: { fill: "rgba(var(--brand-ink-rgb), 0.62)", fillSelected: "rgba(var(--brand-ink-rgb), 0.95)" },
+    forest: { fill: "rgba(var(--brand-accent-rgb), 0.62)", fillSelected: "rgba(var(--brand-accent-rgb), 0.95)" },
+    mountains: { fill: "rgba(var(--brand-warm-rgb), 0.62)", fillSelected: "rgba(var(--brand-warm-rgb), 0.95)" },
+    other: { fill: "rgba(var(--brand-ink-rgb), 0.4)", fillSelected: "rgba(var(--brand-accent-rgb), 0.78)" },
   } satisfies Record<PlaceTypeCategoryV1, { fill: string; fillSelected: string }>;
 
   return {
-    color: isSelected ? (isDark ? "#e5e7eb" : "#0f172a") : isDark ? "#0f172a" : "#0b1220",
+    color: isSelected
+      ? "rgba(var(--brand-warm-rgb), 0.95)"
+      : isDark
+      ? "rgba(var(--brand-ink-rgb), 0.9)"
+      : "rgba(var(--brand-ink-rgb), 0.92)",
     weight: isSelected ? 2 : 1,
     fillColor: isSelected ? palette[category].fillSelected : palette[category].fill,
     fillOpacity: isDimmed ? 0.55 : 0.9,
@@ -91,6 +110,11 @@ export type PlacesMapProps = {
   layers?: PlacesMapLayersV1 | null;
   markerColorMode?: PlacesMapMarkerColorMode;
   interactionMode?: PlacesMapInteractionMode;
+  defaultCenter?: [number, number];
+  defaultZoom?: number;
+  defaultPanBy?: [number, number]; // [x, y] pixels
+  showResetViewButton?: boolean;
+  toolBarVariant?: PlacesMapToolBarVariant;
   markerEventHandlers?: (marker: PlaceMarker) => LeafletEventHandlerFnMap | undefined;
   renderMarkerChildren?: (args: {
     marker: PlaceMarker;
@@ -98,6 +122,26 @@ export type PlacesMapProps = {
     isDimmed: boolean;
   }) => ReactNode;
 };
+
+function MapRefBinder({
+  onMap,
+  onZoom,
+}: {
+  onMap: (map: LeafletMap) => void;
+  onZoom: (zoom: number) => void;
+}) {
+  const map = useMap();
+  useEffect(() => {
+    onMap(map);
+    const handler = () => onZoom(map.getZoom());
+    handler();
+    map.on("zoomend", handler);
+    return () => {
+      map.off("zoomend", handler);
+    };
+  }, [map, onMap, onZoom]);
+  return null;
+}
 
 export default function PlacesMap({
   markers,
@@ -109,10 +153,18 @@ export default function PlacesMap({
   layers = null,
   markerColorMode = "uniform_v1",
   interactionMode = "static",
+  defaultCenter,
+  defaultZoom,
+  defaultPanBy,
+  showResetViewButton = false,
+  toolBarVariant = "none",
   markerEventHandlers,
   renderMarkerChildren,
 }: PlacesMapProps) {
   const [isDark, setIsDark] = useState(false);
+  const mapRef = useRef<LeafletMap | null>(null);
+  const [currentZoom, setCurrentZoom] = useState<number | null>(null);
+  const didApplyInitialPanRef = useRef(false);
 
   useEffect(() => {
     const media = window.matchMedia("(prefers-color-scheme: dark)");
@@ -122,11 +174,27 @@ export default function PlacesMap({
     return () => media.removeEventListener("change", update);
   }, []);
 
-  const center = useMemo<[number, number]>(() => [47.16, 19.5], []);
   const tileLayerArgs = useMemo(() => {
     if (basemap === "brand") return null;
     return getBasemapTileLayerArgs({ basemap, isDark });
   }, [basemap, isDark]);
+
+  const onMap = useCallback((map: LeafletMap) => {
+    mapRef.current = map;
+
+    if (
+      !didApplyInitialPanRef.current &&
+      defaultPanBy &&
+      (defaultPanBy[0] !== 0 || defaultPanBy[1] !== 0)
+    ) {
+      didApplyInitialPanRef.current = true;
+      map.panBy(defaultPanBy, { animate: false });
+    }
+  }, [defaultPanBy]);
+
+  const onZoom = useCallback((zoom: number) => {
+    setCurrentZoom(zoom);
+  }, []);
 
   const interactions = useMemo(() => {
     if (interactionMode === "bounded_hu_v1") {
@@ -138,8 +206,8 @@ export default function PlacesMap({
         keyboard: false,
         boxZoom: false,
         touchZoom: true,
-        minZoom: 1.2,
-        maxZoom: 10,
+        minZoom: PLACES_DASHBOARD_MIN_ZOOM_V1,
+        maxZoom: PLACES_DASHBOARD_MAX_ZOOM_V1,
         maxBounds: HUNGARY_MAX_BOUNDS_V1,
         maxBoundsViscosity: 1.0,
       } as const;
@@ -153,20 +221,100 @@ export default function PlacesMap({
       keyboard: false,
       boxZoom: false,
       touchZoom: false,
-      minZoom: undefined,
-      maxZoom: undefined,
+      minZoom: PLACES_DEFAULT_ZOOM_V1,
+      maxZoom: PLACES_DEFAULT_ZOOM_V1,
       maxBounds: undefined,
       maxBoundsViscosity: undefined,
     } as const;
   }, [interactionMode]);
 
+  const mapDefaultCenter = defaultCenter ?? PLACES_DEFAULT_CENTER_V1;
+  const mapDefaultZoom = defaultZoom ?? PLACES_DEFAULT_ZOOM_V1;
+  const minZoom = typeof interactions.minZoom === "number" ? interactions.minZoom : mapDefaultZoom;
+  const maxZoom = typeof interactions.maxZoom === "number" ? interactions.maxZoom : mapDefaultZoom;
+  const canZoomIn = currentZoom === null ? true : currentZoom < maxZoom;
+  const canZoomOut = currentZoom === null ? true : currentZoom > minZoom;
+
+  const applyDefaultView = useCallback(
+    (map: LeafletMap, opts: { animate: boolean }) => {
+      if (defaultPanBy && (defaultPanBy[0] !== 0 || defaultPanBy[1] !== 0)) {
+        map.once("moveend", () => {
+          map.panBy(defaultPanBy, { animate: false });
+        });
+      }
+      map.setView(mapDefaultCenter, mapDefaultZoom, { animate: opts.animate });
+    },
+    [defaultPanBy, mapDefaultCenter, mapDefaultZoom]
+  );
+
+  const onResetView = useCallback(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    applyDefaultView(map, { animate: true });
+  }, [applyDefaultView]);
+
+  const onZoomIn = useCallback(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    map.zoomIn();
+  }, []);
+
+  const onZoomOut = useCallback(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    map.zoomOut();
+  }, []);
+
   return (
     <div className={`places-map ${styles.layout}`}>
+      {toolBarVariant === "bottom_right_v1" ? (
+        <div className={styles.toolBar} aria-label="Map tools">
+          <div className={styles.toolGroup} role="group" aria-label="Zoom">
+            <button
+              type="button"
+              className={styles.toolButton}
+              onClick={onZoomIn}
+              disabled={!canZoomIn}
+              aria-label="Nagyítás"
+              title="Nagyítás"
+            >
+              +
+            </button>
+            <button
+              type="button"
+              className={styles.toolButton}
+              onClick={onZoomOut}
+              disabled={!canZoomOut}
+              aria-label="Kicsinyítés"
+              title="Kicsinyítés"
+            >
+              −
+            </button>
+          </div>
+          <div className={styles.toolGroup} role="group" aria-label="View">
+            <button
+              type="button"
+              className={`${styles.toolButton} ${styles.toolButtonWide}`}
+              onClick={onResetView}
+              aria-label="Alap nézet"
+              title="Alap nézet"
+            >
+              <Icon name="undo" size={18} title="Alap nézet" />
+            </button>
+          </div>
+        </div>
+      ) : showResetViewButton ? (
+        <div className={styles.resetView}>
+          <button type="button" className={`btn btn--secondary ${styles.resetViewButton}`} onClick={onResetView}>
+            <Icon name="undo" size={18} title="Alap nézet" />
+          </button>
+        </div>
+      ) : null}
       <MapContainer
         className={styles.map}
-        center={center}
-        zoom={1.2}
-        zoomControl={interactions.zoomControl}
+        center={mapDefaultCenter}
+        zoom={mapDefaultZoom}
+        zoomControl={false}
         scrollWheelZoom={interactions.scrollWheelZoom}
         doubleClickZoom={interactions.doubleClickZoom}
         dragging={interactions.dragging}
@@ -179,6 +327,7 @@ export default function PlacesMap({
         maxBoundsViscosity={interactions.maxBoundsViscosity}
         attributionControl={false}
       >
+        <MapRefBinder onMap={onMap} onZoom={onZoom} />
         {tileLayerArgs ? (
           <TileLayer url={tileLayerArgs.url} attribution={tileLayerArgs.attribution} />
         ) : null}

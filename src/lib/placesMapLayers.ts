@@ -62,62 +62,68 @@ async function loadGeometriesById(regionIds: string[]) {
 
 const cache = new Map<string, PlacesMapLayersV1>();
 
-export async function buildPlacesMapLayersV1(args: { placeRegionIds: string[] }): Promise<PlacesMapLayersV1> {
+export async function buildPlacesMapLayersV1(args: {
+  placeRegionIds: string[];
+  includeCountries?: boolean;
+}): Promise<PlacesMapLayersV1> {
   const placeRegionIds = Array.from(new Set(args.placeRegionIds.map((id) => id.trim()).filter(Boolean))).sort();
-  const cacheKey = `v1:${placeRegionIds.join("|")}`;
+  const includeCountries = args.includeCountries ?? true;
+  const cacheKey = `v1:${includeCountries ? "countries" : "no_countries"}:${placeRegionIds.join("|")}`;
   const cached = cache.get(cacheKey);
   if (cached) return cached;
 
   // 1) Country borders (globalRegions -> countries intersecting HU viewport).
   let countryFeatures: Feature[] = [];
 
-  const globalRepo = await loadRegionCatalogFromRepo("globalRegions");
-  if (globalRepo && globalRepo.length) {
-    const globalCountries = globalRepo.filter(
-      (r) => r.type === "country" && bboxIntersects(r.bbox, HUNGARY_VIEWPORT_BBOX)
-    );
-    countryFeatures = globalCountries.map((r) =>
-      toFeature({ region_id: r.region_id, name: r.name, type: r.type, geometry: r.geometry })
-    );
-  } else {
-    const { data, error } = await supabaseServerClient
-      .from("distribution_region_catalog_items")
-      .select("region_id,name,type,bbox")
-      .eq("catalog", "globalRegions")
-      .eq("type", "country");
+  if (includeCountries) {
+    const globalRepo = await loadRegionCatalogFromRepo("globalRegions");
+    if (globalRepo && globalRepo.length) {
+      const globalCountries = globalRepo.filter(
+        (r) => r.type === "country" && bboxIntersects(r.bbox, HUNGARY_VIEWPORT_BBOX)
+      );
+      countryFeatures = globalCountries.map((r) =>
+        toFeature({ region_id: r.region_id, name: r.name, type: r.type, geometry: r.geometry })
+      );
+    } else {
+      const { data, error } = await supabaseServerClient
+        .from("distribution_region_catalog_items")
+        .select("region_id,name,type,bbox")
+        .eq("catalog", "globalRegions")
+        .eq("type", "country");
 
-    if (!error) {
-      const rows = (data ?? []) as Array<Record<string, unknown>>;
-      const meta = rows
-        .map((row) => {
-          const bbox = parseBounds(row.bbox);
-          if (!bbox) return null;
-          const region_id = String(row.region_id ?? "").trim();
-          if (!region_id) return null;
-          const name = typeof row.name === "string" ? row.name : "";
-          const type = typeof row.type === "string" ? row.type : "country";
-          const item: DistributionRegionCatalogItemMeta = {
-            region_id,
-            name,
-            scope: "global",
-            type,
-            source: "supabase",
-            bbox,
-          };
-          return item;
-        })
-        .filter(Boolean) as DistributionRegionCatalogItemMeta[];
+      if (!error) {
+        const rows = (data ?? []) as Array<Record<string, unknown>>;
+        const meta = rows
+          .map((row) => {
+            const bbox = parseBounds(row.bbox);
+            if (!bbox) return null;
+            const region_id = String(row.region_id ?? "").trim();
+            if (!region_id) return null;
+            const name = typeof row.name === "string" ? row.name : "";
+            const type = typeof row.type === "string" ? row.type : "country";
+            const item: DistributionRegionCatalogItemMeta = {
+              region_id,
+              name,
+              scope: "global",
+              type,
+              source: "supabase",
+              bbox,
+            };
+            return item;
+          })
+          .filter(Boolean) as DistributionRegionCatalogItemMeta[];
 
-      const globalCountries = meta.filter((r) => bboxIntersects(r.bbox, HUNGARY_VIEWPORT_BBOX));
-      const countryIds = globalCountries.map((r) => r.region_id);
-      const geomById = await loadGeometriesById(countryIds);
-      countryFeatures = globalCountries
-        .map((r) => {
-          const geom = geomById[r.region_id];
-          if (!geom) return null;
-          return toFeature({ region_id: r.region_id, name: r.name, type: r.type, geometry: geom });
-        })
-        .filter(Boolean) as Feature[];
+        const globalCountries = meta.filter((r) => bboxIntersects(r.bbox, HUNGARY_VIEWPORT_BBOX));
+        const countryIds = globalCountries.map((r) => r.region_id);
+        const geomById = await loadGeometriesById(countryIds);
+        countryFeatures = globalCountries
+          .map((r) => {
+            const geom = geomById[r.region_id];
+            if (!geom) return null;
+            return toFeature({ region_id: r.region_id, name: r.name, type: r.type, geometry: geom });
+          })
+          .filter(Boolean) as Feature[];
+      }
     }
   }
 

@@ -49,6 +49,7 @@ export default async function AdminPage() {
   const publishedMarkers = await listPublishedPlaceDashboardMarkers();
   const dashboardLayers = await buildPlacesMapLayersV1({
     placeRegionIds: publishedMarkers.map((m) => m.leaflet_region_id ?? "").filter(Boolean),
+    includeCountries: false,
   });
   const currentSeason = getCurrentSeasonKey();
   const currentSeasonLabel =

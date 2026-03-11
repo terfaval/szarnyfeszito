@@ -623,7 +623,7 @@
 .layerStackPublish {
   margin-top: 1.25rem;
   aspect-ratio: auto;
-  grid-template-columns: minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
   min-height: 0;
   background: transparent;
   border-radius: 0;
@@ -631,8 +631,7 @@
 }
 
 .layerStackPublish .overlayLayer {
-  align-items: stretch;
-  padding: 1.25rem;
+  padding: 1rem 1rem 1rem 0;
 }
 
 .layerStackPublish .backgroundLayer {
@@ -640,7 +639,7 @@
 }
 
 .layerStackPublish .overlayItem {
-  width: 100%;
+  width: min(420px, 100%);
 }
 
 .layerStackPublish .fullBodyImage {
@@ -708,19 +707,13 @@
 @media (min-width: 768px) {
   .layerStackPublish .fullBodyImagePublish,
   .layerStackPublish .fullBodyPlaceholderPublish {
-    width: min(820px, 100%);
+    width: clamp(420px, 88%, 760px);
   }
 
   .layerStackPublish .overlayLayer {
-    margin-top: -4rem;
-    padding-top: 0;
-    align-items: flex-end;
     position: relative;
     z-index: 2;
-  }
-
-  .layerStackPublish .overlayItem {
-    width: min(420px, 100%);
+    transform: translateX(-3rem);
   }
 }
 

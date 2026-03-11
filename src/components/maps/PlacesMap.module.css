@@ -4,6 +4,7 @@
   border: 1px solid var(--line);
   border-radius: 1.25rem;
   overflow: hidden;
+  position: relative;
 }
 
 .map {
@@ -12,6 +13,78 @@
   background: var(--background);
 }
 
+.resetView {
+  position: absolute;
+  top: clamp(12px, 2.5vw, 24px);
+  right: clamp(12px, 2.5vw, 24px);
+  z-index: 500;
+}
+
+.resetViewButton {
+  min-height: 2.15rem;
+  padding: 0.45rem 1.05rem;
+  letter-spacing: 0.25em;
+}
+
 :global(.places-map .leaflet-control-attribution) {
   display: none !important;
+}
+
+.toolBar {
+  position: absolute;
+  right: clamp(12px, 2.5vw, 24px);
+  bottom: clamp(12px, 2.5vw, 24px);
+  z-index: 500;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.toolGroup {
+  border: 1px solid var(--line);
+  background: var(--panel-2);
+  border-radius: 18px;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.toolButton {
+  border: 0;
+  background: transparent;
+  color: var(--brand-ink);
+  font-weight: 700;
+  width: 44px;
+  height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border-bottom: 1px solid rgba(var(--brand-ink-rgb), 0.18);
+}
+
+.toolButton:last-child {
+  border-bottom: 0;
+}
+
+.toolButton:hover {
+  background: rgba(var(--brand-ink-rgb), 0.08);
+  color: var(--brand-warm);
+}
+
+.toolButton:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.toolButton:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.toolButtonWide {
+  width: 44px;
+  padding: 0;
+  font-size: 0.7rem;
 }

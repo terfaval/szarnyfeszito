@@ -22,6 +22,7 @@ export type AdminTopBarProps = {
 export function AdminTopBar({ action }: AdminTopBarProps) {
   const pathname = usePathname() ?? "";
   const logoSrc = pathname.startsWith("/admin/yoga") ? "/YOGA/ICONS/logo.svg" : "/logo.svg";
+  const isDashboard = pathname === "/admin";
   const navId = useId();
   const [menuOpenForPath, setMenuOpenForPath] = useState<string | null>(null);
   const menuOpen = menuOpenForPath === pathname;
@@ -35,7 +36,7 @@ export function AdminTopBar({ action }: AdminTopBarProps) {
   };
 
   return (
-    <div className="admin-topbar">
+    <div className={`admin-topbar ${isDashboard ? "admin-topbar--dashboard-overlay" : ""}`}>
       <div className="admin-topbar__inner">
         <div className="admin-topbar__brand">
           <Link

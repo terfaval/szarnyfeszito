@@ -1,13 +1,18 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
-import { Tooltip } from "react-leaflet";
 
 import PlacesMap from "@/components/maps/PlacesMap";
 import type { PlacesMapLayersV1 } from "@/types/placesMap";
 import type { PlaceMarker } from "@/types/place";
 import styles from "./DashboardPlacesMap.module.css";
+
+const Tooltip = dynamic(() => import("react-leaflet").then((module) => module.Tooltip), {
+  ssr: false,
+  loading: () => null,
+});
 
 type HoverPlaceDetail = {
   place: {
@@ -129,8 +134,12 @@ export default function DashboardPlacesMap({
           selectedSlug={activeSlug}
           selectedRegionId={selectedRegionId}
           basemap="bird"
-          regionVisualization="places_regions_v1_countries_filled"
+          regionVisualization="places_regions_v1"
           interactionMode="bounded_hu_v1"
+          toolBarVariant="bottom_right_v1"
+          defaultCenter={[47.16, 19.5]}
+          defaultZoom={7.5}
+          defaultPanBy={[0, 84]}
           markerColorMode="water_highlight_v1"
           onSelect={(slug) => setPinnedSlug((prev) => (prev === slug ? null : slug))}
           markerEventHandlers={(marker) => ({

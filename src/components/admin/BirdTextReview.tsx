@@ -786,7 +786,11 @@ export default function BirdTextReview({
               </div>
             ) : null}
 
-              <div className={styles.layerStack}>
+              <div
+                className={`${styles.layerStack} ${
+                  isPublishMode ? styles.layerStackPublish : ""
+                }`}
+              >
                 <div className={styles.backgroundLayer}>
                   <div className={styles.mainImageFrame}>
                     {mainHabitatPreviewUrl ? (
