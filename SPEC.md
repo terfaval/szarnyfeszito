@@ -309,7 +309,19 @@ Tabs:
 - A futás blokk csak azt rögzíti, hogy futottunk: egy opcionális `distance` (km) és/vagy `duration` (perc) mező, valamint egy jegyzet. Amennyiben nincs megadva méret, akkor a log is csak a „kijelölt futás” című rekordot menti.
 - A havi rács, a heti sor és a log űrlap együtt mutatják a nap előrehaladását: a nap kiválasztásakor töltjük fel a kártyákat az adott naphoz tartozó `activity_logs` adatokkal, a naplózás után frissül a térkép, így mindig a kiválasztott nap áll rendelkezésre. Az architektúra jelenleg statikus könyvtárat használ, később a TICKETS/yoga mappa frissíthető további gyakorlatokkal.
 
----
+---
+
+### 7.5.1 Yoga Guru (tervezett)
+
+- A Yoga felületen (`/admin/yoga`) egy új `Yoga Guru` gomb/menüpont vezet egy “vezetett” ajánló flow-ra.
+- A Guru **server-side AI** segítségével a napra javaslatot ad a felhasználónak az előzmények (logok), a heti terv és a megjegyzések alapján.
+- A javaslat több formában érkezhet:
+  - DB-ből választott jóga template/kártya,
+  - YouTube link (`url + title + hossz`),
+  - vagy YouTube kereső kulcsszavak.
+- A felhasználó a javaslatok közül választ, majd a kiválasztott ajánlás **ugyanazon ActivityLog contract** szerint rögzíthető, mint a normál logolás.
+
+Megjegyzés: a pontos contract és a nyitott döntések a `TICKETS/yoga/yoga_guru.md` fájlban vannak (F0/F2). Build csak governance után.
 
 ### 7.6 Chef receptek (Admin)
 

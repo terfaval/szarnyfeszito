@@ -779,3 +779,29 @@ Birdwatch logging should reflect “I saw X at place Y”, and help selection by
 ### Out of scope (v1)
 - Free pan/zoom or world navigation.
 - Changing public `/places` interaction defaults.
+
+---
+
+## D44 – Yoga Guru (planned): server-side ajánlás + ActivityLog rögzítés
+
+**Status:** Proposed  
+**Date:** 2026-03-11  
+**Scope:** Studio `/admin/yoga` (Admin-only). Explorer out of scope. No runtime AI.
+
+### Context
+- A Yoga felület jelenleg “normál módon” nap kiválasztásával és ActivityLog mentéssel működik.
+- Szükség van egy dinamikusabb, “guru” jellegű, vezetett ajánló flow-ra, ami a felhasználó előzményei és heti céljai alapján javaslatot ad az adott napra.
+
+### Decision (v1 irány)
+- A Yoga Guru AI hívás **csak server-side** történik.
+- A Guru outputja **szigorúan validált JSON contract**, és több javaslatot ad (DB template / YouTube link / YouTube kereső kulcsszavak).
+- A kiválasztott javaslat rögzítése a meglévő `activity_logs` contracton keresztül történik (nem új “guru log” tábla v1-ben); extra információk `metadata` alá kerülhetnek.
+- Modell az env-ből jön (nincs hardcoded model id).
+
+### Open questions
+- A “heti terv” kanonikus tárolása (jelenleg nincs dedikált terv tábla a repóban).
+- Egy nap/tevékenység: 1 vagy több log? (SPEC/D16 vs implementáció eltérés)
+
+### Out of scope (v1)
+- Anatómiai és jóga katalógus generálás/pipeline.
+- YouTube API integráció és automatikus videó meta letöltés.
