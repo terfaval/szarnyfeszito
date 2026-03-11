@@ -5,6 +5,7 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import type { BirdDossierLeaflets } from "@/types/dossier";
 import { getBasemapTileLayerArgs } from "@/components/maps/basemaps";
+import { HUNGARY_FULL_BOUNDS_V1, WORLD_FULL_BOUNDS_V1 } from "@/components/maps/viewPresets";
 import { getHungaryRegionDef, getWorldRegionDef } from "@/lib/leafletsRegions";
 import { getHungaryRegionV2Def, getWorldRegionV2Def } from "@/lib/leafletsRegionsV2";
 
@@ -51,11 +52,8 @@ export default function BirdLeaflets({ kind, leaflets, className }: LeafletMiniM
       touchZoom: false,
     });
 
-    if (kind === "world") {
-      map.setView([20, 0], 1);
-    } else {
-      map.setView([47.1625, 19.5033], 6);
-    }
+    const bounds = kind === "world" ? WORLD_FULL_BOUNDS_V1 : HUNGARY_FULL_BOUNDS_V1;
+    map.fitBounds(bounds, { padding: [8, 8], animate: false });
 
     const initialIsDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
     const tileLayerArgs = getBasemapTileLayerArgs({ basemap: "bird", isDark: initialIsDark });

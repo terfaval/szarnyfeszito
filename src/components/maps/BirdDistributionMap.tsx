@@ -8,6 +8,7 @@ import type { LatLngBoundsExpression, PathOptions } from "leaflet";
 import "leaflet/dist/leaflet.css";
 import styles from "./BirdDistributionMap.module.css";
 import { getBasemapTileLayerArgs } from "./basemaps";
+import { HUNGARY_FULL_BOUNDS_V1, WORLD_FULL_BOUNDS_V1 } from "./viewPresets";
 
 const STATUS_COLORS: Record<DistributionStatus, string> = {
   resident: "#BE2D12",
@@ -92,17 +93,11 @@ export default function BirdDistributionMap({
   const bounds: LatLngBoundsExpression = useMemo(() => {
     if (mapType === "hungary") {
       // Deterministic "show full HU" viewport for a static display map.
-      return [
-        [45.7, 16.0], // southWest [lat, lng]
-        [48.7, 22.9], // northEast [lat, lng]
-      ];
+      return HUNGARY_FULL_BOUNDS_V1;
     }
 
     // Leaflet WebMercator clamps to ~±85 deg; using ~±80 keeps "full Earth" framing stable.
-    return [
-      [-80, -180],
-      [80, 180],
-    ];
+    return WORLD_FULL_BOUNDS_V1;
   }, [mapType]);
 
   const collections = useMemo(() => {

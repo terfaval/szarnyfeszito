@@ -10,6 +10,7 @@ import { createHash, randomUUID } from "crypto";
 import { supabaseServerClient } from "@/lib/supabaseServerClient";
 import { getBirdById, updateBird } from "@/lib/birdService";
 import { getLatestApprovedContentBlockForPlace } from "@/lib/placeContentService";
+import { listApprovedPublishedBirdLinksForPlace } from "@/lib/placeBirdService";
 import {
   IMAGE_ACCURACY_INPUTS,
   IMAGE_STYLE_CONFIG_ID_ICONIC,
@@ -104,6 +105,12 @@ async function uploadPngToStorage(args: {
     });
 
   if (error) {
+    const message = (error as { message?: string } | null)?.message ?? "";
+    if (/bucket/i.test(message) && /not\s+found|does\s+not\s+exist/i.test(message)) {
+      throw new Error(
+        `Supabase Storage bucket "${SUPABASE_IMAGE_BUCKET}" not found. Create it (or apply the repo migration that provisions it) before generating images.`
+      );
+    }
     throw error;
   }
 }
@@ -618,6 +625,18 @@ export async function generateHeroImageForPlace(
   const variants = approvedContent?.blocks_json?.variants ?? null;
   const springSnippet = variants?.seasonal_snippet?.spring ?? null;
 
+  let springBirds: Array<{ slug: string; name_hu: string }> = [];
+  try {
+    const placeBirds = await listApprovedPublishedBirdLinksForPlace(place.id);
+    springBirds = placeBirds
+      .filter((row) => row.visible_in_spring && row.bird)
+      .sort((a, b) => (a.rank ?? 0) - (b.rank ?? 0))
+      .map((row) => ({ slug: row.bird!.slug, name_hu: row.bird!.name_hu }))
+      .slice(0, 4);
+  } catch {
+    springBirds = [];
+  }
+
   const provider = getImageProvider();
   const results: ImageGenerationResult[] = [];
 
@@ -653,6 +672,13 @@ export async function generateHeroImageForPlace(
             seasonal_snippet_spring: springSnippet,
           }
         : null,
+      requested_birds: {
+        season: "spring",
+        mode: springBirds.length ? "specific" : "generic",
+        birds: springBirds,
+        rendering: "small_distant",
+        count: springBirds.length ? springBirds.length : 2,
+      },
       intent: "place_hero_spring_scientific_realistic",
       review_note: reviewNote,
       style_family: spec.style_family,

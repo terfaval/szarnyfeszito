@@ -145,9 +145,19 @@ export async function generateBirdDistributionMapV1(args: {
         : [];
 
   if (globalMeta.length === 0) {
-    throw new Error(
-      "Region catalog is missing/empty: globalRegions. Import into distribution_region_catalog_items (or place repo catalogs and set DISTRIBUTION_REGION_CATALOG_SOURCE=repo/auto)."
-    );
+    throw new Error([
+      "Region catalog is missing/empty: globalRegions.",
+      "Fix: import catalogs into Supabase (distribution_region_catalog_items) OR provide repo catalog files.",
+      "",
+      "Supabase import (recommended):",
+      '- npm run region:catalog:import -- \"TICKETS/leaflet shapefile builder/out/globalRegions.json\" \"TICKETS/leaflet shapefile builder/out/hungaryRegions.json\"',
+      "- npm run region:catalog:verify",
+      "",
+      "Repo catalogs (dev/local):",
+      "- Set DISTRIBUTION_REGION_CATALOG_SOURCE=repo (or auto)",
+      "- Provide globalRegions.json(.gz) and hungaryRegions.json(.gz)",
+      "- Optional: set DISTRIBUTION_REGION_CATALOG_REPO_DIR to the folder containing those files",
+    ].join("\n"));
   }
 
   const hungaryMeta =

@@ -3,7 +3,7 @@
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CircleMarker, GeoJSON, MapContainer, TileLayer, useMap } from "react-leaflet";
-import type { LatLngBoundsExpression, LeafletEventHandlerFnMap, Map as LeafletMap } from "leaflet";
+import type { FitBoundsOptions, LatLngBoundsExpression, LeafletEventHandlerFnMap, Map as LeafletMap } from "leaflet";
 import "leaflet/dist/leaflet.css";
 import styles from "./PlacesMap.module.css";
 import { DEFAULT_BASEMAP, getBasemapTileLayerArgs } from "./basemaps";
@@ -112,6 +112,8 @@ export type PlacesMapProps = {
   interactionMode?: PlacesMapInteractionMode;
   defaultCenter?: [number, number];
   defaultZoom?: number;
+  defaultBounds?: LatLngBoundsExpression;
+  defaultBoundsOptions?: FitBoundsOptions;
   defaultPanBy?: [number, number]; // [x, y] pixels
   showResetViewButton?: boolean;
   toolBarVariant?: PlacesMapToolBarVariant;
@@ -155,6 +157,8 @@ export default function PlacesMap({
   interactionMode = "static",
   defaultCenter,
   defaultZoom,
+  defaultBounds,
+  defaultBoundsOptions,
   defaultPanBy,
   showResetViewButton = false,
   toolBarVariant = "none",
@@ -183,6 +187,7 @@ export default function PlacesMap({
     mapRef.current = map;
 
     if (
+      !defaultBounds &&
       !didApplyInitialPanRef.current &&
       defaultPanBy &&
       (defaultPanBy[0] !== 0 || defaultPanBy[1] !== 0)
@@ -190,7 +195,7 @@ export default function PlacesMap({
       didApplyInitialPanRef.current = true;
       map.panBy(defaultPanBy, { animate: false });
     }
-  }, [defaultPanBy]);
+  }, [defaultBounds, defaultPanBy]);
 
   const onZoom = useCallback((zoom: number) => {
     setCurrentZoom(zoom);
@@ -230,6 +235,8 @@ export default function PlacesMap({
 
   const mapDefaultCenter = defaultCenter ?? PLACES_DEFAULT_CENTER_V1;
   const mapDefaultZoom = defaultZoom ?? PLACES_DEFAULT_ZOOM_V1;
+  const mapDefaultBounds = defaultBounds ?? null;
+  const mapDefaultBoundsOptions = defaultBoundsOptions ?? null;
   const minZoom = typeof interactions.minZoom === "number" ? interactions.minZoom : mapDefaultZoom;
   const maxZoom = typeof interactions.maxZoom === "number" ? interactions.maxZoom : mapDefaultZoom;
   const canZoomIn = currentZoom === null ? true : currentZoom < maxZoom;
@@ -237,6 +244,13 @@ export default function PlacesMap({
 
   const applyDefaultView = useCallback(
     (map: LeafletMap, opts: { animate: boolean }) => {
+      if (mapDefaultBounds) {
+        map.fitBounds(mapDefaultBounds, {
+          ...(mapDefaultBoundsOptions ?? {}),
+          animate: opts.animate,
+        });
+        return;
+      }
       if (defaultPanBy && (defaultPanBy[0] !== 0 || defaultPanBy[1] !== 0)) {
         map.once("moveend", () => {
           map.panBy(defaultPanBy, { animate: false });
@@ -244,7 +258,7 @@ export default function PlacesMap({
       }
       map.setView(mapDefaultCenter, mapDefaultZoom, { animate: opts.animate });
     },
-    [defaultPanBy, mapDefaultCenter, mapDefaultZoom]
+    [defaultPanBy, mapDefaultBounds, mapDefaultBoundsOptions, mapDefaultCenter, mapDefaultZoom]
   );
 
   const onResetView = useCallback(() => {
@@ -312,8 +326,15 @@ export default function PlacesMap({
       ) : null}
       <MapContainer
         className={styles.map}
-        center={mapDefaultCenter}
-        zoom={mapDefaultZoom}
+        {...(mapDefaultBounds
+          ? {
+              bounds: mapDefaultBounds,
+              boundsOptions: mapDefaultBoundsOptions ?? undefined,
+            }
+          : {
+              center: mapDefaultCenter,
+              zoom: mapDefaultZoom,
+            })}
         zoomControl={false}
         scrollWheelZoom={interactions.scrollWheelZoom}
         doubleClickZoom={interactions.doubleClickZoom}

@@ -128,6 +128,7 @@ export default function PlaceHeroImageReview({
                 height: "min(70vh, 720px)",
                 borderRadius: 14,
                 overflow: "hidden",
+                boxShadow: "inset 0 0 0 14px var(--brand-paper)",
               }}
             >
               <Image src={image.previewUrl} alt="Place hero preview" fill style={{ objectFit: "cover" }} />
@@ -148,4 +149,3 @@ export default function PlaceHeroImageReview({
     </section>
   );
 }
-

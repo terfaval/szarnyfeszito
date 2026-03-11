@@ -1,3 +1,5 @@
+import path from "node:path";
+
 import { enumEnv, optionalEnv, requiredEnv } from "@/lib/env";
 export const SUPABASE_URL = requiredEnv("SUPABASE_URL");
 export const SUPABASE_SERVICE_ROLE_KEY = requiredEnv("SUPABASE_SERVICE_ROLE_KEY");
@@ -32,6 +34,14 @@ export const DISTRIBUTION_REGION_CATALOG_SOURCE = enumEnv(
   "DISTRIBUTION_REGION_CATALOG_SOURCE",
   ["supabase", "repo", "auto"] as const,
   "supabase"
+);
+
+// D26 region catalog files (used when DISTRIBUTION_REGION_CATALOG_SOURCE is "repo" or "auto").
+// Accepts either an absolute path or a repo-relative folder.
+export const DISTRIBUTION_REGION_CATALOG_REPO_DIR = path.resolve(
+  process.cwd(),
+  optionalEnv("DISTRIBUTION_REGION_CATALOG_REPO_DIR", "data/distribution-region-catalog/v1") ??
+    "data/distribution-region-catalog/v1"
 );
 export const NODE_ENV = process.env.NODE_ENV?.trim() || "development";
 export const IS_PRODUCTION = NODE_ENV === "production";

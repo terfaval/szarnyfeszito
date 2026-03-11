@@ -4,6 +4,7 @@ import { createClient } from "@supabase/supabase-js";
 
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const supabaseImageBucket = process.env.SUPABASE_IMAGE_BUCKET || "bird-images";
 
 if (!supabaseUrl || !supabaseServiceRoleKey) {
   throw new Error(
@@ -16,6 +17,13 @@ const supabase = createClient(supabaseUrl, supabaseServiceRoleKey, {
 });
 
 async function runSmokeTest() {
+  const { error: bucketError } = await supabase.storage.getBucket(supabaseImageBucket);
+  if (bucketError) {
+    throw new Error(
+      `missing Storage bucket "${supabaseImageBucket}": ${bucketError.message ?? "unknown"}`
+    );
+  }
+
   const slug = `smoke-${crypto.randomUUID()}`;
   const birdRows = {
     slug,

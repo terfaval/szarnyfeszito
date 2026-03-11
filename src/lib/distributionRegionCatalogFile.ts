@@ -1,9 +1,11 @@
 import fs from "node:fs/promises";
 import path from "node:path";
+import zlib from "node:zlib";
 import { z } from "zod";
 
 import type { DistributionGeometry } from "@/types/distributionMap";
 import type { DistributionRegionCatalogName } from "@/lib/distributionRegionCatalogService";
+import { DISTRIBUTION_REGION_CATALOG_REPO_DIR } from "@/lib/config";
 
 export type RegionCatalogItem = {
   region_id: string;
@@ -57,7 +59,29 @@ const catalogSchema = z
 let cache: Partial<Record<DistributionRegionCatalogName, RegionCatalogItem[]>> = {};
 
 function catalogPath(catalog: DistributionRegionCatalogName) {
-  return path.join(process.cwd(), "data", "distribution-region-catalog", "v1", `${catalog}.json`);
+  return path.join(DISTRIBUTION_REGION_CATALOG_REPO_DIR, `${catalog}.json`);
+}
+
+async function readFileIfExists(filePath: string): Promise<Buffer | null> {
+  try {
+    return await fs.readFile(filePath);
+  } catch (err) {
+    const anyErr = err as unknown as { code?: unknown };
+    if (anyErr?.code === "ENOENT") return null;
+    throw err;
+  }
+}
+
+async function loadCatalogJsonString(catalog: DistributionRegionCatalogName): Promise<string | null> {
+  const jsonPath = catalogPath(catalog);
+  const jsonBuf = await readFileIfExists(jsonPath);
+  if (jsonBuf) return jsonBuf.toString("utf-8");
+
+  const gzPath = `${jsonPath}.gz`;
+  const gzBuf = await readFileIfExists(gzPath);
+  if (!gzBuf) return null;
+
+  return zlib.gunzipSync(gzBuf).toString("utf-8");
 }
 
 export async function loadRegionCatalogFromRepo(
@@ -65,9 +89,10 @@ export async function loadRegionCatalogFromRepo(
 ): Promise<RegionCatalogItem[] | null> {
   if (cache[catalog]) return cache[catalog] ?? null;
 
-  const filePath = catalogPath(catalog);
   try {
-    const raw = await fs.readFile(filePath, "utf-8");
+    const raw = await loadCatalogJsonString(catalog);
+    if (!raw) return null;
+
     const parsed = catalogSchema.parse(JSON.parse(raw));
     const items = parsed.regions.map((r) => ({
       region_id: r.region_id,
@@ -88,4 +113,3 @@ export async function loadRegionCatalogFromRepo(
 export function clearRegionCatalogRepoCache() {
   cache = {};
 }
-

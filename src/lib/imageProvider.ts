@@ -53,6 +53,25 @@ function parseSizePx(size: string) {
 }
 
 function buildOpenAIPrompt(input: GenerateImageInput) {
+  const requestedBirdsPayload = (input.promptPayload as { requested_birds?: unknown } | null)
+    ?.requested_birds as
+    | {
+        season?: string;
+        mode?: "specific" | "generic";
+        birds?: Array<{ slug?: string; name_hu?: string }>;
+        rendering?: string;
+        count?: number;
+      }
+    | undefined;
+
+  const requestedBirdNamesHu =
+    requestedBirdsPayload?.mode === "specific" && Array.isArray(requestedBirdsPayload.birds)
+      ? requestedBirdsPayload.birds
+          .map((b) => (typeof b?.name_hu === "string" ? b.name_hu.trim() : ""))
+          .filter((name) => name.length > 0)
+          .slice(0, 6)
+      : [];
+
   const base = [
     "You are generating a PNG image for a Hungarian nature guide app.",
     "High priority: accuracy, recognizability, consistency, educational natural-history illustration (not artistic).",
@@ -70,6 +89,11 @@ function buildOpenAIPrompt(input: GenerateImageInput) {
     input.entityType !== "bird"
       ? "- Do NOT include birds/animals unless explicitly requested by the structured JSON hints."
       : "",
+    input.entityType === "place" && input.variant === "place_hero_spring_v1"
+      ? requestedBirdsPayload?.mode === "specific" && requestedBirdNamesHu.length
+        ? `- Requested birds (include a few, small and distant): ${requestedBirdNamesHu.join(", ")}.`
+        : "- Requested birds: include 1-3 small, distant generic birds (do not depict an identifiable species if none is specified)."
+      : "",
     "",
     "Variant rules:",
     input.styleFamily === "scientific"
@@ -83,11 +107,11 @@ function buildOpenAIPrompt(input: GenerateImageInput) {
           input.variant === "main_habitat"
              ? "- main_habitat: include only a subtle habitat hint (e.g., reeds, shallow water, grass clumps, branch). Keep background simple."
              : "",
-          input.variant === "place_hero_spring_v1"
-            ? "- place_hero_spring_v1: spring highlight moment for the place; realistic, scientific illustration feel; wide scenic composition; no people; no buildings unless clearly implied by the place metadata; no animals unless requested."
-            : "",
-          input.variant === "flight_clean"
-             ? "- flight_clean: clean neutral background, bird in flight, wings fully visible, wing structure readable."
+           input.variant === "place_hero_spring_v1"
+             ? "- place_hero_spring_v1: spring highlight moment for the place; realistic, scientific illustration feel; wide scenic composition; no people; no buildings unless clearly implied by the place metadata; no animals unless requested."
+             : "",
+           input.variant === "flight_clean"
+              ? "- flight_clean: clean neutral background, bird in flight, wings fully visible, wing structure readable."
              : "",
           input.variant === "nesting_clean"
              ? "- nesting_clean: bird at nest with chicks visible if possible; natural scene, not cartoonish."

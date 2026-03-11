@@ -124,7 +124,16 @@ export default function PlaceHeroImagePanel({
 
         {image?.previewUrl ? (
           <div className="admin-panel admin-panel--muted" aria-label="Hero image preview">
-            <div style={{ position: "relative", width: "100%", aspectRatio: "16 / 9", borderRadius: 14, overflow: "hidden" }}>
+            <div
+              style={{
+                position: "relative",
+                width: "100%",
+                aspectRatio: "16 / 9",
+                borderRadius: 14,
+                overflow: "hidden",
+                boxShadow: "inset 0 0 0 14px var(--brand-paper)",
+              }}
+            >
               <Image src={image.previewUrl} alt="Place hero preview" fill style={{ objectFit: "cover" }} />
             </div>
           </div>
@@ -143,4 +152,3 @@ export default function PlaceHeroImagePanel({
     </section>
   );
 }
-

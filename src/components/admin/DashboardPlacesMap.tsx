@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 
 import PlacesMap from "@/components/maps/PlacesMap";
+import { HUNGARY_FULL_BOUNDS_V1 } from "@/components/maps/viewPresets";
 import type { PlacesMapLayersV1 } from "@/types/placesMap";
 import type { PlaceMarker } from "@/types/place";
 import styles from "./DashboardPlacesMap.module.css";
@@ -57,10 +58,31 @@ export default function DashboardPlacesMap({
   const [detail, setDetail] = useState<HoverPlaceDetail | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [dashboardTopInsetPx, setDashboardTopInsetPx] = useState<number>(0);
 
   const cacheRef = useRef<Map<string, HoverPlaceDetail>>(new Map());
   const activeSlug = pinnedSlug ?? hoveredSlug;
   const panelOpen = Boolean(pinnedSlug);
+
+  useEffect(() => {
+    const readPx = (value: string) => {
+      const trimmed = value.trim();
+      if (!trimmed) return 0;
+      const num = Number.parseFloat(trimmed);
+      return Number.isFinite(num) ? num : 0;
+    };
+
+    const update = () => {
+      const computed = window.getComputedStyle(document.documentElement);
+      const topBar = readPx(computed.getPropertyValue("--admin-dashboard-topbar-offset"));
+      const shellPad = readPx(computed.getPropertyValue("--admin-shell-pad-block"));
+      setDashboardTopInsetPx(topBar + shellPad);
+    };
+
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, []);
 
   useEffect(() => {
     if (!activeSlug) return;
@@ -124,6 +146,14 @@ export default function DashboardPlacesMap({
   const markerBySlug = useMemo(() => new Map(markers.map((m) => [m.slug, m])), [markers]);
   const activeMarker = activeSlug ? markerBySlug.get(activeSlug) ?? null : null;
   const selectedRegionId = activeMarker?.leaflet_region_id?.trim() || null;
+  const boundsOptions = useMemo(() => {
+    const inset = Math.max(0, dashboardTopInsetPx);
+    return {
+      padding: [12, 12] as [number, number],
+      paddingTopLeft: [12, Math.round(inset + 12)] as [number, number],
+      paddingBottomRight: [12, 12] as [number, number],
+    };
+  }, [dashboardTopInsetPx]);
 
   return (
     <section className={styles.section} aria-label="Published places map">
@@ -137,9 +167,8 @@ export default function DashboardPlacesMap({
           regionVisualization="places_regions_v1"
           interactionMode="bounded_hu_v1"
           toolBarVariant="bottom_right_v1"
-          defaultCenter={[47.16, 19.5]}
-          defaultZoom={7.1}
-          defaultPanBy={[0, 170]}
+          defaultBounds={HUNGARY_FULL_BOUNDS_V1}
+          defaultBoundsOptions={boundsOptions}
           markerColorMode="water_highlight_v1"
           onSelect={(slug) => setPinnedSlug((prev) => (prev === slug ? null : slug))}
           markerEventHandlers={(marker) => ({
