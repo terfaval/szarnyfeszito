@@ -214,7 +214,7 @@ async function ensureVisualBriefForImageGen(bird: Bird, scienceDossier: { payloa
 
 export async function generateImagesForBird(
   bird: Bird,
-  options: { forceRegenerate?: boolean } = {}
+  options: { forceRegenerate?: boolean; onlyVariant?: ImageVariant } = {}
 ): Promise<{
   bird: Bird;
   required_success: boolean;
@@ -347,7 +347,27 @@ export async function generateImagesForBird(
   };
 
   const specs = buildSpecs();
+
+  if (options.onlyVariant) {
+    const hasSpec = specs.some((spec) => spec.variant === options.onlyVariant);
+    if (!hasSpec) {
+      throw new Error(
+        `Unsupported variant "${options.onlyVariant}" for bird image generation.`
+      );
+    }
+
+    const status = reviewStatusByVariant.get(options.onlyVariant) ?? null;
+    if (status === "approved") {
+      throw new Error(
+        `Variant "${options.onlyVariant}" is approved and locked. Request changes instead of regenerating.`
+      );
+    }
+  }
+
   const specsToGenerate = specs.filter((spec) => {
+    if (options.onlyVariant && spec.variant !== options.onlyVariant) {
+      return false;
+    }
     const status = reviewStatusByVariant.get(spec.variant) ?? null;
     if (status === "approved") {
       return false;

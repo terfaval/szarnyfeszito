@@ -366,10 +366,10 @@
 .regionRow {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-rows: minmax(220px, auto) auto;
   gap: 1rem;
   margin-top: 1.5rem;
   align-items: stretch;
-  grid-auto-rows: minmax(0, 1fr);
 }
 
 .mapColumn {
@@ -377,6 +377,11 @@
   flex-direction: column;
   gap: 0.5rem;
   min-height: 0;
+}
+
+.mapFrame {
+  flex: 1;
+  min-height: 220px;
 }
 
 .mapHeader {
@@ -401,7 +406,8 @@
 }
 
 .mapPlaceholder {
-  height: 140px;
+  height: 100%;
+  min-height: 140px;
   border-radius: 20px;
   border: 1px dashed var(--line);
   background: var(--panel);
@@ -423,6 +429,21 @@
   flex-direction: column;
   gap: 0.75rem;
   min-height: 0;
+}
+
+.legendFrame {
+  flex: 1;
+  min-height: 220px;
+  width: 100%;
+  border-radius: 20px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  padding: 0.9rem 1rem;
+  overflow: auto;
+}
+
+.distributionInfoRowFull {
+  grid-column: 1 / -1;
 }
 
 .distributionInfo {

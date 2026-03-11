@@ -805,3 +805,46 @@ Birdwatch logging should reflect “I saw X at place Y”, and help selection by
 ### Out of scope (v1)
 - Anatómiai és jóga katalógus generálás/pipeline.
 - YouTube API integráció és automatikus videó meta letöltés.
+
+---
+
+## D46 – Bird distribution map batch refresh tool v1 (Studio)
+
+**Status:** Accepted  
+**Date:** 2026-03-11  
+**Scope:** Studio only (Admin). Explorer out of scope. No runtime AI.
+
+### Context
+- D24/D26 bevezette a per-madár “Generate/Regenerate distribution map” actiont, ami AI-val kiválaszt régió ID-kat, majd a szerver katalógusból GeoJSON-t expandál.
+- A madárlistán sok entitás esetén kényelmetlen kézzel végigmenni és egyesével újragenerálni a distribution térképeket.
+
+### Decision
+- Új admin-oldal: `/admin/birds/distribution-maps`.
+- A batch UI kliens-oldalról sorban meghívja a meglévő szerver oldali endpointot: `POST /api/birds/:id/distribution-map/generate`.
+- A felület “háttérben futó” progress-t mutat (fut / ok / hiba), és képes leállítani a folyamatot, illetve újrapróbálni a hibás tételeket.
+- V1-ben nincs külön queue / worker / DB-ben tárolt batch-run állapot; a futás a böngésző session-höz kötött.
+
+### Out of scope (v1)
+- Tartós batch-run státusz (resume több session között).
+- Párhuzamos futtatás, rate-limit menedzsment.
+- Automatikus futtatás publish/approve eseményekre.
+
+---
+
+## D47 – Distribution map notes per status v1 (Studio hover)
+
+**Status:** Accepted  
+**Date:** 2026-03-11  
+**Scope:** Studio Bird distribution maps only.
+
+### Context
+- A Bird distribution map régió-alapú (D24/D26) rétegeihez a UI hover részleteket mutat (státusz/bizonyosság/megjegyzés).
+- A “note” mező eddig opcionális volt, ezért sok esetben üresen maradt, és a hover kevésbé volt informatív.
+
+### Decision
+- A generálás output contractjában a `ranges[].note` mező **kötelező** (rövid, 1–2 mondatos indoklás rétegenként).
+- A UI a note-ot hoverre továbbra is megjeleníti; ha egy státusz nem vállalható, az a réteg maradjon inkább kihagyva (nem “üres note”-tal).
+
+### Out of scope (v1)
+- Note lokalizáció több nyelvre.
+- Régió-lista UI (region_ids) részletezés a hoverben.

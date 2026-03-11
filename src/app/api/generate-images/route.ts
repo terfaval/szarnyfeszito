@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAdminUserFromCookies } from "@/lib/auth";
 import { getBirdById } from "@/lib/birdService";
 import { generateImagesForBird } from "@/lib/imageService";
+import type { ImageVariant } from "@/types/image";
 
 export async function POST(request: NextRequest) {
   const admin = await getAdminUserFromCookies();
@@ -14,6 +15,7 @@ export async function POST(request: NextRequest) {
   const birdId = body?.bird_id;
   const forceRegenerate =
     typeof body?.force_regenerate === "boolean" ? body.force_regenerate : false;
+  const variant = typeof body?.variant === "string" ? (body.variant as ImageVariant) : null;
 
   if (!birdId || typeof birdId !== "string") {
     return NextResponse.json(
@@ -31,6 +33,7 @@ export async function POST(request: NextRequest) {
   try {
     const result = await generateImagesForBird(bird, {
       forceRegenerate,
+      onlyVariant: variant ?? undefined,
     });
 
     return NextResponse.json({

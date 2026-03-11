@@ -93,6 +93,10 @@ Ez nem külön DB tábla. A template lista a legutóbbi (limitelt) `activity_log
 **Prioritás javaslat:**
 - **P0:** hozzunk létre egy `supabase/migrations/` migrációt az `activity_logs` táblára + RLS policy-kra (a repo RLS gyakorlatához igazítva).
 
+**Repo fix (D46):**
+- A hiányzó baseline-t pótolja: `supabase/migrations/20260311_d46_activity_logs_table_v1.sql`.
+- Tudatosan nem rak rá `(date, activity_type)` unique constraintet addig, amíg a “1 vs N log/nap/activity” döntés nincs lezárva.
+
 ## 4) Handoff / fejlesztési támpontok
 
 ### Hol érdemes kezdeni (UI)

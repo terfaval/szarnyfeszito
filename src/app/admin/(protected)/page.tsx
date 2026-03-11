@@ -401,9 +401,14 @@ export default async function AdminPage() {
               Recent birds in the pipeline
             </h2>
           </div>
-          <Link className="admin-nav-link" href="/admin/birds">
-            View all birds
-          </Link>
+          <div className="flex flex-wrap items-center justify-end gap-3">
+            <Link className="admin-nav-link" href="/admin/birds/distribution-maps">
+              Elterjedési térképek
+            </Link>
+            <Link className="admin-nav-link" href="/admin/birds">
+              View all birds
+            </Link>
+          </div>
         </header>
 
         <div className="space-y-3">

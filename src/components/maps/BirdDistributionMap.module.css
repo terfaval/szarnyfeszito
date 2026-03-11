@@ -1,5 +1,5 @@
 .wrap {
-  height: 220px;
+  height: 100%;
   border-radius: 20px;
   overflow: hidden;
   border: 1px solid var(--line);
@@ -10,4 +10,3 @@
   height: 100%;
   width: 100%;
 }
-

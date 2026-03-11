@@ -17,6 +17,13 @@ const STATUS_COLORS: Record<DistributionStatus, string> = {
   passage: "#FFD43B",
 };
 
+const STATUS_LABELS: Record<DistributionStatus, string> = {
+  resident: "Állandó",
+  breeding: "Költő",
+  wintering: "Telelő",
+  passage: "Átvonuló",
+};
+
 const LAYER_ORDER: DistributionStatus[] = [
   "resident",
   "breeding",
@@ -109,7 +116,14 @@ export default function BirdDistributionMap({
     const confidenceRaw =
       typeof props.confidence === "number" ? props.confidence : null;
 
-    const lines = [speciesSummary, status ? `Status: ${status}` : ""].filter(Boolean);
+    const statusLabel =
+      status && (STATUS_LABELS as Record<string, string>)[status]
+        ? `Státusz: ${(STATUS_LABELS as Record<string, string>)[status]}`
+        : status
+          ? `Státusz: ${status}`
+          : "";
+
+    const lines = [speciesSummary, statusLabel].filter(Boolean);
 
     if (onHover) {
       const maybeStatus = status as DistributionStatus;

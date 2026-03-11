@@ -53,10 +53,27 @@
   overflow: hidden;
 }
 
+.previewImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
 .imageMeta {
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
+}
+
+.imageToolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+  justify-content: flex-end;
+  gap: 0.5rem;
 }
 
 .imageActions {

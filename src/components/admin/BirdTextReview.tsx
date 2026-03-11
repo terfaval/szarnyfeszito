@@ -20,10 +20,10 @@ import { distributionRangeSchema } from "@/lib/distributionMapSchema";
 import styles from "./BirdTextReview.module.css";
 
 const DISTRIBUTION_STATUS_LABELS: Record<DistributionStatus, string> = {
-  resident: "Resident",
-  breeding: "Breeding",
-  wintering: "Wintering",
-  passage: "Passage",
+  resident: "Állandó",
+  breeding: "Költő",
+  wintering: "Telelő",
+  passage: "Átvonuló",
 };
 
 const DISTRIBUTION_STATUS_COLORS: Record<DistributionStatus, string> = {
@@ -880,7 +880,7 @@ export default function BirdTextReview({
             <div className={styles.regionRow}>
               <div className={styles.mapColumn}>
                 <div className={styles.mapHeader}>
-                  <p className={styles.mapLabel}>Distribution</p>
+                  <p className={styles.mapLabel}>Elterjedés</p>
                   {!isPublishMode ? (
                     <Button
                       type="button"
@@ -890,74 +890,82 @@ export default function BirdTextReview({
                       disabled={distributionGenerating || distributionLoading}
                     >
                       {distributionGenerating
-                        ? "Generating..."
+                        ? "Generálás…"
                         : distributionMap
-                          ? "Regenerate"
-                          : "Generate"}
+                          ? "Újragenerálás"
+                          : "Generálás"}
                     </Button>
                   ) : (
                     <span className={styles.mapHeaderSpacer} aria-hidden="true" />
                   )}
                 </div>
-                {distributionRanges.length > 0 ? (
-                  <BirdDistributionMap
-                    mapType="global"
-                    ranges={distributionRanges}
-                    activeStatuses={activeStatuses}
-                    speciesSummary={speciesSummary}
-                    onHover={setDistributionHover}
-                  />
-                ) : (
-                  <div className={styles.mapPlaceholder}>
-                    <div className={styles.mapPlaceholderEmpty}>
-                      <span>Distribution data unavailable</span>
+                <div className={styles.mapFrame}>
+                  {distributionRanges.length > 0 ? (
+                    <BirdDistributionMap
+                      mapType="global"
+                      ranges={distributionRanges}
+                      activeStatuses={activeStatuses}
+                      speciesSummary={speciesSummary}
+                      onHover={setDistributionHover}
+                    />
+                  ) : (
+                    <div className={styles.mapPlaceholder}>
+                      <div className={styles.mapPlaceholderEmpty}>
+                        <span>Nincs elterjedési adat</span>
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
+
               <div className={styles.mapColumn}>
                 <div className={styles.mapHeader}>
-                  <p className={styles.mapLabel}>Hungary</p>
+                  <p className={styles.mapLabel}>Magyarország</p>
                   <span className={styles.mapHeaderSpacer} aria-hidden="true" />
                 </div>
-                {distributionRanges.length > 0 ? (
-                  <BirdDistributionMap
-                    mapType="hungary"
-                    ranges={distributionRanges}
-                    activeStatuses={activeStatuses}
-                    speciesSummary={speciesSummary}
-                    onHover={setDistributionHover}
-                  />
-                ) : (
-                  <div className={styles.mapPlaceholder}>
-                    <div className={styles.mapPlaceholderEmpty}>
-                      <span>Distribution data unavailable</span>
+                <div className={styles.mapFrame}>
+                  {distributionRanges.length > 0 ? (
+                    <BirdDistributionMap
+                      mapType="hungary"
+                      ranges={distributionRanges}
+                      activeStatuses={activeStatuses}
+                      speciesSummary={speciesSummary}
+                      onHover={setDistributionHover}
+                    />
+                  ) : (
+                    <div className={styles.mapPlaceholder}>
+                      <div className={styles.mapPlaceholderEmpty}>
+                        <span>Nincs elterjedési adat</span>
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
+
               <div className={styles.statsColumn}>
                 <div className={styles.mapHeader}>
-                  <p className={styles.mapLabel}>Legend</p>
+                  <p className={styles.mapLabel}>Jelmagyarázat</p>
                   <span className={styles.mapHeaderSpacer} aria-hidden="true" />
                 </div>
                 {distributionLoading && (
-                  <p className={styles.distributionNote}>Loading distribution…</p>
+                  <p className={styles.distributionNote}>Elterjedés betöltése…</p>
                 )}
                 {distributionError && (
                   <p className={styles.distributionError}>{distributionError}</p>
                 )}
-                <DistributionLegend
-                  active={activeStatuses}
-                  onToggle={toggleDistributionStatus}
-                />
+                <div className={styles.legendFrame}>
+                  <DistributionLegend active={activeStatuses} onToggle={toggleDistributionStatus} />
+                </div>
+              </div>
+
+              <div className={styles.distributionInfoRowFull}>
                 <div className={styles.distributionInfo}>
-                  <p className={styles.distributionInfoTitle}>Info</p>
+                  <p className={styles.distributionInfoTitle}>Infó</p>
                   <p className={styles.distributionInfoSummary}>{speciesSummary}</p>
                   {distributionHover ? (
                     <div className={styles.distributionInfoBody}>
                       <div className={styles.distributionInfoRow}>
-                        <span className={styles.distributionInfoLabel}>Status</span>
+                        <span className={styles.distributionInfoLabel}>Státusz</span>
                         <span className={styles.distributionInfoValue}>
                           <span
                             className={styles.distributionInfoSwatch}
@@ -971,7 +979,7 @@ export default function BirdTextReview({
                         </span>
                       </div>
                       <div className={styles.distributionInfoRow}>
-                        <span className={styles.distributionInfoLabel}>Confidence</span>
+                        <span className={styles.distributionInfoLabel}>Bizonyosság</span>
                         <span className={styles.distributionInfoValue}>
                           {distributionHover.confidence == null
                             ? "—"
@@ -979,7 +987,7 @@ export default function BirdTextReview({
                         </span>
                       </div>
                       <div className={styles.distributionInfoRow}>
-                        <span className={styles.distributionInfoLabel}>Note</span>
+                        <span className={styles.distributionInfoLabel}>Megjegyzés</span>
                         <span className={styles.distributionInfoValue}>
                           {distributionHover.note?.trim() ? distributionHover.note : "—"}
                         </span>
@@ -987,7 +995,7 @@ export default function BirdTextReview({
                     </div>
                   ) : (
                     <p className={styles.distributionInfoHint}>
-                      Hover a colored area to see details here.
+                      Vidd az egeret egy színes terület fölé a részletekért.
                     </p>
                   )}
                 </div>

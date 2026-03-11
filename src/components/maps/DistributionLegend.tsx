@@ -4,10 +4,10 @@ import type { DistributionStatus } from "@/types/distributionMap";
 import styles from "./DistributionLegend.module.css";
 
 const STATUS_LABELS: Record<DistributionStatus, string> = {
-  resident: "Resident",
-  breeding: "Breeding",
-  wintering: "Wintering",
-  passage: "Passage",
+  resident: "Állandó",
+  breeding: "Költő",
+  wintering: "Telelő",
+  passage: "Átvonuló",
 };
 
 const STATUS_COLORS: Record<DistributionStatus, string> = {
@@ -48,4 +48,3 @@ export default function DistributionLegend({ active, onToggle }: DistributionLeg
     </div>
   );
 }
-

@@ -79,7 +79,7 @@ const selectionRangeSchema = z
   .object({
     status: statusSchema,
     confidence: confidenceSchema,
-    note: z.string().trim().max(600).optional().nullable(),
+    note: trimmed().max(600),
     region_ids: z.array(trimmed()).min(1).max(60),
   })
   .strict();
@@ -232,7 +232,7 @@ Helpful dossier hints (do not invent beyond these; they are only hints):
       {
         "status": "resident|breeding|wintering|passage",
         "confidence": 0.0,
-        "note": "optional",
+        "note": "required: 1-2 short sentences explaining the choice (HU focus if relevant)",
         "region_ids": ["eco_123", "country_hu"]
       }
     ]
@@ -248,6 +248,7 @@ Helpful dossier hints (do not invent beyond these; they are only hints):
   Quality rules:
   - Always include at least 1 range entry.
   - If you cannot justify a status confidently, omit that status instead of guessing.
+  - For every range entry you DO include, always provide a short, concrete note.
   - confidence is informational only (0..1).
 
   ${candidatesBlock}

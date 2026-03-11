@@ -33,6 +33,8 @@ and persists `bird_distribution_maps.ranges[]`.
 - Verziózás (alap szinten)
 - Dokumentált pipeline
 - Bird distribution map modul (D24): polygon alapú elterjedési zónák + közös legend (Studio)
+- Bird distribution map batch frissítés (D46): admin-oldali eszköz az összes madár térképének újragenerálására (Studio)
+  - Minden státusz-réteghez rövid megjegyzés (note) készül, ami hoverre megjelenik a Studio felületen.
 
 ### OUT (MVP-ben NINCS)
 
@@ -570,6 +572,10 @@ images is canonical for generated assets with:
 ### POST /api/generate-images  (controlled; T007)
 - Preconditions:
   - bird.status == text_approved OR images_generated OR images_approved
+- Input (JSON):
+  - bird_id: string
+  - force_regenerate?: boolean (required when bird.status == images_generated)
+  - variant?: ImageVariant (optional; generate/regenerate only this variant; lock rule still applies)
 - Steps:
   - prompt inputs:
     - default: use Field-Guide dossier only

@@ -33,6 +33,13 @@ const STATUS_HINTS: Record<ImageReviewStatus, string> = {
   approved: "Approved",
 };
 
+const CAN_REGENERATE_VARIANTS = new Set<ImageRecord["variant"]>([
+  "main_habitat",
+  "fixed_pose_icon_v1",
+  "flight_clean",
+  "nesting_clean",
+]);
+
 type BirdImageReviewProps = {
   birdId: string;
   images: BirdImageWithPreview[];
@@ -63,6 +70,9 @@ export default function BirdImageReview({
   );
   const [uploadingId, setUploadingId] = useState<string | null>(null);
   const [generating, setGenerating] = useState(false);
+  const [generatingVariantId, setGeneratingVariantId] = useState<string | null>(
+    null
+  );
   const [error, setError] = useState<string | null>(null);
   const [requestOverlay, setRequestOverlay] = useState<{
     imageId: string;
@@ -93,12 +103,17 @@ export default function BirdImageReview({
   const SPRING_SCENE_PRESET_NOTE =
     "Tavaszi jelenet (scientific): friss, üde zöldek és koratavaszi fény; látványos, de visszafogott tavaszi hangulat (pl. rügyfakadás / virágzó bokrok), miközben a faj anatómiai jegyei maradnak elsődlegesek. Keep background subtle; no text/watermark.";
 
-  const handleGenerate = async () => {
+  const handleGenerate = async (options?: {
+    variant?: ImageRecord["variant"];
+    imageId?: string;
+    label?: string;
+  }) => {
     if (!canGenerate || generating) {
       return;
     }
 
     setGenerating(true);
+    setGeneratingVariantId(options?.imageId ?? null);
     setError(null);
     setRequestStatusMessage(null);
 
@@ -109,6 +124,7 @@ export default function BirdImageReview({
         body: JSON.stringify({
           bird_id: birdId,
           force_regenerate: birdStatus === "images_generated" || images.length > 0,
+          ...(options?.variant ? { variant: options.variant } : {}),
         }),
       });
 
@@ -118,12 +134,17 @@ export default function BirdImageReview({
         throw new Error(payload?.error ?? "Unable to generate images.");
       }
 
-      setRequestStatusMessage("Images generated. Refreshing...");
+      setRequestStatusMessage(
+        options?.variant
+          ? `Image regenerated (${options.label ?? options.variant}). Refreshing...`
+          : "Images generated. Refreshing..."
+      );
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to generate images.");
     } finally {
       setGenerating(false);
+      setGeneratingVariantId(null);
     }
   };
 
@@ -363,13 +384,13 @@ export default function BirdImageReview({
           </div>
 
           <div className="flex flex-wrap items-center justify-end gap-2">
-            <Button
-              type="button"
-              variant="accent"
-              onClick={handleGenerate}
-              disabled={!canGenerate || generating}
-              className="whitespace-nowrap"
-            >
+              <Button
+                type="button"
+                variant="accent"
+                onClick={() => handleGenerate()}
+                disabled={!canGenerate || generating}
+                className="whitespace-nowrap"
+              >
               {generating ? "Generatingâ€¦" : generateLabel}
             </Button>
 
@@ -436,7 +457,7 @@ export default function BirdImageReview({
                       <img
                         src={image.previewUrl ?? ""}
                         alt={`${label} preview`}
-                        className="h-full w-full object-contain"
+                        className={styles.previewImage}
                       />
                     ) : (
                       <div className="flex h-full w-full items-center justify-center">
@@ -448,9 +469,34 @@ export default function BirdImageReview({
                   </div>
 
                   <div className={styles.imageMeta}>
-                    <div className="flex items-center justify-between gap-3">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                       <p className="admin-link-card__title">{label}</p>
-                      <div className="flex items-center gap-2">
+                      <div className={styles.imageToolbar}>
+                        {CAN_REGENERATE_VARIANTS.has(image.variant) && (
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            disabled={
+                              !canGenerate ||
+                              generating ||
+                              uploadingId !== null ||
+                              presettingId !== null ||
+                              requestSubmitting
+                            }
+                            onClick={() =>
+                              handleGenerate({
+                                variant: image.variant,
+                                imageId: image.id,
+                                label: String(label),
+                              })
+                            }
+                            className="whitespace-nowrap"
+                          >
+                            {generatingVariantId === image.id
+                              ? "Regenerating..."
+                              : "Regenerate"}
+                          </Button>
+                        )}
                         {image.previewUrl && (
                           <a
                             className="btn btn--ghost"

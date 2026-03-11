@@ -39,6 +39,10 @@ type PublishedBirdListItem = {
   name_hu: string;
 };
 
+function normalizeName(name: string) {
+  return name.trim().replace(/\s+/g, " ");
+}
+
 async function runWithConcurrency<TInput, TResult>(options: {
   items: TInput[];
   concurrency: number;
@@ -150,7 +154,7 @@ export default function PlaceBirdsEditor({ placeId }: PlaceBirdsEditorProps) {
   const linkedBirdIdSet = useMemo(() => {
     const set = new Set<string>();
     links.forEach((link) => {
-      if (link.bird?.id) set.add(link.bird.id);
+      if (link.bird_id) set.add(link.bird_id);
     });
     return set;
   }, [links]);
@@ -159,6 +163,24 @@ export default function PlaceBirdsEditor({ placeId }: PlaceBirdsEditorProps) {
     () => new Set(selectedPublishedBirdIds),
     [selectedPublishedBirdIds]
   );
+
+  const suggestedUnlinkedNameSet = useMemo(() => {
+    const set = new Set<string>();
+    links.forEach((link) => {
+      if (link.review_status !== "suggested") return;
+      if (link.bird_id) return;
+      const pending = typeof link.pending_bird_name_hu === "string" ? normalizeName(link.pending_bird_name_hu) : "";
+      if (!pending) return;
+      set.add(pending.toLowerCase());
+    });
+    return set;
+  }, [links]);
+
+  const visiblePublishedBirds = useMemo(() => {
+    const unlinked = publishedBirds.filter((bird) => !linkedBirdIdSet.has(bird.id));
+    if (suggestedUnlinkedNameSet.size === 0) return unlinked;
+    return unlinked.filter((bird) => suggestedUnlinkedNameSet.has(normalizeName(bird.name_hu).toLowerCase()));
+  }, [linkedBirdIdSet, publishedBirds, suggestedUnlinkedNameSet]);
 
   const refresh = async () => {
     setLoading(true);
@@ -373,9 +395,7 @@ export default function PlaceBirdsEditor({ placeId }: PlaceBirdsEditorProps) {
   };
 
   const selectAllPublishedBirdResults = () => {
-    const ids = publishedBirds
-      .map((bird) => bird.id)
-      .filter((id) => !linkedBirdIdSet.has(id));
+    const ids = visiblePublishedBirds.map((bird) => bird.id);
     setSelectedPublishedBirdIds((prev) => Array.from(new Set([...prev, ...ids])));
   };
 
@@ -438,6 +458,197 @@ export default function PlaceBirdsEditor({ placeId }: PlaceBirdsEditorProps) {
 
     setMessage(
       `Linked ${okCount} bird(s).${alreadyLinked.length > 0 ? ` Skipped ${alreadyLinked.length} already linked.` : ""}`
+    );
+  };
+
+  const renderLinkRow = (link: PlaceBirdLinkRow) => {
+    const draft = draftById[link.id];
+    const displayName = link.bird?.name_hu ?? link.pending_bird_name_hu ?? "(unnamed)";
+    const isPending = !link.bird_id && Boolean(link.pending_bird_name_hu);
+
+    return (
+      <div key={link.id} className="admin-list-link">
+        <div className="admin-list-details space-y-3">
+          <div className="space-y-1">
+            <p className="admin-list-title">{displayName}</p>
+            <p className="admin-list-meta">
+              {link.bird ? (
+                <>
+                  linked ·{" "}
+                  <Link className="underline" href={`/admin/birds/${link.bird.id}`}>
+                    {link.bird.slug}
+                  </Link>
+                </>
+              ) : (
+                "pending"
+              )}{" "}
+              · {link.frequency_band} · rank {link.rank} · {link.review_status}
+            </p>
+          </div>
+
+          {draft ? (
+            <>
+              <div className="grid gap-3 md:grid-cols-3">
+                <Input
+                  label="Rank"
+                  value={String(draft.rank)}
+                  onChange={(e) =>
+                    setDraftById((p) => ({
+                      ...p,
+                      [link.id]: { ...p[link.id], rank: Number(e.target.value || 0) },
+                    }))
+                  }
+                />
+
+                <label className="form-field">
+                  <span className="form-field__label">Status</span>
+                  <div className="form-field__row">
+                    <select
+                      className="input"
+                      value={draft.review_status}
+                      onChange={(e) =>
+                        setDraftById((p) => ({
+                          ...p,
+                          [link.id]: {
+                            ...p[link.id],
+                            review_status: e.target.value as PlaceBirdReviewStatus,
+                          },
+                        }))
+                      }
+                    >
+                      <option value="suggested">suggested</option>
+                      <option value="approved">approved</option>
+                    </select>
+                  </div>
+                </label>
+
+                <label className="form-field">
+                  <span className="form-field__label">Frequency</span>
+                  <div className="form-field__row">
+                    <select
+                      className="input"
+                      value={draft.frequency_band}
+                      onChange={(e) =>
+                        setDraftById((p) => ({
+                          ...p,
+                          [link.id]: {
+                            ...p[link.id],
+                            frequency_band: e.target.value as PlaceFrequencyBand,
+                          },
+                        }))
+                      }
+                    >
+                      {PLACE_FREQUENCY_BANDS.map((value) => (
+                        <option key={value} value={value}>
+                          {value}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </label>
+              </div>
+
+              <div className="grid gap-3 md:grid-cols-6">
+                <label className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={draft.is_iconic}
+                    onChange={(e) =>
+                      setDraftById((p) => ({
+                        ...p,
+                        [link.id]: { ...p[link.id], is_iconic: e.target.checked },
+                      }))
+                    }
+                  />
+                  Iconic
+                </label>
+                {(
+                  [
+                    ["visible_in_spring", "Spring"],
+                    ["visible_in_summer", "Summer"],
+                    ["visible_in_autumn", "Autumn"],
+                    ["visible_in_winter", "Winter"],
+                  ] as const
+                ).map(([key, label]) => (
+                  <label key={key} className="flex items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={draft[key as DraftSeasonKey]}
+                      onChange={(e) =>
+                        setDraftById((p) => ({
+                          ...p,
+                          [link.id]: { ...p[link.id], [key as DraftSeasonKey]: e.target.checked },
+                        }))
+                      }
+                    />
+                    {label}
+                  </label>
+                ))}
+              </div>
+
+              <Input
+                label="Seasonality note"
+                value={draft.seasonality_note ?? ""}
+                onChange={(e) =>
+                  setDraftById((p) => ({
+                    ...p,
+                    [link.id]: { ...p[link.id], seasonality_note: e.target.value },
+                  }))
+                }
+                placeholder="Mostly in late autumn..."
+              />
+            </>
+          ) : null}
+        </div>
+
+        <div className="admin-inline-actions">
+          {link.review_status === "suggested" ? (
+            <Button type="button" variant="ghost" onClick={() => acceptSuggestion(link)}>
+              Accept
+            </Button>
+          ) : null}
+
+          <Button type="button" variant="ghost" onClick={() => saveDraft(link)}>
+            Save
+          </Button>
+
+          {isPending && link.pending_bird_name_hu ? (
+            <Link
+              className="btn btn--accent"
+              href={`/admin/birds?prefill_name_hu=${encodeURIComponent(
+                link.pending_bird_name_hu
+              )}&source=place_suggestion&place_name=${encodeURIComponent(placeName || "")}&link_place_id=${encodeURIComponent(
+                placeId
+              )}&link_place_bird_id=${encodeURIComponent(link.id)}`}
+            >
+              Quick-create bird
+            </Link>
+          ) : null}
+
+          {isPending ? (
+            <div className="flex flex-col items-end gap-2">
+              <Input
+                label="Link bird_id"
+                value={draftById[link.id]?.link_bird_id_input ?? ""}
+                onChange={(e) =>
+                  setDraftById((p) => ({
+                    ...p,
+                    [link.id]: { ...p[link.id], link_bird_id_input: e.target.value },
+                  }))
+                }
+                placeholder="uuid..."
+              />
+              <Button type="button" variant="ghost" onClick={() => linkToExistingBird(link)}>
+                Link to existing bird
+              </Button>
+            </div>
+          ) : null}
+
+          <Button type="button" variant="ghost" onClick={() => deleteLink(link.id)}>
+            Delete
+          </Button>
+        </div>
+      </div>
     );
   };
 
@@ -509,27 +720,28 @@ export default function PlaceBirdsEditor({ placeId }: PlaceBirdsEditorProps) {
 
         {publishedBirdsLoading ? <p className="admin-note-small">Loading published birds…</p> : null}
 
-        {publishedBirds.length === 0 && !publishedBirdsLoading ? (
+        {suggestedUnlinkedNameSet.size > 0 ? (
+          <p className="admin-note-small">
+            Showing only unlinked published birds that match current suggested (pending) names.
+          </p>
+        ) : null}
+
+        {visiblePublishedBirds.length === 0 && !publishedBirdsLoading ? (
           <p className="admin-note-small">No published birds found.</p>
         ) : (
           <div className="grid gap-2 md:grid-cols-2">
-            {publishedBirds.slice(0, 40).map((bird) => {
-              const alreadyLinked = linkedBirdIdSet.has(bird.id);
+            {visiblePublishedBirds.slice(0, 40).map((bird) => {
               const selected = selectedPublishedBirdSet.has(bird.id);
               return (
                 <label key={bird.id} className="admin-list-link flex items-center justify-between gap-3">
                   <div className="admin-list-details">
                     <p className="admin-list-title">{bird.name_hu}</p>
-                    <p className="admin-list-meta">
-                      {bird.slug ? `${bird.slug} · ` : ""}
-                      {alreadyLinked ? "already linked" : "published"}
-                    </p>
+                    <p className="admin-list-meta">{bird.slug ? `${bird.slug} · ` : ""}published</p>
                   </div>
                   <div className="admin-list-action flex items-center gap-3">
                     <input
                       type="checkbox"
                       checked={selected}
-                      disabled={alreadyLinked}
                       onChange={() => togglePublishedBirdSelection(bird.id)}
                       aria-label={`Select ${bird.name_hu}`}
                     />
@@ -654,196 +866,30 @@ export default function PlaceBirdsEditor({ placeId }: PlaceBirdsEditorProps) {
           <p className="admin-note-small">No birds linked yet.</p>
         ) : (
           <div className="space-y-4">
-            {sortedLinks.map((link) => {
-              const draft = draftById[link.id];
-              const displayName = link.bird?.name_hu ?? link.pending_bird_name_hu ?? "(unnamed)";
-              const isPending = !link.bird_id && Boolean(link.pending_bird_name_hu);
+            {sortedLinks.some((link) => link.review_status === "suggested" && !link.bird_id) ? (
+              <div className="space-y-2">
+                <p className="admin-subheading">Suggested (pending)</p>
+                {sortedLinks
+                  .filter((link) => link.review_status === "suggested" && !link.bird_id)
+                  .map((link) => renderLinkRow(link))}
+              </div>
+            ) : null}
 
-              return (
-                <div key={link.id} className="admin-list-link">
-                  <div className="admin-list-details space-y-3">
-                    <div className="space-y-1">
-                      <p className="admin-list-title">{displayName}</p>
-                      <p className="admin-list-meta">
-                        {link.bird ? (
-                          <>
-                            linked ·{" "}
-                            <Link className="underline" href={`/admin/birds/${link.bird.id}`}>
-                              {link.bird.slug}
-                            </Link>
-                          </>
-                        ) : (
-                          "pending"
-                        )}{" "}
-                        · {link.frequency_band} · rank {link.rank} · {link.review_status}
-                      </p>
-                    </div>
+            {sortedLinks.some((link) => link.bird_id) ? (
+              <div className="space-y-2">
+                <p className="admin-subheading">Linked</p>
+                {sortedLinks.filter((link) => link.bird_id).map((link) => renderLinkRow(link))}
+              </div>
+            ) : null}
 
-                    {draft ? (
-                      <>
-                        <div className="grid gap-3 md:grid-cols-3">
-                          <Input
-                            label="Rank"
-                            value={String(draft.rank)}
-                            onChange={(e) =>
-                              setDraftById((p) => ({
-                                ...p,
-                                [link.id]: { ...p[link.id], rank: Number(e.target.value || 0) },
-                              }))
-                            }
-                          />
-
-                          <label className="form-field">
-                            <span className="form-field__label">Status</span>
-                            <div className="form-field__row">
-                              <select
-                                className="input"
-                                value={draft.review_status}
-                                onChange={(e) =>
-                                  setDraftById((p) => ({
-                                    ...p,
-                                    [link.id]: {
-                                      ...p[link.id],
-                                      review_status: e.target.value as PlaceBirdReviewStatus,
-                                    },
-                                  }))
-                                }
-                              >
-                                <option value="suggested">suggested</option>
-                                <option value="approved">approved</option>
-                              </select>
-                            </div>
-                          </label>
-
-                          <label className="form-field">
-                            <span className="form-field__label">Frequency</span>
-                            <div className="form-field__row">
-                              <select
-                                className="input"
-                                value={draft.frequency_band}
-                                onChange={(e) =>
-                                  setDraftById((p) => ({
-                                    ...p,
-                                    [link.id]: {
-                                      ...p[link.id],
-                                      frequency_band: e.target.value as PlaceFrequencyBand,
-                                    },
-                                  }))
-                                }
-                              >
-                                {PLACE_FREQUENCY_BANDS.map((value) => (
-                                  <option key={value} value={value}>
-                                    {value}
-                                  </option>
-                                ))}
-                              </select>
-                            </div>
-                          </label>
-                        </div>
-
-                        <div className="grid gap-3 md:grid-cols-6">
-                          <label className="flex items-center gap-2 text-sm">
-                            <input
-                              type="checkbox"
-                              checked={draft.is_iconic}
-                              onChange={(e) =>
-                                setDraftById((p) => ({
-                                  ...p,
-                                  [link.id]: { ...p[link.id], is_iconic: e.target.checked },
-                                }))
-                              }
-                            />
-                            Iconic
-                          </label>
-                          {(
-                            [
-                              ["visible_in_spring", "Spring"],
-                              ["visible_in_summer", "Summer"],
-                              ["visible_in_autumn", "Autumn"],
-                              ["visible_in_winter", "Winter"],
-                            ] as const
-                          ).map(([key, label]) => (
-                            <label key={key} className="flex items-center gap-2 text-sm">
-                              <input
-                                type="checkbox"
-                                checked={draft[key as DraftSeasonKey]}
-                                onChange={(e) =>
-                                  setDraftById((p) => ({
-                                    ...p,
-                                    [link.id]: { ...p[link.id], [key as DraftSeasonKey]: e.target.checked },
-                                  }))
-                                }
-                              />
-                              {label}
-                            </label>
-                          ))}
-                        </div>
-
-                        <Input
-                          label="Seasonality note"
-                          value={draft.seasonality_note ?? ""}
-                          onChange={(e) =>
-                            setDraftById((p) => ({
-                              ...p,
-                              [link.id]: { ...p[link.id], seasonality_note: e.target.value },
-                            }))
-                          }
-                          placeholder="Mostly in late autumn..."
-                        />
-                      </>
-                    ) : null}
-                  </div>
-
-                  <div className="admin-inline-actions">
-                    {link.review_status === "suggested" ? (
-                      <Button type="button" variant="ghost" onClick={() => acceptSuggestion(link)}>
-                        Accept
-                      </Button>
-                    ) : null}
-
-                    <Button type="button" variant="ghost" onClick={() => saveDraft(link)}>
-                      Save
-                    </Button>
-
-                    {isPending && link.pending_bird_name_hu ? (
-                      <Link
-                        className="btn btn--accent"
-                        href={`/admin/birds?prefill_name_hu=${encodeURIComponent(
-                          link.pending_bird_name_hu
-                        )}&source=place_suggestion&place_name=${encodeURIComponent(placeName || "")}&link_place_id=${encodeURIComponent(
-                          placeId
-                        )}&link_place_bird_id=${encodeURIComponent(link.id)}`}
-                      >
-                        Quick-create bird
-                      </Link>
-                    ) : null}
-
-                    {isPending ? (
-                      <div className="flex flex-col items-end gap-2">
-                        <Input
-                          label="Link bird_id"
-                          value={draftById[link.id]?.link_bird_id_input ?? ""}
-                          onChange={(e) =>
-                            setDraftById((p) => ({
-                              ...p,
-                              [link.id]: { ...p[link.id], link_bird_id_input: e.target.value },
-                            }))
-                          }
-                          placeholder="uuid..."
-                        />
-                        <Button type="button" variant="ghost" onClick={() => linkToExistingBird(link)}>
-                          Link to existing bird
-                        </Button>
-                      </div>
-                    ) : null}
-
-                    <Button type="button" variant="ghost" onClick={() => deleteLink(link.id)}>
-                      Delete
-                    </Button>
-                  </div>
-                </div>
-              );
-            })}
+            {sortedLinks.some((link) => link.review_status !== "suggested" && !link.bird_id) ? (
+              <div className="space-y-2">
+                <p className="admin-subheading">Unlinked (non-suggested)</p>
+                {sortedLinks
+                  .filter((link) => link.review_status !== "suggested" && !link.bird_id)
+                  .map((link) => renderLinkRow(link))}
+              </div>
+            ) : null}
           </div>
         )}
       </Card>
