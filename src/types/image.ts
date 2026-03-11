@@ -5,6 +5,7 @@ export type ImageVariant =
   | "standing_clean"
   | "flight_clean"
   | "nesting_clean"
+  | "main_habitat_pair_sexes_v1"
   | "place_hero_spring_v1"
   | "fixed_pose_icon_v1";
 

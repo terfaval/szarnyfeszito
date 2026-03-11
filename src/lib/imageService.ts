@@ -40,6 +40,14 @@ const OPTIONAL_SPECS: ImageSpec[] = [
   { style_family: "scientific", variant: "nesting_clean" },
 ];
 
+const POST_PUBLISH_ALLOWED_IMAGE_VARIANTS = new Set<ImageVariant>([
+  "main_habitat_pair_sexes_v1",
+]);
+
+const ON_DEMAND_SPECS: ImageSpec[] = [
+  { style_family: "scientific", variant: "main_habitat_pair_sexes_v1" },
+];
+
 const PLACE_HERO_SPECS: ImageSpec[] = [
   { style_family: "scientific", variant: "place_hero_spring_v1" },
 ];
@@ -221,7 +229,11 @@ export async function generateImagesForBird(
   results: ImageGenerationResult[];
 }> {
   if (bird.status === "published") {
-    throw new Error("Images cannot be generated after a bird is published.");
+    const allowed =
+      options.onlyVariant && POST_PUBLISH_ALLOWED_IMAGE_VARIANTS.has(options.onlyVariant);
+    if (!allowed) {
+      throw new Error("Images cannot be generated after a bird is published.");
+    }
   }
 
   if (bird.status === "images_generated" && !options.forceRegenerate) {
@@ -340,10 +352,19 @@ export async function generateImagesForBird(
       };
     };
 
-    return [
+    const base = [
       ...REQUIRED_SPECS.map((spec) => makeOne(spec, true)),
       ...OPTIONAL_SPECS.map((spec) => makeOne(spec, false)),
     ];
+
+    if (options.onlyVariant) {
+      const extra = ON_DEMAND_SPECS.filter((spec) => spec.variant === options.onlyVariant).map(
+        (spec) => makeOne(spec, false)
+      );
+      return [...base, ...extra];
+    }
+
+    return base;
   };
 
   const specs = buildSpecs();

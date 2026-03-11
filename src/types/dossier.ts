@@ -179,6 +179,7 @@ export type BirdDossierV2 = {
   ethics_tip: string;
   typical_places: string[];
   leaflets?: BirdDossierLeaflets;
+  sex_comparison?: SexComparisonV1;
 };
 
 export type BirdDossier = BirdDossierV2;
@@ -189,4 +190,15 @@ export type GenerationMeta = {
   generated_at: string;
   review_comment?: string;
   review_requested_at?: string;
+};
+
+export type SexComparisonSchemaVersion = "sex_comparison_v1";
+
+export type SexComparisonV1 = {
+  schema_version: SexComparisonSchemaVersion;
+  language: "hu";
+  review_status: "draft" | "reviewed" | "approved";
+  summary: string;
+  key_differences: [string, string, string];
+  generation_meta: GenerationMeta;
 };

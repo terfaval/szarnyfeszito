@@ -14,6 +14,7 @@ type BirdImageWithPreview = ImageRecord & {
 };
 
 const VARIANT_LABELS: Partial<Record<ImageRecord["variant"], string>> = {
+  main_habitat_pair_sexes_v1: "Scientific - Pair (male + female)",
   main_habitat: "Scientific · Main Habitat",
   standing_clean: "Scientific · Standing",
   flight_clean: "Scientific · Flight",
@@ -38,6 +39,7 @@ const CAN_REGENERATE_VARIANTS = new Set<ImageRecord["variant"]>([
   "fixed_pose_icon_v1",
   "flight_clean",
   "nesting_clean",
+  "main_habitat_pair_sexes_v1",
 ]);
 
 type BirdImageReviewProps = {

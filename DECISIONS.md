@@ -2,6 +2,33 @@
 
 ---
 
+## D50 - Bird: sex comparison block + duo image refill v1 (Studio)
+
+**Status:** Accepted  
+**Date:** 2026-03-11  
+**Scope:** Studio only (admin + published view). No Explorer/runtime AI changes.
+
+### Context
+- Published Birds often miss a short "male vs female" comparison + a duo illustration.
+- The Bird publish gate (D6) must remain stable and required-variants-only.
+
+### Decision
+- Add an optional canonical dossier sub-block: `content_blocks.blocks_json.sex_comparison`:
+  - schema_version: `sex_comparison_v1`, language: `hu`
+  - review_status: `draft|reviewed|approved`
+  - summary (2-4 sentences) + key_differences (exactly 3)
+  - generation_meta for traceability (model + prompt_hash + generated_at; optional review_comment)
+- Add an optional scientific image variant: `images.variant="main_habitat_pair_sexes_v1"` (male + female together).
+- Publish gate stays unchanged (D6): this block + image are optional (not required).
+- Add a Studio refill page: `/admin/birds/refill/sex-comparison` for backfilling published birds.
+- Post-publish rule: only `main_habitat_pair_sexes_v1` may be generated after publish; required variants remain blocked.
+
+### Out of scope (v1)
+- Explorer Bird panel integration.
+- Extending publish gate to require sex comparison assets.
+
+---
+
 ## D29 — Continuous mobile UX iteration + paired checks (Studio)
 
 **Status:** Accepted  
@@ -889,9 +916,9 @@ Birdwatch logging should reflect “I saw X at place Y”, and help selection by
 - Az `/admin/places` listában megjelenik egy batch “Refill links” eszköz.
 - A batch kliens-oldalról sorban hívja a meglévő endpointot: `POST /api/places/:id/birds/suggest?existing_published_only=true`.
 - `existing_published_only=true` módban a suggestion engine **csak** már létező, **published** Bird rekordokra linkel (nem szúr be `pending_bird_name_hu` sorokat).
-- A beszúrt linkek `review_status="suggested"` státuszban maradnak; publikussá csak explicit editor approval után válhatnak.
+- Alapértelmezésben a beszúrt linkek `review_status="suggested"` státuszban maradnak; publikussá csak explicit editor approval után válhatnak.
+- Opcionális auto-approve: a batch hívhatja ugyanazt az endpointot `review_status=approved` paraméterrel, de csak `existing_published_only=true` mellett.
 
 ### Out of scope (v1)
-- Automatikus `approved`-ra emelés.
 - Hosszú futású szerver-oldali batch/queue/worker; a batch a böngésző session-höz kötött.
 - Draft/reviewed Bird-ek automatikus linkelése.

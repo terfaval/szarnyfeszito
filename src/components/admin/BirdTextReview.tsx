@@ -392,6 +392,7 @@ export default function BirdTextReview({
   const mainHabitatPreviewUrl = previewByVariant.get("main_habitat") ?? null;
   const flightPreviewUrl = previewByVariant.get("flight_clean") ?? null;
   const nestingPreviewUrl = previewByVariant.get("nesting_clean") ?? null;
+  const sexPairPreviewUrl = previewByVariant.get("main_habitat_pair_sexes_v1") ?? null;
 
   const openOverlay = (target: TextReviewSection) => {
     setOverlayTarget(target);
@@ -861,6 +862,33 @@ export default function BirdTextReview({
                 ))}
               </div>
             </div>
+
+            {isPublishMode ? (
+              <div className="admin-stat-card">
+                <p className="admin-stat-label">Male vs female comparison</p>
+                {dossier.sex_comparison?.review_status === "approved" ? (
+                  <div className="stack">
+                    {sexPairPreviewUrl ? (
+                      <div className="admin-stat-card">
+                        <img src={sexPairPreviewUrl} alt="Male + female duo illustration" />
+                      </div>
+                    ) : (
+                      <p className="admin-stat-note">No approved duo image yet.</p>
+                    )}
+                    <p className="admin-stat-note" style={{ whiteSpace: "pre-wrap" }}>
+                      {dossier.sex_comparison.summary}
+                    </p>
+                    <ul className="admin-stat-note" style={{ paddingLeft: 18, listStyleType: "disc" }}>
+                      {dossier.sex_comparison.key_differences.map((diff, idx) => (
+                        <li key={`${idx}-${diff}`}>{diff}</li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : (
+                  <p className="admin-stat-note">Missing approved sex comparison.</p>
+                )}
+              </div>
+            ) : null}
 
             <div className="mt-3 flex flex-col items-end gap-2">
               <Button

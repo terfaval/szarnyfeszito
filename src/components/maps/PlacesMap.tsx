@@ -107,7 +107,7 @@ export type PlacesMapProps = {
   markers: PlaceMarker[];
   selectedSlug: string | null;
   selectedRegionId?: string | null;
-  onSelect: (slug: string) => void;
+  onSelect?: (slug: string) => void;
   basemap?: BasemapId;
   basemapPreset?: BasemapPresetKey;
   regionVisualization?: PlacesRegionVisualizationVariant;
@@ -376,7 +376,7 @@ export default function PlacesMap({
             ...(handlers ?? {}),
             click: (event) => {
               handlers?.click?.(event);
-              onSelect(marker.slug);
+              onSelect?.(marker.slug);
             },
           };
           return (

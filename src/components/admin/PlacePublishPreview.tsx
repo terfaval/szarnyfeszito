@@ -191,7 +191,6 @@ export default function PlacePublishPreview({
                       hasMarker ? ([placeMarker.lat as number, placeMarker.lng as number] as [number, number]) : undefined
                     }
                     defaultZoom={8}
-                    onSelect={() => {}}
                   />
                   {shouldOverlayDidYouKnow ? (
                     <div className={styles.didYouKnowOverlay} aria-label="Tudtad-e (overlay)">

@@ -5,7 +5,7 @@ import { AI_MODEL_TEXT } from "@/lib/aiConfig";
 import { extractJsonPayload, AIJsonParseError, AISchemaMismatchError } from "@/lib/aiUtils";
 import { hashPrompt } from "@/lib/promptHash";
 import { supabaseServerClient } from "@/lib/supabaseServerClient";
-import type { Place, PlaceBirdLink, PlaceFrequencyBand } from "@/types/place";
+import type { Place, PlaceBirdLink, PlaceBirdReviewStatus, PlaceFrequencyBand } from "@/types/place";
 import { PLACE_FREQUENCY_BANDS } from "@/types/place";
 
 const frequencyBandEnum = PLACE_FREQUENCY_BANDS as unknown as [
@@ -215,7 +215,7 @@ export async function generatePlaceBirdSuggestionsV1(args: {
 
 export async function suggestPlaceBirdLinksV1(args: {
   place: Place;
-  review_status?: "suggested";
+  review_status?: PlaceBirdReviewStatus;
   existing_published_only?: boolean;
 }): Promise<{
   inserted: PlaceBirdLink[];

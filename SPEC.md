@@ -85,6 +85,11 @@ Kapcsolódó:
 - content_blocks
 - images
 
+Optional add-ons (D50):
+- `content_blocks.blocks_json.sex_comparison` (male vs female; review-gated)
+- `images.variant="main_habitat_pair_sexes_v1"` (scientific duo illustration; optional, not a publish gate)
+- Studio refill page: `/admin/birds/refill/sex-comparison` (backfill missing block/image for published birds)
+
 Kiegészítő meta (D18):
 - A Studio `/admin/birds` oldalon a madarak szűrhetők/rendezhetők `size_category` (méret) és `visibility_category` (észlelhetőség) alapján.
 - A kategóriák nem publish-gate feltételek (nem blokkolják a publish-t), kizárólag admin taxonómia / registry célokra szolgálnak.
@@ -152,7 +157,7 @@ Place → Birds relations (D35):
   - on Place quick-create generation
   - on Place content regeneration
   - on editor manual trigger ("Suggest birds")
-  - on Places list batch refill (published Places; existing published Birds only)
+  - on Places list batch refill (published Places; existing published Birds only; optional auto-approve)
 - Explorer/public endpoints only show `place_birds.review_status="approved"` rows (no AI suggestions leaking to public).
 
 ---
@@ -456,6 +461,9 @@ Image generation can only be triggered when:
   - clean background; wing structure visible
 - scientific.nesting_clean (OPTIONAL)
   - preferred: nest + chicks visible
+  - not blocking for publish
+- scientific.main_habitat_pair_sexes_v1 (OPTIONAL; D50)
+  - duo plate: male + female together
   - not blocking for publish
 
 ### Publish gate

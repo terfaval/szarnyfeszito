@@ -121,6 +121,58 @@ export default function PlaceBirdRefillBatchTool({ places }: { places: PlaceBird
     await runBatch(publishedPlaces.map((p) => p.id));
   };
 
+  const handleStartAutoApprove = async () => {
+    if (running) return;
+    setRows(initialRows);
+
+    cancelRef.current = false;
+    setRunning(true);
+
+    for (const placeId of publishedPlaces.map((p) => p.id)) {
+      if (cancelRef.current) break;
+
+      setRows((current) =>
+        current.map((row) => (row.id === placeId ? { ...row, status: "running", message: null } : row))
+      );
+
+      const controller = new AbortController();
+      abortRef.current = controller;
+
+      try {
+        const res = await fetch(
+          `/api/places/${placeId}/birds/suggest?existing_published_only=true&review_status=approved`,
+          { method: "POST", signal: controller.signal }
+        );
+        const payload = (await res.json().catch(() => ({}))) as { error?: string; data?: { inserted_count?: number } };
+        if (!res.ok) throw new Error(payload?.error ?? `HTTP ${res.status}`);
+
+        const insertedCount =
+          typeof payload?.data?.inserted_count === "number" ? payload.data.inserted_count : null;
+
+        setRows((current) =>
+          current.map((row) =>
+            row.id === placeId
+              ? { ...row, status: "ok", message: insertedCount === null ? null : `+${insertedCount} link(s)` }
+              : row
+          )
+        );
+      } catch (error) {
+        if (controller.signal.aborted) {
+          setRows((current) =>
+            current.map((row) => (row.id === placeId ? { ...row, status: "pending", message: null } : row))
+          );
+          break;
+        }
+        const message = error instanceof Error ? error.message : "Unknown error";
+        setRows((current) => current.map((row) => (row.id === placeId ? { ...row, status: "error", message } : row)));
+      } finally {
+        abortRef.current = null;
+      }
+    }
+
+    setRunning(false);
+  };
+
   const handleStop = () => {
     cancelRef.current = true;
     abortRef.current?.abort();
@@ -142,6 +194,9 @@ export default function PlaceBirdRefillBatchTool({ places }: { places: PlaceBird
       <div className="flex flex-wrap items-center gap-2">
         <Button type="button" onClick={handleStart} disabled={running || publishedPlaces.length === 0}>
           Refill Place→Bird links (published places)
+        </Button>
+        <Button type="button" variant="accent" onClick={handleStartAutoApprove} disabled={running || publishedPlaces.length === 0}>
+          Refill + auto-approve
         </Button>
         <Button type="button" variant="ghost" onClick={handleStop} disabled={!running}>
           Stop

@@ -4,6 +4,7 @@ import { getPlaceById } from "@/lib/placeService";
 import { suggestPlaceBirdLinksV1 } from "@/lib/placeBirdSuggestion";
 import { AIJsonParseError, AISchemaMismatchError } from "@/lib/aiUtils";
 import { AI_MODEL_TEXT } from "@/lib/aiConfig";
+import { PLACE_BIRD_REVIEW_STATUS_VALUES, type PlaceBirdReviewStatus } from "@/types/place";
 
 export async function POST(request: Request, ctx: { params: Promise<{ id: string }> }) {
   const user = await getAdminUserFromCookies();
@@ -16,10 +17,22 @@ export async function POST(request: Request, ctx: { params: Promise<{ id: string
   const url = new URL(request.url);
   const existingPublishedOnly = url.searchParams.get("existing_published_only") === "true";
 
+  const reviewStatusRaw = url.searchParams.get("review_status") ?? "";
+  const reviewStatus = PLACE_BIRD_REVIEW_STATUS_VALUES.includes(reviewStatusRaw as PlaceBirdReviewStatus)
+    ? (reviewStatusRaw as PlaceBirdReviewStatus)
+    : ("suggested" as const);
+
+  if (reviewStatus === "approved" && !existingPublishedOnly) {
+    return NextResponse.json(
+      { error: "review_status=approved requires existing_published_only=true." },
+      { status: 400 }
+    );
+  }
+
   try {
     const result = await suggestPlaceBirdLinksV1({
       place,
-      review_status: "suggested",
+      review_status: reviewStatus,
       existing_published_only: existingPublishedOnly,
     });
     return NextResponse.json({

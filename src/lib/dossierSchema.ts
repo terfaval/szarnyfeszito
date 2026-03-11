@@ -54,6 +54,31 @@ const shortLine = () =>
     .min(70, "Short option must be 1–2 sentences (≥70 chars).")
     .max(180, "Short option should be concise (≤180 chars).");
 
+const generationMetaSchema = z
+  .object({
+    model: trimmedString(),
+    prompt_hash: trimmedString(),
+    generated_at: trimmedString(),
+    review_comment: z.string().trim().optional(),
+    review_requested_at: z.string().trim().optional(),
+  })
+  .strict();
+
+const sexComparisonSchemaV1 = z
+  .object({
+    schema_version: z.literal("sex_comparison_v1"),
+    language: z.literal("hu"),
+    review_status: z.enum(["draft", "reviewed", "approved"]),
+    summary: trimmedString().max(900),
+    key_differences: z.tuple([
+      trimmedString().max(220),
+      trimmedString().max(220),
+      trimmedString().max(220),
+    ]),
+    generation_meta: generationMetaSchema,
+  })
+  .strict();
+
 const IUCN_STATUS_VALUES = ["LC", "NT", "VU", "EN", "CR", "EW", "EX", "DD", "NE"] as const;
 
 const IUCN_NORMALIZATION_MAP: Record<string, (typeof IUCN_STATUS_VALUES)[number]> = {
@@ -340,6 +365,7 @@ const birdDossierSchemaV22 = z
     ethics_tip: trimmedString(),
     typical_places: z.array(trimmedString()).min(1, "Include at least one typical place."),
     leaflets: leafletsSchema,
+    sex_comparison: sexComparisonSchemaV1.optional(),
   })
   .strict();
 
@@ -360,6 +386,7 @@ const birdDossierSchemaV23 = z
     ethics_tip: trimmedString(),
     typical_places: z.array(trimmedString()).min(1, "Include at least one typical place."),
     leaflets: leafletsSchema,
+    sex_comparison: sexComparisonSchemaV1.optional(),
   })
   .strict();
 
@@ -371,7 +398,7 @@ export const birdDossierSchema = z.discriminatedUnion("schema_version", [
 export type BirdDossierSchema = z.infer<typeof birdDossierSchema>;
 
 export function parseBirdDossier(payload: unknown): BirdDossier {
-  return birdDossierSchema.parse(payload);
+  return birdDossierSchema.parse(payload) as BirdDossier;
 }
 
 export function parseBirdIdentificationBlockV23(payload: unknown) {

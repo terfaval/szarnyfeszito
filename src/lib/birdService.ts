@@ -19,6 +19,13 @@ type ListBirdsOptions = {
   colorTags?: BirdColorTag[];
 };
 
+export type PublishedBirdRefillListItem = {
+  id: string;
+  slug: string;
+  name_hu: string;
+  updated_at: string;
+};
+
 export async function listBirds(options: ListBirdsOptions = {}): Promise<Bird[]> {
   const { search, status, sizeCategory, visibilityCategory, colorTags } = options;
   let query = supabaseServerClient
@@ -57,6 +64,24 @@ export async function listBirds(options: ListBirdsOptions = {}): Promise<Bird[]>
   }
 
   return data ?? [];
+}
+
+export async function listPublishedBirdsForRefill(args: {
+  limit?: number;
+} = {}): Promise<PublishedBirdRefillListItem[]> {
+  const limit = typeof args.limit === "number" && args.limit > 0 ? args.limit : 300;
+  const { data, error } = await supabaseServerClient
+    .from("birds")
+    .select("id,slug,name_hu,updated_at")
+    .eq("status", "published")
+    .order("updated_at", { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    throw error;
+  }
+
+  return (data ?? []) as PublishedBirdRefillListItem[];
 }
 
 export async function listBirdsMissingClassification(): Promise<Bird[]> {

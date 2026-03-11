@@ -129,9 +129,12 @@ function buildOpenAIPrompt(input: GenerateImageInput) {
           input.entityType === "bird"
             ? "- Bird: full body visible, mostly side view, mild perspective, no extreme distortion."
             : "- Place: realistic habitat / landscape depiction; no maps, no UI, no text; keep it credible.",
-          input.variant === "main_habitat"
+           input.variant === "main_habitat"
              ? "- main_habitat: include only a subtle habitat hint (e.g., reeds, shallow water, grass clumps, branch). Keep background simple."
              : "",
+          input.variant === "main_habitat_pair_sexes_v1"
+            ? "- main_habitat_pair_sexes_v1: depict two birds of the same species together (male + female). Full bodies visible. Keep it a simple scientific plate with a subtle habitat hint (similar to main_habitat)."
+            : "",
            input.variant === "place_hero_spring_v1"
              ? "- place_hero_spring_v1: spring highlight moment for the place; realistic, scientific illustration feel; wide scenic composition; no people; no buildings unless clearly implied by the place metadata; no animals unless requested."
              : "",

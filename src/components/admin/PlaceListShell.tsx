@@ -178,7 +178,7 @@ export default function PlaceListShell({ places }: PlaceListShellProps) {
             <p className="admin-note-small">
               Runs the Place→Bird suggestion engine for every <code className="rounded bg-zinc-100 px-1 text-xs">status=published</code>{" "}
               place, but only inserts links that match already-published Birds (no pending names). Inserted rows stay{" "}
-              <code className="rounded bg-zinc-100 px-1 text-xs">review_status=suggested</code>.
+              <code className="rounded bg-zinc-100 px-1 text-xs">review_status=suggested</code> unless you opt into auto-approve.
             </p>
             <PlaceBirdRefillBatchTool
               places={places.map((place) => ({ id: place.id, name: place.name, place_status: place.status }))}
