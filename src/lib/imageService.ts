@@ -228,10 +228,13 @@ export async function generateImagesForBird(
   required_success: boolean;
   results: ImageGenerationResult[];
 }> {
+  const postPublishAllowed =
+    bird.status === "published" &&
+    Boolean(options.onlyVariant) &&
+    POST_PUBLISH_ALLOWED_IMAGE_VARIANTS.has(options.onlyVariant as ImageVariant);
+
   if (bird.status === "published") {
-    const allowed =
-      options.onlyVariant && POST_PUBLISH_ALLOWED_IMAGE_VARIANTS.has(options.onlyVariant);
-    if (!allowed) {
+    if (!postPublishAllowed) {
       throw new Error("Images cannot be generated after a bird is published.");
     }
   }
@@ -245,10 +248,11 @@ export async function generateImagesForBird(
   if (
     bird.status !== "text_approved" &&
     bird.status !== "images_generated" &&
-    bird.status !== "images_approved"
+    bird.status !== "images_approved" &&
+    !postPublishAllowed
   ) {
     throw new Error(
-      "Images can only be generated when the bird status is text_approved, images_generated, or images_approved."
+      "Images can only be generated when the bird status is text_approved, images_generated, images_approved, or published (optional variants only)."
     );
   }
 

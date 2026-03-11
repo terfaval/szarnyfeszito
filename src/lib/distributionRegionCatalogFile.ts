@@ -46,7 +46,7 @@ const itemSchema = z
     bbox: bboxSchema,
     geometry: geometrySchema,
   })
-  .strict();
+  .passthrough();
 
 const catalogSchema = z
   .object({
@@ -54,7 +54,7 @@ const catalogSchema = z
     schema_version: z.string().trim().min(1),
     regions: z.array(itemSchema),
   })
-  .strict();
+  .passthrough();
 
 let cache: Partial<Record<DistributionRegionCatalogName, RegionCatalogItem[]>> = {};
 
