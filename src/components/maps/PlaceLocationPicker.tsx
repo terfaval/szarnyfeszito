@@ -1,18 +1,20 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { MapContainer, Marker, TileLayer, useMapEvents } from "react-leaflet";
-import "leaflet/dist/leaflet.css";
+import { useMemo } from "react";
+import { Marker, useMapEvents } from "react-leaflet";
 import styles from "./PlaceLocationPicker.module.css";
-import { DEFAULT_BASEMAP, getBasemapTileLayerArgs } from "./basemaps";
-import type { BasemapId } from "./basemaps";
-import { ensureLeafletDefaultIcon } from "./leafletIconFix";
+import { DEFAULT_BASEMAP } from "./basemaps";
+import type { BasemapId, BasemapPresetKey } from "./basemaps";
+import ThemedMapContainer from "./ThemedMapContainer";
+import BasemapLayer from "./BasemapLayer";
+import { createMapMarkerIcon } from "./markers";
 
 type PlaceLocationPickerProps = {
   lat: number | null;
   lng: number | null;
   onPick: (coords: { lat: number; lng: number }) => void;
   basemap?: BasemapId;
+  basemapPreset?: BasemapPresetKey;
 };
 
 function ClickHandler({ onPick }: { onPick: PlaceLocationPickerProps["onPick"] }) {
@@ -29,21 +31,8 @@ export default function PlaceLocationPicker({
   lng,
   onPick,
   basemap = DEFAULT_BASEMAP,
+  basemapPreset,
 }: PlaceLocationPickerProps) {
-  const [isDark, setIsDark] = useState(false);
-
-  useEffect(() => {
-    ensureLeafletDefaultIcon();
-  }, []);
-
-  useEffect(() => {
-    const media = window.matchMedia("(prefers-color-scheme: dark)");
-    const update = () => setIsDark(media.matches);
-    update();
-    media.addEventListener("change", update);
-    return () => media.removeEventListener("change", update);
-  }, []);
-
   const center = useMemo<[number, number]>(() => {
     if (typeof lat === "number" && typeof lng === "number") {
       return [lat, lng];
@@ -53,25 +42,24 @@ export default function PlaceLocationPicker({
 
   const markerPosition =
     typeof lat === "number" && typeof lng === "number" ? ([lat, lng] as [number, number]) : null;
-  const tileLayerArgs = useMemo(
-    () => getBasemapTileLayerArgs({ basemap, isDark }),
-    [basemap, isDark]
-  );
+  const markerIcon = useMemo(() => createMapMarkerIcon({ variant: "default", selected: true, size: "lg" }), []);
+  const effectiveBasemap = basemap === "brand" ? DEFAULT_BASEMAP : basemap;
 
   return (
     <div className={`place-location-picker ${styles.wrap}`}>
-      <MapContainer
+      <ThemedMapContainer
         className={styles.map}
+        basemapPreset={basemapPreset}
         center={center}
         zoom={markerPosition ? 10 : 7}
         scrollWheelZoom
         zoomControl={false}
         attributionControl={false}
       >
-        <TileLayer url={tileLayerArgs.url} attribution={tileLayerArgs.attribution} />
+        <BasemapLayer basemap={effectiveBasemap} basemapPreset={basemapPreset} />
         <ClickHandler onPick={onPick} />
-        {markerPosition ? <Marker position={markerPosition} /> : null}
-      </MapContainer>
+        {markerPosition ? <Marker position={markerPosition} icon={markerIcon} keyboard={true} /> : null}
+      </ThemedMapContainer>
     </div>
   );
 }

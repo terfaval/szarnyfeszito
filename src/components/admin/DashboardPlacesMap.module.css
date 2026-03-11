@@ -62,20 +62,6 @@
   color: var(--foreground);
 }
 
-:global(.sf-place-tooltip) {
-  border: 0 !important;
-  background: transparent !important;
-  box-shadow: none !important;
-  padding: 0 !important;
-}
-
-:global(.sf-place-tooltip.leaflet-tooltip-top:before),
-:global(.sf-place-tooltip.leaflet-tooltip-bottom:before),
-:global(.sf-place-tooltip.leaflet-tooltip-left:before),
-:global(.sf-place-tooltip.leaflet-tooltip-right:before) {
-  display: none !important;
-}
-
 .tooltipCard {
   width: 360px;
   max-width: min(360px, 80vw);

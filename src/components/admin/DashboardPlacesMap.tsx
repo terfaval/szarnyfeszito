@@ -185,7 +185,7 @@ export default function DashboardPlacesMap({
             const isPinned = pinnedSlug === marker.slug;
             return (
               <Tooltip
-                className="sf-place-tooltip"
+                className="sf-map-tooltip--chrome-less"
                 direction="top"
                 offset={[0, -10]}
                 opacity={1}

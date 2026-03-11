@@ -1,4 +1,6 @@
 @import "tailwindcss";
+@import "leaflet/dist/leaflet.css";
+@import "./leaflet-theme.css";
 
 :root {
   --bg: #f6efe1;
@@ -32,6 +34,38 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --sf-map-water: #bae6fd;
+
+  /* -------------------------------------------------------------------
+     Map theme tokens (Leaflet surfaces)
+     ------------------------------------------------------------------- */
+
+  --sf-map-surface: var(--panel);
+  --sf-map-surface-strong: var(--panel-2);
+  --sf-map-border: var(--line);
+  --sf-map-shadow: var(--shadow);
+
+  --sf-map-text: var(--foreground);
+  --sf-map-text-muted: var(--brand-ink);
+
+  --sf-map-marker: var(--brand-warm);
+  --sf-map-marker-alt: var(--brand-ink);
+  --sf-map-marker-active: var(--brand-accent);
+
+  --sf-map-popup-bg: var(--panel);
+  --sf-map-popup-border: var(--line);
+  --sf-map-popup-title: var(--brand-warm);
+  --sf-map-popup-meta: var(--brand-ink);
+  --sf-map-popup-text: var(--foreground);
+
+  --sf-map-control-bg: rgba(250, 231, 198, 0.92);
+  --sf-map-control-border: var(--line);
+  --sf-map-control-icon: var(--brand-warm);
+
+  --sf-map-cluster-bg: rgba(var(--brand-ink-rgb), 0.92);
+  --sf-map-cluster-ring: rgba(var(--brand-accent-rgb), 0.9);
+  --sf-map-cluster-text: #ffffff;
+
+  --sf-map-overlay-scrim: rgba(246, 239, 225, 0.08);
   --font-sans: var(--font-display);
   --font-mono: var(--font-body);
   color-scheme: light;
@@ -105,6 +139,11 @@ h5,
     --background: var(--bg);
     --foreground: var(--text);
     --sf-map-water: rgba(56, 189, 248, 0.22);
+
+    --sf-map-text-muted: rgba(255, 255, 255, 0.72);
+    --sf-map-popup-bg: rgba(9, 17, 31, 0.92);
+    --sf-map-control-bg: rgba(9, 17, 31, 0.88);
+    --sf-map-overlay-scrim: rgba(5, 11, 29, 0.2);
     color-scheme: dark;
   }
 }
@@ -125,6 +164,11 @@ h5,
   --background: var(--bg);
   --foreground: var(--text);
   --sf-map-water: rgba(56, 189, 248, 0.22);
+
+  --sf-map-text-muted: rgba(255, 255, 255, 0.72);
+  --sf-map-popup-bg: rgba(9, 17, 31, 0.92);
+  --sf-map-control-bg: rgba(9, 17, 31, 0.88);
+  --sf-map-overlay-scrim: rgba(5, 11, 29, 0.2);
   color-scheme: dark;
 }
 

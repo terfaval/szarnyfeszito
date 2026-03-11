@@ -2,17 +2,20 @@
 
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { CircleMarker, GeoJSON, MapContainer, TileLayer, useMap } from "react-leaflet";
+import { CircleMarker, GeoJSON, useMap } from "react-leaflet";
 import type { FitBoundsOptions, LatLngBoundsExpression, LeafletEventHandlerFnMap, Map as LeafletMap } from "leaflet";
-import "leaflet/dist/leaflet.css";
 import styles from "./PlacesMap.module.css";
-import { DEFAULT_BASEMAP, getBasemapTileLayerArgs } from "./basemaps";
-import type { BasemapId } from "./basemaps";
+import { DEFAULT_BASEMAP } from "./basemaps";
+import type { BasemapId, BasemapPresetKey } from "./basemaps";
+import { DEFAULT_BASEMAP_PRESET } from "./basemaps";
 import { Icon } from "@/ui/icons/Icon";
 import type { PlaceMarker, PlaceType } from "@/types/place";
 import { HUNGARY_BORDER_110M, HUNGARY_WATER_MASK_110M } from "./hungaryBorder110m";
 import PlacesRegionVisualization, { type PlacesRegionVisualizationVariant } from "./PlacesRegionVisualization";
 import type { PlacesMapLayersV1 } from "@/types/placesMap";
+import ThemedMapContainer from "./ThemedMapContainer";
+import BasemapLayer from "./BasemapLayer";
+import { useTimeThemeMode } from "./useTimeThemeMode";
 
 export type PlacesMapMarkerColorMode = "uniform_v1" | "water_highlight_v1" | "place_type_category_v1";
 export type PlacesMapInteractionMode = "static" | "bounded_hu_v1";
@@ -106,6 +109,7 @@ export type PlacesMapProps = {
   selectedRegionId?: string | null;
   onSelect: (slug: string) => void;
   basemap?: BasemapId;
+  basemapPreset?: BasemapPresetKey;
   regionVisualization?: PlacesRegionVisualizationVariant;
   layers?: PlacesMapLayersV1 | null;
   markerColorMode?: PlacesMapMarkerColorMode;
@@ -151,6 +155,7 @@ export default function PlacesMap({
   selectedRegionId = null,
   onSelect,
   basemap = DEFAULT_BASEMAP,
+  basemapPreset = DEFAULT_BASEMAP_PRESET,
   regionVisualization = "places_regions_v1",
   layers = null,
   markerColorMode = "uniform_v1",
@@ -165,23 +170,11 @@ export default function PlacesMap({
   markerEventHandlers,
   renderMarkerChildren,
 }: PlacesMapProps) {
-  const [isDark, setIsDark] = useState(false);
+  const { isNight } = useTimeThemeMode();
+  const isDark = isNight;
   const mapRef = useRef<LeafletMap | null>(null);
   const [currentZoom, setCurrentZoom] = useState<number | null>(null);
   const didApplyInitialPanRef = useRef(false);
-
-  useEffect(() => {
-    const media = window.matchMedia("(prefers-color-scheme: dark)");
-    const update = () => setIsDark(media.matches);
-    update();
-    media.addEventListener("change", update);
-    return () => media.removeEventListener("change", update);
-  }, []);
-
-  const tileLayerArgs = useMemo(() => {
-    if (basemap === "brand") return null;
-    return getBasemapTileLayerArgs({ basemap, isDark });
-  }, [basemap, isDark]);
 
   const onMap = useCallback((map: LeafletMap) => {
     mapRef.current = map;
@@ -324,8 +317,9 @@ export default function PlacesMap({
           </button>
         </div>
       ) : null}
-      <MapContainer
+      <ThemedMapContainer
         className={styles.map}
+        basemapPreset={basemapPreset}
         {...(mapDefaultBounds
           ? {
               bounds: mapDefaultBounds,
@@ -349,9 +343,7 @@ export default function PlacesMap({
         attributionControl={false}
       >
         <MapRefBinder onMap={onMap} onZoom={onZoom} />
-        {tileLayerArgs ? (
-          <TileLayer url={tileLayerArgs.url} attribution={tileLayerArgs.attribution} />
-        ) : null}
+        <BasemapLayer basemap={basemap} basemapPreset={basemapPreset} />
         {basemap === "brand" ? (
           <>
             <GeoJSON
@@ -399,7 +391,7 @@ export default function PlacesMap({
             </CircleMarker>
           );
         })}
-      </MapContainer>
+      </ThemedMapContainer>
     </div>
   );
 }

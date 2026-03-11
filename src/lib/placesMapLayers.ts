@@ -1,5 +1,6 @@
 import type { Feature, FeatureCollection, GeoJsonProperties } from "geojson";
 
+import { DISTRIBUTION_REGION_CATALOG_SOURCE } from "@/lib/config";
 import { supabaseServerClient } from "@/lib/supabaseServerClient";
 import {
   getDistributionRegionGeometriesById,
@@ -66,6 +67,8 @@ export async function buildPlacesMapLayersV1(args: {
   placeRegionIds: string[];
   includeCountries?: boolean;
 }): Promise<PlacesMapLayersV1> {
+  const allowRepo = DISTRIBUTION_REGION_CATALOG_SOURCE !== "supabase";
+  const allowSupabase = DISTRIBUTION_REGION_CATALOG_SOURCE !== "repo";
   const placeRegionIds = Array.from(new Set(args.placeRegionIds.map((id) => id.trim()).filter(Boolean))).sort();
   const includeCountries = args.includeCountries ?? true;
   const cacheKey = `v1:${includeCountries ? "countries" : "no_countries"}:${placeRegionIds.join("|")}`;
@@ -76,7 +79,7 @@ export async function buildPlacesMapLayersV1(args: {
   let countryFeatures: Feature[] = [];
 
   if (includeCountries) {
-    const globalRepo = await loadRegionCatalogFromRepo("globalRegions");
+    const globalRepo = allowRepo ? await loadRegionCatalogFromRepo("globalRegions") : null;
     if (globalRepo && globalRepo.length) {
       const globalCountries = globalRepo.filter(
         (r) => r.type === "country" && bboxIntersects(r.bbox, HUNGARY_VIEWPORT_BBOX)
@@ -84,7 +87,7 @@ export async function buildPlacesMapLayersV1(args: {
       countryFeatures = globalCountries.map((r) =>
         toFeature({ region_id: r.region_id, name: r.name, type: r.type, geometry: r.geometry })
       );
-    } else {
+    } else if (allowSupabase) {
       const { data, error } = await supabaseServerClient
         .from("distribution_region_catalog_items")
         .select("region_id,name,type,bbox")
@@ -127,27 +130,47 @@ export async function buildPlacesMapLayersV1(args: {
     }
   }
 
-  // 2) HU regions (Supabase only: distribution_region_catalog_items where catalog="hungaryRegions").
+  // 2) HU regions (repo and/or Supabase, depending on DISTRIBUTION_REGION_CATALOG_SOURCE).
   let regionFeatures: Feature[] = [];
   if (placeRegionIds.length) {
-    const { data, error } = await supabaseServerClient
-      .from("distribution_region_catalog_items")
-      .select("region_id,name,type,geometry")
-      .eq("catalog", "hungaryRegions")
-      .in("region_id", placeRegionIds);
+    const byId = new Map<string, { region_id: string; name: string | null; type: string | null; geometry: unknown }>();
 
-    if (!error) {
-      const rows = (data ?? []) as Array<Record<string, unknown>>;
-      regionFeatures = rows
-        .map((row) => ({
-          region_id: String(row.region_id ?? "").trim(),
-          name: typeof row.name === "string" ? row.name : null,
-          type: typeof row.type === "string" ? row.type : null,
-          geometry: row.geometry,
-        }))
-        .filter((r) => Boolean(r.region_id) && Boolean(r.geometry))
-        .map((r) => toFeature({ region_id: r.region_id, name: r.name, type: r.type, geometry: r.geometry }));
+    const hungaryRepo = allowRepo ? await loadRegionCatalogFromRepo("hungaryRegions") : null;
+    if (hungaryRepo && hungaryRepo.length) {
+      hungaryRepo.forEach((r) => {
+        if (!r.region_id || !r.geometry) return;
+        byId.set(r.region_id, { region_id: r.region_id, name: r.name, type: r.type, geometry: r.geometry });
+      });
     }
+
+    const missing = allowSupabase ? placeRegionIds.filter((id) => !byId.has(id)) : [];
+    if (missing.length) {
+      const { data, error } = await supabaseServerClient
+        .from("distribution_region_catalog_items")
+        .select("region_id,name,type,geometry")
+        .eq("catalog", "hungaryRegions")
+        .in("region_id", missing);
+
+      if (!error) {
+        const rows = (data ?? []) as Array<Record<string, unknown>>;
+        rows.forEach((row) => {
+          const region_id = String(row.region_id ?? "").trim();
+          if (!region_id) return;
+          if (!row.geometry) return;
+          byId.set(region_id, {
+            region_id,
+            name: typeof row.name === "string" ? row.name : null,
+            type: typeof row.type === "string" ? row.type : null,
+            geometry: row.geometry,
+          });
+        });
+      }
+    }
+
+    regionFeatures = placeRegionIds
+      .map((id) => byId.get(id) ?? null)
+      .filter(Boolean)
+      .map((r) => toFeature({ region_id: r!.region_id, name: r!.name, type: r!.type, geometry: r!.geometry }));
   }
 
   const out: PlacesMapLayersV1 = {

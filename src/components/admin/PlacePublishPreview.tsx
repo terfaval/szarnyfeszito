@@ -104,7 +104,7 @@ export default function PlacePublishPreview({
       <Card className="stack">
         {heroImageUrl ? (
           <div className={styles.heroImageFrame} aria-label="Approved hero image">
-            <Image src={heroImageUrl} alt="" fill className={styles.heroImage} sizes="100vw" priority />
+            <img src={heroImageUrl} alt="" className={styles.heroImage} />
             <div className={styles.heroOverlay} aria-label="Hero overlay">
               <div className={styles.heroPills}>
                 <span className={`${styles.heroPill} ${styles.heroPillName}`}>

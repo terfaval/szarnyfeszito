@@ -52,7 +52,7 @@ These catalogs back deterministic bird distribution map generation (the AI selec
 - Import catalogs into Supabase in small batches (streamed; avoids “file too big” issues in dashboards):
   - `npm run region:catalog:import -- --dry-run "TICKETS/leaflet shapefile builder/out/globalRegions.json"`
   - `npm run region:catalog:import -- "TICKETS/leaflet shapefile builder/out/globalRegions.json" "TICKETS/leaflet shapefile builder/out/hungaryRegions.json"`
-  - Or set `DISTRIBUTION_REGION_CATALOG_SOURCE=repo`/`auto` and point `DISTRIBUTION_REGION_CATALOG_REPO_DIR` at your local `out/` folder (supports `.json` and `.json.gz`).
+  - Or set `DISTRIBUTION_REGION_CATALOG_SOURCE=repo`/`auto` and either point `DISTRIBUTION_REGION_CATALOG_REPO_DIR` at your local `out/` folder, or rely on the default fallback that also checks `TICKETS/leaflet shapefile builder/out/` (supports `.json` and `.json.gz`).
 
 If you prefer running from inside the builder folder, relative paths work too:
 - `cd "TICKETS/leaflet shapefile builder"`

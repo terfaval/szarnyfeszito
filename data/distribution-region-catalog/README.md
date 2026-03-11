@@ -18,7 +18,8 @@ Optional (small/local/dev): you can place repo catalogs here:
 Catalog source selection is controlled by `DISTRIBUTION_REGION_CATALOG_SOURCE` (default: `supabase`).
 
 Repo catalogs can also be gzip-compressed (`.json.gz`). If you keep catalogs outside git, set
-`DISTRIBUTION_REGION_CATALOG_REPO_DIR` to the folder containing the files.
+`DISTRIBUTION_REGION_CATALOG_REPO_DIR` to the folder containing the files (the loader also checks
+`TICKETS/leaflet shapefile builder/out/` as a fallback).
 
 ## How to build the JSON catalogs (manual Python run)
 

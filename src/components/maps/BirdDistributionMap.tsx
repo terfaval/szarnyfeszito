@@ -1,14 +1,14 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import type { Feature, FeatureCollection } from "geojson";
 import type { DistributionRange, DistributionStatus } from "@/types/distributionMap";
-import { MapContainer, TileLayer, GeoJSON } from "react-leaflet";
+import { GeoJSON } from "react-leaflet";
 import type { LatLngBoundsExpression, PathOptions } from "leaflet";
-import "leaflet/dist/leaflet.css";
 import styles from "./BirdDistributionMap.module.css";
-import { getBasemapTileLayerArgs } from "./basemaps";
 import { HUNGARY_FULL_BOUNDS_V1, WORLD_FULL_BOUNDS_V1 } from "./viewPresets";
+import ThemedMapContainer from "./ThemedMapContainer";
+import BasemapLayer from "./BasemapLayer";
 
 const STATUS_COLORS: Record<DistributionStatus, string> = {
   resident: "#BE2D12",
@@ -64,21 +64,6 @@ export default function BirdDistributionMap({
   speciesSummary,
   onHover,
 }: BirdDistributionMapProps) {
-  const [isDark, setIsDark] = useState(false);
-
-  useEffect(() => {
-    const media = window.matchMedia("(prefers-color-scheme: dark)");
-    const update = () => setIsDark(media.matches);
-    update();
-    media.addEventListener("change", update);
-    return () => media.removeEventListener("change", update);
-  }, []);
-
-  const tileLayerArgs = useMemo(
-    () => getBasemapTileLayerArgs({ basemap: "bird", isDark }),
-    [isDark]
-  );
-
   const byStatus = useMemo(() => {
     const grouped: Record<DistributionStatus, DistributionRange[]> = {
       resident: [],
@@ -160,7 +145,7 @@ export default function BirdDistributionMap({
 
   return (
     <div className={styles.wrap}>
-      <MapContainer
+      <ThemedMapContainer
         className={styles.map}
         bounds={bounds}
         boundsOptions={{ padding: [12, 12] }}
@@ -173,11 +158,7 @@ export default function BirdDistributionMap({
         touchZoom={false}
         attributionControl={false}
       >
-        <TileLayer
-          url={tileLayerArgs.url}
-          attribution={tileLayerArgs.attribution}
-          noWrap={true}
-        />
+        <BasemapLayer basemap="bird" noWrap={true} />
         {LAYER_ORDER.map((status) => {
           const data = collections[status];
           if (!data) return null;
@@ -190,7 +171,7 @@ export default function BirdDistributionMap({
             />
           );
         })}
-      </MapContainer>
+      </ThemedMapContainer>
     </div>
   );
 }

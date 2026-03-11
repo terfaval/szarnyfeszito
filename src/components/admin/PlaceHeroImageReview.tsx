@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
 import { Button } from "@/ui/components/Button";
 import { Card } from "@/ui/components/Card";
 import type { ImageRecord, ImageReviewStatus } from "@/types/image";
@@ -131,7 +130,17 @@ export default function PlaceHeroImageReview({
                 boxShadow: "inset 0 0 0 14px var(--brand-paper)",
               }}
             >
-              <Image src={image.previewUrl} alt="Place hero preview" fill style={{ objectFit: "cover" }} />
+              <img
+                src={image.previewUrl}
+                alt="Place hero preview"
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "cover",
+                }}
+              />
             </div>
           </div>
         ) : (

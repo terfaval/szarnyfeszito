@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import type { GeoJsonObject } from "geojson";
-import { CircleMarker, GeoJSON, MapContainer, TileLayer } from "react-leaflet";
-import "leaflet/dist/leaflet.css";
+import { CircleMarker, GeoJSON } from "react-leaflet";
 import { HUNGARY_BORDER_110M } from "@/components/maps/hungaryBorder110m";
-import { getBasemapTileLayerArgs } from "@/components/maps/basemaps";
 import styles from "./PlacePublishHeroMap.module.css";
+import ThemedMapContainer from "@/components/maps/ThemedMapContainer";
+import BasemapLayer from "@/components/maps/BasemapLayer";
 
 const FALLBACK_CENTER: [number, number] = [47.16, 19.5];
 
@@ -21,16 +21,6 @@ export default function PlacePublishHeroMap({
   overlayGeoJson?: GeoJsonObject | null;
   overlayBbox?: { south: number; west: number; north: number; east: number } | null;
 }) {
-  const [isDark, setIsDark] = useState(false);
-
-  useEffect(() => {
-    const media = window.matchMedia("(prefers-color-scheme: dark)");
-    const update = () => setIsDark(media.matches);
-    update();
-    media.addEventListener("change", update);
-    return () => media.removeEventListener("change", update);
-  }, []);
-
   const hasPosition = Number.isFinite(lat) && Number.isFinite(lng);
   const center = useMemo<[number, number]>(() => {
     if (!hasPosition) return FALLBACK_CENTER;
@@ -49,12 +39,11 @@ export default function PlacePublishHeroMap({
   }, [overlayBbox]);
 
   const effectiveCenter = hasPosition ? center : fallbackCenter;
-  const tileLayerArgs = useMemo(() => getBasemapTileLayerArgs({ basemap: "bird", isDark }), [isDark]);
 
   return (
     <div className={styles.wrap} aria-label="Map preview">
       {!hasPosition ? <div className={styles.overlayNote}>No location marker set yet.</div> : null}
-      <MapContainer
+      <ThemedMapContainer
         className={styles.map}
         center={effectiveCenter}
         zoom={8}
@@ -67,7 +56,7 @@ export default function PlacePublishHeroMap({
         touchZoom={false}
         attributionControl={false}
       >
-        <TileLayer url={tileLayerArgs.url} attribution={tileLayerArgs.attribution} />
+        <BasemapLayer basemap="bird" />
         <GeoJSON
           data={HUNGARY_BORDER_110M}
           style={{
@@ -99,7 +88,7 @@ export default function PlacePublishHeroMap({
             }}
           />
         ) : null}
-      </MapContainer>
+      </ThemedMapContainer>
     </div>
   );
 }

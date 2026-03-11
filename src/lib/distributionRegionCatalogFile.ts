@@ -58,8 +58,10 @@ const catalogSchema = z
 
 let cache: Partial<Record<DistributionRegionCatalogName, RegionCatalogItem[]>> = {};
 
-function catalogPath(catalog: DistributionRegionCatalogName) {
-  return path.join(DISTRIBUTION_REGION_CATALOG_REPO_DIR, `${catalog}.json`);
+function candidateCatalogDirs(): string[] {
+  const builderOut = path.resolve(process.cwd(), "TICKETS/leaflet shapefile builder/out");
+  const raw = [DISTRIBUTION_REGION_CATALOG_REPO_DIR, builderOut];
+  return Array.from(new Set(raw.map((p) => path.resolve(p))));
 }
 
 async function readFileIfExists(filePath: string): Promise<Buffer | null> {
@@ -73,15 +75,17 @@ async function readFileIfExists(filePath: string): Promise<Buffer | null> {
 }
 
 async function loadCatalogJsonString(catalog: DistributionRegionCatalogName): Promise<string | null> {
-  const jsonPath = catalogPath(catalog);
-  const jsonBuf = await readFileIfExists(jsonPath);
-  if (jsonBuf) return jsonBuf.toString("utf-8");
+  for (const dir of candidateCatalogDirs()) {
+    const jsonPath = path.join(dir, `${catalog}.json`);
+    const jsonBuf = await readFileIfExists(jsonPath);
+    if (jsonBuf) return jsonBuf.toString("utf-8");
 
-  const gzPath = `${jsonPath}.gz`;
-  const gzBuf = await readFileIfExists(gzPath);
-  if (!gzBuf) return null;
+    const gzPath = `${jsonPath}.gz`;
+    const gzBuf = await readFileIfExists(gzPath);
+    if (gzBuf) return zlib.gunzipSync(gzBuf).toString("utf-8");
+  }
 
-  return zlib.gunzipSync(gzBuf).toString("utf-8");
+  return null;
 }
 
 export async function loadRegionCatalogFromRepo(

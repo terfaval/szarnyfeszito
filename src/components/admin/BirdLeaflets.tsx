@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import L from "leaflet";
-import "leaflet/dist/leaflet.css";
 import type { BirdDossierLeaflets } from "@/types/dossier";
-import { getBasemapTileLayerArgs } from "@/components/maps/basemaps";
+import { DEFAULT_BASEMAP_PRESET, getBasemapTileLayerArgs, resolveBasemapPreset } from "@/components/maps/basemaps";
 import { HUNGARY_FULL_BOUNDS_V1, WORLD_FULL_BOUNDS_V1 } from "@/components/maps/viewPresets";
 import { getHungaryRegionDef, getWorldRegionDef } from "@/lib/leafletsRegions";
 import { getHungaryRegionV2Def, getWorldRegionV2Def } from "@/lib/leafletsRegionsV2";
+import { useTimeThemeMode } from "@/components/maps/useTimeThemeMode";
 
 type LeafletMiniMapProps = {
   kind: "world" | "hungary";
@@ -26,15 +26,9 @@ export default function BirdLeaflets({ kind, leaflets, className }: LeafletMiniM
   const mapRef = useRef<L.Map | null>(null);
   const overlayRef = useRef<L.LayerGroup | null>(null);
   const tileLayerRef = useRef<L.TileLayer | null>(null);
-  const [isDark, setIsDark] = useState(false);
-
-  useEffect(() => {
-    const media = window.matchMedia("(prefers-color-scheme: dark)");
-    const update = () => setIsDark(media.matches);
-    update();
-    media.addEventListener("change", update);
-    return () => media.removeEventListener("change", update);
-  }, []);
+  const { mode } = useTimeThemeMode();
+  const isDark = mode === "night";
+  const resolvedPreset = resolveBasemapPreset({ preset: DEFAULT_BASEMAP_PRESET, theme: mode });
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) {
@@ -55,8 +49,7 @@ export default function BirdLeaflets({ kind, leaflets, className }: LeafletMiniM
     const bounds = kind === "world" ? WORLD_FULL_BOUNDS_V1 : HUNGARY_FULL_BOUNDS_V1;
     map.fitBounds(bounds, { padding: [8, 8], animate: false });
 
-    const initialIsDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-    const tileLayerArgs = getBasemapTileLayerArgs({ basemap: "bird", isDark: initialIsDark });
+    const tileLayerArgs = getBasemapTileLayerArgs({ basemap: "bird", isDark });
     const tileLayer = L.tileLayer(tileLayerArgs.url, {
       maxZoom: 8,
       minZoom: 1,
@@ -74,7 +67,7 @@ export default function BirdLeaflets({ kind, leaflets, className }: LeafletMiniM
       map.remove();
       mapRef.current = null;
     };
-  }, [kind]);
+  }, [kind, isDark]);
 
   useEffect(() => {
     const layer = tileLayerRef.current;
@@ -156,5 +149,6 @@ export default function BirdLeaflets({ kind, leaflets, className }: LeafletMiniM
     });
   }, [kind, leaflets]);
 
-  return <div ref={containerRef} className={className} />;
+  const mergedClassName = [className, "sf-map", resolvedPreset.mapClassName].filter(Boolean).join(" ");
+  return <div ref={containerRef} className={mergedClassName} />;
 }

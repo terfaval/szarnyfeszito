@@ -26,10 +26,6 @@
   letter-spacing: 0.25em;
 }
 
-:global(.places-map .leaflet-control-attribution) {
-  display: none !important;
-}
-
 .toolBar {
   position: absolute;
   right: clamp(12px, 2.5vw, 24px);

@@ -1,0 +1,267 @@
+:root {
+  --sf-map-tile-filter: none;
+}
+
+.sf-map.leaflet-container {
+  font-family: var(--font-body);
+  background: var(--background);
+}
+
+/* -------------------------------------------------------------------
+   Basemap presets (CSS-only adjustments on raster tiles)
+   ------------------------------------------------------------------- */
+
+.sf-map--preset-paperLight {
+  --sf-map-tile-filter: saturate(0.82) contrast(0.98) brightness(1.02);
+}
+
+.sf-map--preset-mutedContext {
+  --sf-map-tile-filter: saturate(0.42) contrast(0.92) brightness(1.04);
+}
+
+.sf-map--preset-nightInk {
+  --sf-map-tile-filter: saturate(0.86) contrast(1.05) brightness(0.94);
+}
+
+.sf-map .leaflet-tile {
+  filter: var(--sf-map-tile-filter);
+}
+
+.sf-map--preset-mutedContext .leaflet-tile {
+  opacity: 0.88;
+}
+
+/* -------------------------------------------------------------------
+   Leaflet controls
+   ------------------------------------------------------------------- */
+
+.sf-map .leaflet-bar,
+.sf-map .leaflet-control-zoom {
+  border: 1px solid var(--sf-map-control-border);
+  border-radius: 14px;
+  box-shadow: var(--sf-map-shadow);
+  overflow: hidden;
+  background: var(--sf-map-control-bg);
+}
+
+.sf-map .leaflet-bar a,
+.sf-map .leaflet-bar a:hover {
+  background: transparent;
+  color: var(--sf-map-control-icon);
+  border-bottom: 1px solid rgba(var(--brand-ink-rgb), 0.18);
+}
+
+.sf-map .leaflet-bar a:last-child {
+  border-bottom: 0;
+}
+
+.sf-map .leaflet-bar a:hover {
+  background: rgba(var(--brand-ink-rgb), 0.08);
+  color: var(--brand-warm);
+}
+
+.sf-map .leaflet-bar a:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: -2px;
+}
+
+/* Attribution is intentionally hidden on MVP map surfaces (SPEC D39/D40). */
+.sf-map .leaflet-control-attribution {
+  display: none !important;
+}
+
+/* -------------------------------------------------------------------
+   Markers (divIcon)
+   ------------------------------------------------------------------- */
+
+.sf-map-marker-icon {
+  background: transparent;
+  border: 0;
+}
+
+.sf-map-marker {
+  --sf-map-marker-size: 18px;
+  width: var(--sf-map-marker-size);
+  height: var(--sf-map-marker-size);
+  border-radius: 9999px;
+  position: relative;
+  transform: translateZ(0);
+  background: var(--sf-map-marker);
+  border: 1px solid rgba(0, 0, 0, 0.18);
+  box-shadow: 0 10px 16px rgba(7, 12, 25, 0.2);
+}
+
+.sf-map-marker::before {
+  content: "";
+  position: absolute;
+  inset: 2px;
+  border-radius: 9999px;
+  background: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0) 55%);
+  pointer-events: none;
+}
+
+.sf-map-marker--secondary {
+  background: var(--sf-map-marker-alt);
+}
+
+.sf-map-marker.is-disabled {
+  opacity: 0.45;
+  filter: grayscale(0.2);
+}
+
+.sf-map-marker.is-selected {
+  border-color: rgba(var(--brand-accent-rgb), 0.9);
+  box-shadow:
+    0 0 0 4px rgba(var(--brand-accent-rgb), 0.35),
+    0 12px 20px rgba(7, 12, 25, 0.22);
+}
+
+.sf-map-marker.is-hover {
+  box-shadow:
+    0 0 0 3px rgba(var(--brand-accent-rgb), 0.22),
+    0 12px 20px rgba(7, 12, 25, 0.22);
+}
+
+.sf-map .leaflet-marker-icon:focus-visible .sf-map-marker {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 3px;
+}
+
+/* -------------------------------------------------------------------
+   Cluster markers (divIcon)
+   ------------------------------------------------------------------- */
+
+.sf-map-cluster-icon {
+  background: transparent;
+  border: 0;
+}
+
+.sf-map-cluster {
+  min-width: 36px;
+  height: 36px;
+  padding-inline: 10px;
+  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--sf-map-cluster-bg);
+  color: var(--sf-map-cluster-text);
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow:
+    0 0 0 4px var(--sf-map-cluster-ring),
+    0 14px 24px rgba(0, 0, 0, 0.25);
+}
+
+/* -------------------------------------------------------------------
+   Popups + tooltips
+   ------------------------------------------------------------------- */
+
+.sf-map .leaflet-popup-content-wrapper {
+  background: var(--sf-map-popup-bg);
+  color: var(--sf-map-popup-text);
+  border: 1px solid var(--sf-map-popup-border);
+  border-radius: 14px;
+  box-shadow: var(--sf-map-shadow);
+  padding: 0;
+}
+
+.sf-map .leaflet-popup-content {
+  margin: 0;
+  max-width: min(320px, 86vw);
+}
+
+.sf-map .leaflet-popup-tip {
+  background: var(--sf-map-popup-bg);
+  box-shadow: none;
+  border: 1px solid var(--sf-map-popup-border);
+}
+
+.sf-map .leaflet-popup-close-button {
+  color: var(--sf-map-text-muted);
+  padding: 8px 10px;
+  border-radius: 12px;
+}
+
+.sf-map .leaflet-popup-close-button:hover {
+  color: var(--sf-map-text);
+  background: rgba(var(--brand-ink-rgb), 0.08);
+}
+
+.sf-map .leaflet-tooltip {
+  background: var(--sf-map-popup-bg);
+  color: var(--sf-map-popup-text);
+  border: 1px solid var(--sf-map-popup-border);
+  border-radius: 14px;
+  box-shadow: var(--sf-map-shadow);
+  padding: 10px 12px;
+}
+
+.sf-map-tooltip--chrome-less.leaflet-tooltip {
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
+.sf-map-tooltip--chrome-less.leaflet-tooltip-top:before,
+.sf-map-tooltip--chrome-less.leaflet-tooltip-bottom:before,
+.sf-map-tooltip--chrome-less.leaflet-tooltip-left:before,
+.sf-map-tooltip--chrome-less.leaflet-tooltip-right:before {
+  display: none !important;
+}
+
+.sf-map .leaflet-tooltip:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.sf-map-popup {
+  padding: 14px 14px 12px;
+}
+
+.sf-map-popup__eyebrow {
+  font-size: 0.7rem;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--sf-map-text-muted);
+}
+
+.sf-map-popup__title {
+  margin-top: 6px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--sf-map-popup-title);
+}
+
+.sf-map-popup__meta {
+  margin-top: 6px;
+  font-size: 0.78rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--sf-map-popup-meta);
+}
+
+.sf-map-popup__desc {
+  margin-top: 10px;
+  font-size: 0.9rem;
+  line-height: 1.45;
+  color: var(--sf-map-popup-text);
+  white-space: pre-wrap;
+}
+
+.sf-map-popup__cta {
+  margin-top: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  color: var(--sf-map-popup-text);
+  font-weight: 700;
+}
+
+.sf-map-popup__cta:hover,
+.sf-map-popup__cta:focus-visible {
+  color: var(--sf-map-marker-active);
+}
