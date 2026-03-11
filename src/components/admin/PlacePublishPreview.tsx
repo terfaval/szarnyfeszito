@@ -1,11 +1,11 @@
 import Link from "next/link";
 import Image from "next/image";
-import type { GeoJsonObject } from "geojson";
-import type { Place, PlaceNotableUnit, PlaceNotableUnitType } from "@/types/place";
+import type { PlacesMapLayersV1 } from "@/types/placesMap";
+import type { Place, PlaceFrequencyBand, PlaceMarker, PlaceNotableUnit, PlaceNotableUnitType } from "@/types/place";
 import type { PlaceUiVariantsV1 } from "@/lib/placeContentSchema";
 import type { SeasonKey } from "@/lib/season";
 import BirdIcon from "@/components/admin/BirdIcon";
-import PlacePublishHeroMap from "@/components/admin/PlacePublishHeroMap";
+import PlacesMap from "@/components/maps/PlacesMap";
 import { Card } from "@/ui/components/Card";
 import styles from "./PlacePublishPreview.module.css";
 
@@ -15,6 +15,7 @@ type PlacePublishBird = {
   name_hu: string;
   iconicSrc: string | null;
   rank: number;
+  frequency_band: PlaceFrequencyBand;
 };
 
 const SEASON_LABEL_HU: Record<SeasonKey, string> = {
@@ -51,10 +52,22 @@ function unitKey(unit: PlaceNotableUnit) {
   return `${unit.order_index}:${unit.name}:${unit.unit_type ?? "none"}`;
 }
 
+const FREQUENCY_LABEL_HU: Record<PlaceFrequencyBand, string> = {
+  very_common: "nagyon gyakori",
+  common: "gyakori",
+  regular: "rendszeres",
+  occasional: "alkalmi",
+  special: "különleges",
+};
+
+function frequencyLabelHu(value: PlaceFrequencyBand) {
+  return FREQUENCY_LABEL_HU[value] ?? value.replaceAll("_", " ");
+}
+
 export default function PlacePublishPreview({
   place,
   marker,
-  leafletRegion,
+  layers,
   content,
   heroImageUrl,
   currentSeason,
@@ -63,7 +76,7 @@ export default function PlacePublishPreview({
 }: {
   place: Place;
   marker: { lat: number | null; lng: number | null } | null;
-  leafletRegion: { geojson: GeoJsonObject | null; bbox: { south: number; west: number; north: number; east: number } | null };
+  layers: PlacesMapLayersV1 | null;
   content: PlaceUiVariantsV1 | null;
   heroImageUrl?: string | null;
   currentSeason: SeasonKey;
@@ -91,6 +104,23 @@ export default function PlacePublishPreview({
     place.nearest_city ? place.nearest_city : "",
   ].filter((value) => nonEmpty(value));
 
+  const markerSlug = nonEmpty(place.slug) ? place.slug : place.id;
+  const hasMarker = Boolean(marker && Number.isFinite(marker.lat) && Number.isFinite(marker.lng));
+  const placeMarker: PlaceMarker = {
+    id: place.id,
+    slug: markerSlug,
+    name: place.name || place.slug || "Untitled place",
+    place_type: place.place_type,
+    status: place.status,
+    location_precision: place.location_precision,
+    sensitivity_level: place.sensitivity_level,
+    is_beginner_friendly: place.is_beginner_friendly,
+    leaflet_region_id: place.leaflet_region_id,
+    lat: hasMarker ? (marker!.lat as number) : null,
+    lng: hasMarker ? (marker!.lng as number) : null,
+    updated_at: place.updated_at,
+  };
+
   return (
     <section className={styles.previewRoot} aria-label="Place publish preview">
       <header className="admin-heading">
@@ -107,9 +137,7 @@ export default function PlacePublishPreview({
             <img src={heroImageUrl} alt="" className={styles.heroImage} />
             <div className={styles.heroOverlay} aria-label="Hero overlay">
               <div className={styles.heroPills}>
-                <span className={`${styles.heroPill} ${styles.heroPillName}`}>
-                  {place.name || place.slug || "Untitled place"}
-                </span>
+                <span className={styles.heroPillTitle}>{place.name || place.slug || "Untitled place"}</span>
                 {subtitle ? <span className={styles.heroPill}>{subtitle}</span> : null}
                 {localizationPills.map((pill) => (
                   <span key={pill} className={styles.heroPill}>
@@ -133,18 +161,37 @@ export default function PlacePublishPreview({
 
         {variants ? (
           <>
+            {nonEmpty(variants.short) ? (
+              <p className={styles.shortHighlight} aria-label="Place short">
+                {variants.short}
+              </p>
+            ) : (
+              <p className="admin-note-small">No approved `variants.short` yet.</p>
+            )}
+
             <div className={styles.heroMap}>
               {place.location_precision === "hidden" ? (
                 <div className="admin-panel admin-panel--muted">
                   <p className="admin-note-small">Location is hidden for this place.</p>
                 </div>
               ) : (
-                <div className={styles.heroMapStack}>
-                  <PlacePublishHeroMap
-                    lat={marker?.lat ?? null}
-                    lng={marker?.lng ?? null}
-                    overlayGeoJson={leafletRegion.geojson}
-                    overlayBbox={leafletRegion.bbox}
+                <div className={styles.placeMapStack} aria-label="Place map">
+                  {!hasMarker ? <div className={styles.mapOverlayNote}>No location marker set yet.</div> : null}
+                  <PlacesMap
+                    markers={hasMarker ? [placeMarker] : []}
+                    selectedSlug={hasMarker ? markerSlug : null}
+                    selectedRegionId={place.leaflet_region_id}
+                    layers={layers}
+                    basemap="bird"
+                    regionVisualization="places_regions_v1"
+                    markerColorMode="water_highlight_v1"
+                    interactionMode="bounded_hu_v1"
+                    toolBarVariant="bottom_right_v1"
+                    defaultCenter={
+                      hasMarker ? ([placeMarker.lat as number, placeMarker.lng as number] as [number, number]) : undefined
+                    }
+                    defaultZoom={8}
+                    onSelect={() => {}}
                   />
                   {shouldOverlayDidYouKnow ? (
                     <div className={styles.didYouKnowOverlay} aria-label="Tudtad-e (overlay)">
@@ -166,12 +213,6 @@ export default function PlacePublishPreview({
               )}
             </div>
 
-            {nonEmpty(variants.short) ? (
-              <p className={styles.copyBlock}>{variants.short}</p>
-            ) : (
-              <p className="admin-note-small">No approved `variants.short` yet.</p>
-            )}
-
             {nonEmpty(variants.long) ? <p className={styles.copyBlock}>{variants.long}</p> : null}
             {nonEmpty(variants.ethics_tip) ? (
               <p className={styles.ethicsTip} aria-label="Ethics tip">
@@ -190,17 +231,19 @@ export default function PlacePublishPreview({
                 )}
 
                 {birds.length ? (
-                  <div className={styles.birdRow} aria-label="Linked birds">
+                  <div className={styles.birdGrid} aria-label="Linked birds">
                     {birds.map((bird) => (
                       <Link
                         key={bird.id}
                         href={`/admin/birds/${bird.id}`}
-                        className={styles.birdLink}
+                        className={styles.birdCard}
                         aria-label={`Open bird: ${bird.name_hu}`}
-                        title={bird.name_hu}
                       >
-                        <BirdIcon iconicSrc={bird.iconicSrc} showHabitatBackground={false} size={44} />
-                        <span className={styles.birdName}>{bird.name_hu}</span>
+                        <BirdIcon iconicSrc={bird.iconicSrc} showHabitatBackground={false} size={64} />
+                        <div className={styles.birdText}>
+                          <span className={styles.birdName}>{bird.name_hu}</span>
+                          <span className={styles.birdFrequency}>{frequencyLabelHu(bird.frequency_band)}</span>
+                        </div>
                       </Link>
                     ))}
                   </div>
@@ -213,19 +256,19 @@ export default function PlacePublishPreview({
             {hasExtras ? (
               <div className={styles.extrasGrid} aria-label="Extras">
                 {nonEmpty(variants.who_is_it_for) ? (
-                  <div className="admin-panel">
+                  <div className={`admin-panel ${styles.extrasPanel}`}>
                     <p className="admin-subheading">Kinek való?</p>
                     <p className={styles.copyBlock}>{variants.who_is_it_for}</p>
                   </div>
                 ) : null}
                 {nonEmpty(variants.when_to_go) ? (
-                  <div className="admin-panel">
+                  <div className={`admin-panel ${styles.extrasPanel}`}>
                     <p className="admin-subheading">Mikor menj?</p>
                     <p className={styles.copyBlock}>{variants.when_to_go}</p>
                   </div>
                 ) : null}
                 {nonEmpty(variants.practical_tip) ? (
-                  <div className="admin-panel">
+                  <div className={`admin-panel ${styles.extrasPanel}`}>
                     <p className="admin-subheading">Gyakorlati tipp</p>
                     <p className={styles.copyBlock}>{variants.practical_tip}</p>
                   </div>
@@ -234,40 +277,45 @@ export default function PlacePublishPreview({
             ) : null}
 
             <div className={styles.practicalAfterGrid} aria-label="Practical notes and notable units">
-              <div className={styles.generalPracticalCol} aria-label="General practical notes">
-                <div className="admin-panel">
-                  <p className="admin-subheading">Megközelítés</p>
-                  {nonEmpty(place.access_note) ? (
-                    <p className={styles.copyBlock}>{place.access_note}</p>
-                  ) : (
-                    <p className="admin-note-small">Nincs kitöltve.</p>
-                  )}
-                </div>
-                <div className="admin-panel">
-                  <p className="admin-subheading">Parkolás</p>
-                  {nonEmpty(place.parking_note) ? (
-                    <p className={styles.copyBlock}>{place.parking_note}</p>
-                  ) : (
-                    <p className="admin-note-small">Nincs kitöltve.</p>
-                  )}
-                </div>
-                <div className="admin-panel">
-                  <p className="admin-subheading">Mikor a legjobb?</p>
-                  {nonEmpty(place.best_visit_note) ? (
-                    <p className={styles.copyBlock}>{place.best_visit_note}</p>
-                  ) : (
-                    <p className="admin-note-small">Nincs kitöltve.</p>
-                  )}
-                </div>
-                {hasNearbyProtection ? (
-                  <div className="admin-panel" aria-label="Helyi védelmi szervezetek és programok">
-                    <p className="admin-subheading">Helyi védelem</p>
-                    <p className={styles.copyBlock}>{variants.nearby_protection_context}</p>
+              <div className={`admin-panel ${styles.generalPracticalPanel}`} aria-label="General practical notes">
+                <p className="admin-subheading">General practical info</p>
+                <div className={styles.generalPracticalRows}>
+                  <div className={styles.generalPracticalRow}>
+                    <p className={styles.generalPracticalLabel}>Megközelítés</p>
+                    {nonEmpty(place.access_note) ? (
+                      <p className={styles.generalPracticalValue}>{place.access_note}</p>
+                    ) : (
+                      <p className={styles.generalPracticalEmpty}>Nincs kitöltve.</p>
+                    )}
                   </div>
-                ) : null}
+                  <div className={styles.generalPracticalRow}>
+                    <p className={styles.generalPracticalLabel}>Parkolás</p>
+                    {nonEmpty(place.parking_note) ? (
+                      <p className={styles.generalPracticalValue}>{place.parking_note}</p>
+                    ) : (
+                      <p className={styles.generalPracticalEmpty}>Nincs kitöltve.</p>
+                    )}
+                  </div>
+                  <div className={styles.generalPracticalRow}>
+                    <p className={styles.generalPracticalLabel}>Mikor a legjobb?</p>
+                    {nonEmpty(place.best_visit_note) ? (
+                      <p className={styles.generalPracticalValue}>{place.best_visit_note}</p>
+                    ) : (
+                      <p className={styles.generalPracticalEmpty}>Nincs kitöltve.</p>
+                    )}
+                  </div>
+                  <div className={styles.generalPracticalRow}>
+                    <p className={styles.generalPracticalLabel}>Helyi védelem</p>
+                    {hasNearbyProtection ? (
+                      <p className={styles.generalPracticalValue}>{variants.nearby_protection_context}</p>
+                    ) : (
+                      <p className={styles.generalPracticalEmpty}>Nincs kitöltve.</p>
+                    )}
+                  </div>
+                </div>
               </div>
 
-              <div className="admin-panel" aria-label="Notable units">
+              <div className={`admin-panel ${styles.notableUnitsPanel}`} aria-label="Notable units">
                 <p className="admin-subheading">Notable units</p>
                 {hasNotableUnits ? (
                   <div className={styles.notableUnitsScroll}>

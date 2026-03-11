@@ -39,27 +39,34 @@
   max-width: min(820px, 100%);
 }
 
-.heroPill {
-  border-radius: 9999px;
-  padding: 0.35rem 0.8rem;
-  font-size: 0.78rem;
-  font-weight: 600;
-  line-height: 1.1;
-  color: rgba(255, 255, 255, 0.95);
-  background: rgba(0, 0, 0, 0.35);
-  border: 1px solid rgba(255, 255, 255, 0.18);
+.heroPillTitle {
+  padding: 0.55rem 1.1rem;
+  border-radius: 999px;
+  border: 1px solid rgba(var(--brand-ink-rgb), 0.25);
+  background: rgba(var(--brand-ink-rgb), 0.22);
   backdrop-filter: blur(10px);
+  color: var(--brand-paper);
+  font-family: var(--font-display);
+  font-size: clamp(1rem, 2vw, 1.25rem);
+  letter-spacing: -0.01em;
 }
 
-.heroPillName {
-  font-weight: 800;
-  letter-spacing: 0.06em;
+.heroPill {
+  padding: 0.45rem 0.95rem;
+  border-radius: 999px;
+  border: 1px solid rgba(var(--brand-ink-rgb), 0.25);
+  background: rgba(var(--brand-ink-rgb), 0.18);
+  backdrop-filter: blur(10px);
+  color: var(--brand-paper);
+  font-size: 0.9rem;
 }
 
 .placeHeader {
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
+  align-items: center;
+  text-align: center;
 }
 
 .placeMetaLine {
@@ -88,11 +95,33 @@
 }
 
 .heroMap {
-  margin: 0.4rem 0 0.9rem;
+  margin: 0.9rem auto 1rem;
+  width: 100%;
+  max-width: min(980px, 100%);
 }
 
-.heroMapStack {
+.placeMapStack {
   position: relative;
+}
+
+.placeMapStack :global(.places-map) {
+  height: 360px;
+  min-height: 360px;
+}
+
+.mapOverlayNote {
+  position: absolute;
+  z-index: 600;
+  top: 14px;
+  left: 14px;
+  border-radius: 9999px;
+  padding: 0.4rem 0.65rem;
+  border: 1px solid rgba(var(--brand-ink-rgb), 0.25);
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--brand-ink);
+  font-size: 0.75rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
 }
 
 .didYouKnowOverlay {
@@ -114,6 +143,18 @@
   line-height: 1.65;
 }
 
+.shortHighlight {
+  white-space: pre-wrap;
+  text-align: center;
+  color: var(--brand-accent);
+  font-family: var(--font-display);
+  font-weight: 750;
+  font-size: clamp(1.25rem, 2.2vw, 1.6rem);
+  line-height: 1.55;
+  max-width: min(920px, 100%);
+  margin: 0.75rem auto 0.35rem;
+}
+
 .ethicsTip {
   white-space: pre-wrap;
   color: var(--brand-ink);
@@ -123,8 +164,14 @@
 
 .extrasGrid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.9rem;
+  max-width: min(980px, 100%);
+  margin: 0 auto;
+}
+
+.extrasPanel {
+  border: 2px solid rgba(var(--brand-accent-rgb), 0.32);
 }
 
 @media (max-width: 860px) {
@@ -181,17 +228,60 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 0.9rem;
+  align-items: stretch;
+  max-width: min(980px, 100%);
+  margin: 0 auto;
 }
 
-.generalPracticalCol {
+.generalPracticalPanel {
+  height: 100%;
+}
+
+.generalPracticalRows {
   display: flex;
   flex-direction: column;
-  gap: 0.9rem;
+  justify-content: space-between;
+  gap: 0.85rem;
+  height: 100%;
+  margin-top: 0.75rem;
+}
+
+.generalPracticalRow {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.generalPracticalLabel {
+  font-size: 0.72rem;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  font-weight: 650;
+  color: var(--muted);
+}
+
+.generalPracticalValue {
+  white-space: pre-wrap;
+  color: var(--foreground);
+  line-height: 1.5;
+  font-size: 0.92rem;
+}
+
+.generalPracticalEmpty {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.notableUnitsPanel {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 .notableUnitsScroll {
   margin-top: 0.65rem;
-  max-height: 320px;
+  flex: 1;
   overflow: auto;
   padding-right: 0.35rem;
   display: flex;
@@ -285,43 +375,56 @@
   color: #f1a11e;
 }
 
-.birdRow {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.65rem;
-  align-items: center;
+.birdGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.85rem;
+  max-width: min(820px, 100%);
+  margin: 0 auto;
 }
 
-.birdLink {
-  display: inline-flex;
+@media (max-width: 860px) {
+  .birdGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.birdCard {
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 0.5rem;
-  border-radius: 9999px;
+  text-align: center;
+  gap: 0.55rem;
+  border-radius: 18px;
   border: 1px solid var(--line);
   background: rgba(255, 255, 255, 0.02);
-  padding: 0.35rem 0.6rem;
+  padding: 0.85rem 0.9rem;
   text-decoration: none;
   color: inherit;
-  transition: border-color 0.2s ease;
+  transition: border-color 0.2s ease, transform 0.2s ease;
 }
 
-.birdLink:hover,
-.birdLink:focus-visible {
+.birdCard:hover,
+.birdCard:focus-visible {
   border-color: rgba(var(--brand-ink-rgb), 0.8);
+  transform: translateY(-1px);
+}
+
+.birdText {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
 }
 
 .birdName {
-  max-width: 0;
-  opacity: 0;
-  overflow: hidden;
-  white-space: nowrap;
-  transition: max-width 0.2s ease, opacity 0.2s ease;
-  font-size: 0.85rem;
+  font-weight: 700;
+  font-size: 0.95rem;
   color: var(--foreground);
 }
 
-.birdLink:hover .birdName,
-.birdLink:focus-visible .birdName {
-  max-width: 14rem;
-  opacity: 1;
+.birdFrequency {
+  font-size: 0.78rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
 }

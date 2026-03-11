@@ -5,11 +5,9 @@ import { getLatestApprovedContentBlockForPlace } from "@/lib/placeContentService
 import { listApprovedPublishedBirdLinksForPlace } from "@/lib/placeBirdService";
 import { getCurrentPlaceHeroImage, listApprovedCurrentIconicImagesForBirds, getSignedImageUrl } from "@/lib/imageService";
 import { getCurrentSeasonKey } from "@/lib/season";
-import { getDistributionRegionBboxesById, getDistributionRegionGeometriesById } from "@/lib/distributionRegionCatalogService";
+import { buildPlacesMapLayersV1 } from "@/lib/placesMapLayers";
 import PlacePublishAction from "@/components/admin/PlacePublishAction";
-import PlaceHeroImagePanel from "@/components/admin/PlaceHeroImagePanel";
 import PlacePublishPreview from "@/components/admin/PlacePublishPreview";
-import type { GeoJsonObject } from "geojson";
 
 export const metadata = {
   title: "Place publish — Szárnyfeszítő Admin",
@@ -43,26 +41,10 @@ export default async function PlacePublishPage({
 
   const heroImage = await getCurrentPlaceHeroImage(place.id);
   const heroPreviewUrl = heroImage?.storage_path ? await getSignedImageUrl(heroImage.storage_path) : null;
-  const heroImageWithPreview = heroImage ? { ...heroImage, previewUrl: heroPreviewUrl } : null;
   const heroApprovedUrl = heroImage?.review_status === "approved" ? heroPreviewUrl : null;
 
   const leafletRegionId = place.leaflet_region_id?.trim() ?? "";
-  let leafletRegion: { geojson: GeoJsonObject | null; bbox: { south: number; west: number; north: number; east: number } | null } =
-    { geojson: null, bbox: null };
-  if (leafletRegionId) {
-    try {
-      const [geoById, bboxById] = await Promise.all([
-        getDistributionRegionGeometriesById([leafletRegionId]),
-        getDistributionRegionBboxesById([leafletRegionId]),
-      ]);
-      leafletRegion = {
-        geojson: (geoById[leafletRegionId] as GeoJsonObject | undefined) ?? null,
-        bbox: bboxById[leafletRegionId] ?? null,
-      };
-    } catch {
-      leafletRegion = { geojson: null, bbox: null };
-    }
-  }
+  const mapLayers = await buildPlacesMapLayersV1({ placeRegionIds: leafletRegionId ? [leafletRegionId] : [] });
 
   const placeBirds = await listApprovedPublishedBirdLinksForPlace(place.id);
 
@@ -93,6 +75,7 @@ export default async function PlacePublishPage({
       slug: row.bird!.slug,
       name_hu: row.bird!.name_hu,
       rank: row.rank,
+      frequency_band: row.frequency_band,
       iconicSrc: iconicUrlByBirdId.get(row.bird!.id) ?? null,
     }));
 
@@ -127,12 +110,11 @@ export default async function PlacePublishPage({
 
   return (
     <Card className="place-panel place-publish stack">
-      <PlaceHeroImagePanel placeId={place.id} placeStatus={place.status} image={heroImageWithPreview} />
       <PlacePublishAction place={place} missing={missing} />
       <PlacePublishPreview
         place={place}
         marker={marker}
-        leafletRegion={leafletRegion}
+        layers={mapLayers}
         content={approved?.blocks_json ?? null}
         heroImageUrl={heroApprovedUrl}
         currentSeason={currentSeason}
