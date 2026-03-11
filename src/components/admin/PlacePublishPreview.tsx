@@ -127,8 +127,8 @@ export default function PlacePublishPreview({
             {place.county ? ` · ${place.county}` : ""}
             {place.nearest_city ? ` · ${place.nearest_city}` : ""}
           </p>
-          <h3 className={styles.placeName}>{place.name || place.slug || "Untitled place"}</h3>
-          {variants && nonEmpty(variants.teaser) ? <p className={styles.teaser}>{variants.teaser}</p> : null}
+          {!heroImageUrl ? <h3 className={styles.placeName}>{place.name || place.slug || "Untitled place"}</h3> : null}
+          {!heroImageUrl && variants && nonEmpty(variants.teaser) ? <p className={styles.teaser}>{variants.teaser}</p> : null}
         </header>
 
         {variants ? (

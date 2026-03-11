@@ -25,6 +25,7 @@ export default async function PlaceEditorLayout({
     birds: { href: `/admin/places/${place.id}/birds`, enabled: true },
     notable_units: { href: `/admin/places/${place.id}/notable-units`, enabled: true },
     content: { href: `/admin/places/${place.id}/content`, enabled: true },
+    images: { href: `/admin/places/${place.id}/images`, enabled: true },
     publish: { href: `/admin/places/${place.id}/publish`, enabled: true },
   };
 

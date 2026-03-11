@@ -738,21 +738,22 @@ Birdwatch logging should reflect “I saw X at place Y”, and help selection by
 **Scope:** Studio Place workflow (generation, review, publish preview). Explorer remains read-only and has no runtime AI.
 
 ### Context
-- Place publish cards will display a full-bleed hero image above the header.
+- Place publish cards should show a full-bleed hero image at the top (approved only).
 - We need a controlled, review-gated way to generate that asset server-side.
 
 ### Decision
 - Add a single Place image output (v1):
   - `entity_type="place"`, `style_family="scientific"`, `variant="place_hero_spring_v1"`.
-  - Content intent: a realistic, scientific-style spring highlight moment for the place (no fantasy / no cartoon).
+  - Intent: a realistic, scientific-style spring highlight moment for the place (no fantasy/cartoon).
 - Publish gate (Place) requires:
   - required metadata + approved UI variants (per D31), and
   - an **approved** current hero image for `place_hero_spring_v1`.
-- Studio publish preview card:
-  - Renders the approved hero image at the very top (full-bleed in the card), with overlay pills (name, subtitle, localization).
-  - The map hero preview remains, but moves below the header.
+- Studio UX:
+  - Place editor includes an `Images` view for generating and approving the hero image.
+  - Publish preview renders the approved hero image above the header (full-bleed, with overlay pills); the map preview remains below.
 
 ### Out of scope (v1)
 - Additional seasons or multiple Place image variants.
 - Iconic Place images.
 - Any runtime generation on Explorer/public surfaces.
+

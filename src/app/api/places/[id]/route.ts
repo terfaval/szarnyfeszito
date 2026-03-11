@@ -173,6 +173,7 @@ export async function PATCH(request: Request, ctx: { params: Promise<{ id: strin
       .select("id")
       .eq("entity_type", "place")
       .eq("entity_id", existing.id)
+      .eq("style_family", "scientific")
       .eq("variant", "place_hero_spring_v1")
       .eq("is_current", true)
       .eq("review_status", "approved")

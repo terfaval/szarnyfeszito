@@ -8,7 +8,6 @@ export async function PATCH(
   context: { params: Promise<{ id: string; imageId: string }> }
 ) {
   const user = await getAdminUserFromCookies();
-
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -36,4 +35,3 @@ export async function PATCH(
     );
   }
 }
-
