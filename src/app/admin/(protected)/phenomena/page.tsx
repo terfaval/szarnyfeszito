@@ -1,4 +1,6 @@
-import { Card } from "@/ui/components/Card";
+import PhenomenonListShell from "@/components/admin/PhenomenonListShell";
+import { listPhenomena } from "@/lib/phenomenonService";
+import { listDistributionRegionCatalogMeta } from "@/lib/distributionRegionCatalogService";
 
 export const metadata = {
   title: "Phenomena — Szárnyfeszítő Admin",
@@ -6,11 +8,17 @@ export const metadata = {
 
 export const dynamic = "force-dynamic";
 
-export default function PhenomenaPage() {
+export default async function PhenomenaPage() {
+  const phenomena = await listPhenomena();
+  const regionMeta = await listDistributionRegionCatalogMeta("hungaryRegions").catch(() => []);
+  const spaRegions = regionMeta
+    .filter((r) => r.scope === "hungary" && r.type === "spa")
+    .sort((a, b) => a.name.localeCompare(b.name, "hu"))
+    .map((r) => ({ region_id: r.region_id, name: r.name }));
+
   return (
-    <Card className="admin-stat-card admin-stat-card--note">
-      Phenomena editor is not implemented yet. This page exists to keep admin navigation stable while the Place module lands.
-    </Card>
+    <section className="space-y-10">
+      <PhenomenonListShell phenomena={phenomena} spaRegions={spaRegions} />
+    </section>
   );
 }
-

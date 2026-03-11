@@ -324,7 +324,23 @@ Tabs:
 - Publish
 
 ---
- 
+
+### 7.4.1 Phenomenon List + Editor (Studio)
+
+- Phenomena list: `/admin/phenomena`
+  - Search
+  - Status filter
+  - Create:
+    - Primary: "Ensure SPA autumn peaks" (creates missing `migration_peak/autumn` phenomena for all HU SPA regions)
+    - Secondary: manual create (select SPA region + season)
+
+- Phenomenon editor: `/admin/phenomena/[phenomenonId]`
+  - Tabs:
+    - General (title, season, SPA region_id, timing mm-dd window, admin generation_input)
+    - Birds (suggested + approved links, manual add/remove, "Suggest birds" button)
+    - Content (generate + manual edit + approve, strict `phenomenon_ui_variants_v1` contract)
+    - Publish (server-side gate: approved content + timing window + ≥1 approved+published bird link)
+
 ### 7.5 Yoga naplózó felület (Admin)
 
 - Az admin felületen egy nap akár négy tevékenységet is tud fogadni: jógát (relax/strong), erősítést (könnyű/intenzív), ACL stabilitást (aktiváló rutin vagy stabilitási blokk) és futást. A heti sor ezekre egy-egy apró jelöléssel mutatja, mit logoltunk, a havi rács pedig színes pontokkal vagy ikonokkal az egyes napokban szereplő aktivitásokat; az ikonokat (ill. a pontok színeit) az `activity_logs` rekordokhoz kapcsolódó `activity_type` + kategória adja.

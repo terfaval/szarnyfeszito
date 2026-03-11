@@ -112,15 +112,19 @@ export async function approveSexComparison(args: {
   }
 
   const summary = typeof args.summary === "string" ? args.summary.trim() : existing.summary;
-  const diffsRaw = Array.isArray(args.key_differences) ? args.key_differences : existing.key_differences;
-  const diffs = (diffsRaw as unknown[]).map((d) => (typeof d === "string" ? d.trim() : "")).filter(Boolean);
+  const diffsRaw = Array.isArray(args.key_differences)
+    ? args.key_differences
+    : existing.key_differences;
+  const diffs = (diffsRaw as unknown[]).map((d) =>
+    typeof d === "string" ? d.trim() : ""
+  );
 
   if (!summary) {
     throw new Error("summary is required.");
   }
 
-  if (diffs.length !== 3) {
-    throw new Error("Exactly three key differences are required.");
+  if (diffs.length !== 3 || diffs.some((d) => !d)) {
+    throw new Error("key_differences must be an array of 3 non-empty strings.");
   }
 
   const next: SexComparisonV1 = {
@@ -151,4 +155,3 @@ export async function getSexComparisonStatus(args: { birdId: string }): Promise<
     content_block_status: (block?.review_status as ReviewStatus | undefined) ?? null,
   };
 }
-

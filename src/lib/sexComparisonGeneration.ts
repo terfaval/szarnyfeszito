@@ -26,6 +26,7 @@ JSON kulcsok (kötelező):
 - key_differences: pontosan 3 elemű tömb, mindegyik egy konkrét, rövid különbség (1 mondat).
 
 Szabályok:
+- Ne említsd a latin nevet.
 - Ha gyenge a dimorfizmus: ezt mondd ki, és a 3 különbség lehet "általában" jellegű, de legyen őszinte (ne találj ki markáns jegyet).
 - Ne állíts olyat, ami biztosan nem következik a bemenetből; maradj óvatos, de hasznos.
 `;
@@ -51,7 +52,6 @@ export async function generateSexComparisonV1(args: {
     bird: {
       slug: args.bird.slug,
       name_hu: args.bird.name_hu,
-      name_latin: args.bird.name_latin ?? null,
     },
     field_guide_context: {
       signature_trait: args.dossier.signature_trait,
@@ -103,4 +103,3 @@ export async function generateSexComparisonV1(args: {
     meta,
   };
 }
-

@@ -541,6 +541,26 @@ Indok: A SPA-scoped migration peak is a stable, deterministic primitive that can
 
 ---
 
+## D49 – Studio Phenomenon UI: list + editor tabs v1
+
+- Studio adds a Phenomenon management surface aligned with Birds/Places patterns:
+  - List: `/admin/phenomena` (search + status filter + create tools).
+  - Editor: `/admin/phenomena/[phenomenonId]` with tabs: General, Birds, Content, Publish.
+- List tools:
+  - Primary action: “Ensure SPA autumn peaks” — creates missing `migration_peak/autumn` phenomena for all HU SPA catalog entries.
+  - Manual create: select SPA region + season (spring|autumn) without auto-creating a second season by default.
+- Content workflow:
+  - Generate uses server-side AI only and writes `content_blocks.blocks_json` with `schema_version="phenomenon_ui_variants_v1"`.
+  - Approve marks the latest phenomenon content block as `review_status="approved"` and sets phenomenon status to `reviewed` unless already published.
+- Publish gate (server-enforced):
+  - Timing window (`typical_start_mmdd` + `typical_end_mmdd`) present and valid
+  - Approved phenomenon content exists
+  - At least 1 approved bird link where the Bird entity is published
+
+Indok: Phenomena need the same deterministic, review-gated authoring ergonomics as Places, but remain Studio-first until Explorer rendering is formally scoped.
+
+---
+
 ## D15 â€“ F3 builds mandate paired F4 checks
 
 - Every F3 (Build) engagement that touches implementation code — especially any high-impact or “really big” change — must simultaneously plan, trigger, and document the corresponding F4 (Check) work before the change is closed, so the audit workflow always shows the validation evidence alongside the build.

@@ -1,8 +1,9 @@
 import { BirdStatus } from "@/types/bird";
 import { PlaceStatus } from "@/types/place";
+import type { PhenomenonStatus } from "@/types/phenomenon";
 
 type StatusPillProps = {
-  status: BirdStatus | PlaceStatus;
+  status: BirdStatus | PlaceStatus | PhenomenonStatus;
 };
 
 export function StatusPill({ status }: StatusPillProps) {

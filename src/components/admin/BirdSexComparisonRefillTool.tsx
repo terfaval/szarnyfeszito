@@ -242,6 +242,12 @@ export default function BirdSexComparisonRefillTool({
     }
   };
 
+  const canApproveText =
+    summary.trim().length > 0 &&
+    diff1.trim().length > 0 &&
+    diff2.trim().length > 0 &&
+    diff3.trim().length > 0;
+
   const handleGenerateText = async () => {
     if (!selectedId) return;
     setDetailMessage(null);
@@ -465,7 +471,12 @@ export default function BirdSexComparisonRefillTool({
                 <Button type="button" onClick={handleGenerateText}>
                   {detail.sex_comparison ? "Regenerate text" : "Generate text"}
                 </Button>
-                <Button type="button" variant="ghost" onClick={handleApproveText} disabled={!summary.trim()}>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={handleApproveText}
+                  disabled={!canApproveText}
+                >
                   Approve text
                 </Button>
               </div>
