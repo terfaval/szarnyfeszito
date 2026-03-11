@@ -24,6 +24,7 @@ import { generateScienceDossierV1, generateVisualBriefV1 } from "@/lib/imageAccu
 import { scienceDossierSchemaV1 } from "@/lib/imageAccuracySchemas";
 import { getScienceDossierForBird, upsertScienceDossierDraft } from "@/lib/scienceDossierService";
 import { getVisualBriefForBird, upsertVisualBriefDraft } from "@/lib/visualBriefService";
+import { getHabitatStockAssetByKey } from "@/lib/habitatStockAssetService";
 
 const REQUIRED_IMAGE_VARIANTS: ImageVariant[] = [
   "main_habitat",
@@ -38,15 +39,12 @@ const REQUIRED_SPECS: ImageSpec[] = [
 const OPTIONAL_SPECS: ImageSpec[] = [
   { style_family: "scientific", variant: "flight_clean" },
   { style_family: "scientific", variant: "nesting_clean" },
+  { style_family: "scientific", variant: "main_habitat_pair_sexes_v1" },
 ];
 
 const POST_PUBLISH_ALLOWED_IMAGE_VARIANTS = new Set<ImageVariant>([
   "main_habitat_pair_sexes_v1",
 ]);
-
-const ON_DEMAND_SPECS: ImageSpec[] = [
-  { style_family: "scientific", variant: "main_habitat_pair_sexes_v1" },
-];
 
 const PLACE_HERO_SPECS: ImageSpec[] = [
   { style_family: "scientific", variant: "place_hero_spring_v1" },
@@ -88,15 +86,195 @@ export type ImageGenerationResult = {
 };
 
 function buildVersionedObjectPath(args: {
-  entityType: "bird" | "place" | "phenomenon";
+  entityType: "bird" | "place" | "phenomenon" | "habitat_stock_asset";
   entitySlug: string;
   styleFamily: string;
   variant: string;
   imageId: string;
 }) {
   const root =
-    args.entityType === "bird" ? "birds" : args.entityType === "place" ? "places" : "phenomena";
+    args.entityType === "bird"
+      ? "birds"
+      : args.entityType === "place"
+      ? "places"
+      : args.entityType === "phenomenon"
+      ? "phenomena"
+      : "habitat_stock_assets";
   return `${root}/${args.entitySlug}/${args.styleFamily}/${args.variant}/${args.imageId}.png`;
+}
+
+export async function generateHabitatStockAssetTile(args: {
+  key: string;
+  forceRegenerate?: boolean;
+}): Promise<{ asset_key: string; image: ImageRecord }> {
+  const key = args.key.trim();
+  if (!key) {
+    throw new Error("key is required.");
+  }
+
+  const asset = await getHabitatStockAssetByKey(key);
+  if (!asset) {
+    throw new Error(`Habitat stock asset not found for key "${key}".`);
+  }
+
+  const { data: current, error: currentError } = await supabaseServerClient
+    .from("images")
+    .select("id, review_status")
+    .eq("entity_type", "habitat_stock_asset")
+    .eq("entity_id", asset.id)
+    .eq("style_family", "iconic")
+    .eq("variant", "habitat_square_v1")
+    .eq("is_current", true)
+    .maybeSingle();
+
+  if (currentError) {
+    throw currentError;
+  }
+
+  const currentStatus = (current?.review_status as ImageReviewStatus | undefined) ?? null;
+
+  if (current?.id && !args.forceRegenerate) {
+    throw new Error("Habitat tile already exists. Use regenerate instead.");
+  }
+
+  if (currentStatus === "approved") {
+    throw new Error("Habitat tile is approved and locked. Request changes instead of regenerating.");
+  }
+
+  const provider = getImageProvider();
+
+  const variant: ImageVariant = "habitat_square_v1";
+  const styleFamily: ImageSpec["style_family"] = "iconic";
+  const styleConfigId = IMAGE_STYLE_CONFIG_ID_ICONIC;
+  const seed = deterministicSeed({ entityId: asset.id, styleFamily, variant });
+
+  const imageId = randomUUID();
+  const storageObjectPath = buildVersionedObjectPath({
+    entityType: "habitat_stock_asset",
+    entitySlug: asset.key,
+    styleFamily,
+    variant,
+    imageId,
+  });
+  const storagePath = `${SUPABASE_IMAGE_BUCKET}/${storageObjectPath}`;
+
+  const promptPayload = {
+    habitat_stock_asset: {
+      id: asset.id,
+      key: asset.key,
+      label_hu: asset.label_hu,
+      place_types: asset.place_types ?? [],
+    },
+    style_family: styleFamily,
+    variant,
+    style_config_id: styleConfigId,
+  } satisfies Record<string, unknown>;
+
+  const prompt_hash = sha256Hex(promptPayload);
+  const spec_hash = sha256Hex({
+    styleFamily,
+    variant,
+    styleConfigId,
+    seed,
+    prompt_hash,
+  });
+
+  const startedAt = new Date().toISOString();
+  console.info("[image-gen] start", {
+    entity_type: "habitat_stock_asset",
+    entity_id: asset.id,
+    asset_key: asset.key,
+    variant,
+    style_family: styleFamily,
+    seed,
+    storage_path: storagePath,
+    image_id: imageId,
+    started_at: startedAt,
+  });
+
+  const generated = await provider.generate({
+    entityType: "habitat_stock_asset",
+    entityId: asset.id,
+    entitySlug: asset.key,
+    styleFamily,
+    variant,
+    promptPayload,
+    seed,
+    styleConfigId,
+  });
+
+  if (generated.mimeType !== "image/png") {
+    throw new Error(`Invalid mimeType returned by provider: ${generated.mimeType}`);
+  }
+
+  if (!generated.buffer || generated.buffer.length === 0) {
+    throw new Error("Provider returned empty image buffer.");
+  }
+
+  await uploadPngToStorage({ objectPath: storageObjectPath, buffer: generated.buffer });
+
+  const now = new Date().toISOString();
+  const providerModel = generated.providerModel ?? null;
+
+  const { error: unsetError } = await supabaseServerClient
+    .from("images")
+    .update({ is_current: false, updated_at: now })
+    .eq("entity_type", "habitat_stock_asset")
+    .eq("entity_id", asset.id)
+    .eq("style_family", styleFamily)
+    .eq("variant", variant)
+    .eq("is_current", true);
+
+  if (unsetError) {
+    throw unsetError;
+  }
+
+  const { data: inserted, error: insertError } = await supabaseServerClient
+    .from("images")
+    .insert({
+      id: imageId,
+      entity_type: "habitat_stock_asset",
+      entity_id: asset.id,
+      style_family: styleFamily,
+      variant,
+      storage_path: storagePath,
+      is_current: true,
+      review_status: "draft",
+      review_comment: null,
+      version: `${providerModel ?? AI_MODEL_IMAGE}:${variant}`,
+      style_config_id: styleConfigId,
+      seed,
+      width_px: generated.widthPx ?? null,
+      height_px: generated.heightPx ?? null,
+      provider_model: providerModel,
+      spec_hash,
+      prompt_hash,
+      created_by: "script",
+      updated_at: now,
+    })
+    .select("*")
+    .single();
+
+  if (insertError || !inserted) {
+    throw insertError ?? new Error("Failed to upsert image record.");
+  }
+
+  const finishedAt = new Date().toISOString();
+  console.info("[image-gen] success", {
+    entity_type: "habitat_stock_asset",
+    entity_id: asset.id,
+    asset_key: asset.key,
+    variant,
+    style_family: styleFamily,
+    storage_path: inserted.storage_path,
+    provider_model: inserted.provider_model ?? null,
+    seed: inserted.seed ?? null,
+    width_px: inserted.width_px ?? null,
+    height_px: inserted.height_px ?? null,
+    finished_at: finishedAt,
+  });
+
+  return { asset_key: asset.key, image: inserted as ImageRecord };
 }
 
 async function uploadPngToStorage(args: {
@@ -360,14 +538,6 @@ export async function generateImagesForBird(
       ...REQUIRED_SPECS.map((spec) => makeOne(spec, true)),
       ...OPTIONAL_SPECS.map((spec) => makeOne(spec, false)),
     ];
-
-    if (options.onlyVariant) {
-      const extra = ON_DEMAND_SPECS.filter((spec) => spec.variant === options.onlyVariant).map(
-        (spec) => makeOne(spec, false)
-      );
-      return [...base, ...extra];
-    }
-
     return base;
   };
 

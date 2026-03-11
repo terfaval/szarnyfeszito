@@ -8,6 +8,7 @@ import { createPlaceUiVariantsBlock } from "@/lib/placeContentService";
 import { suggestPlaceBirdLinksV1 } from "@/lib/placeBirdSuggestion";
 import { AIJsonParseError, AISchemaMismatchError } from "@/lib/aiUtils";
 import { AI_MODEL_TEXT } from "@/lib/aiConfig";
+import { supabaseServerClient } from "@/lib/supabaseServerClient";
 
 export async function POST(request: Request) {
   const user = await getAdminUserFromCookies();
@@ -17,7 +18,68 @@ export async function POST(request: Request) {
 
   const body = await request.json().catch(() => ({}));
 
-  const name = typeof body?.name === "string" ? body.name.trim() : "";
+  const requestedName = typeof body?.name === "string" ? body.name.trim() : "";
+  const requestedLeafletRegionId =
+    typeof body?.leaflet_region_id === "string" ? body.leaflet_region_id.trim() : "";
+
+  let leafletRegionId: string | null = requestedLeafletRegionId || null;
+  let regionNameFromCatalog: string | null = null;
+
+  if (leafletRegionId) {
+    const { data, error } = await supabaseServerClient
+      .from("distribution_region_catalog_items")
+      .select("catalog,scope,type,name")
+      .eq("region_id", leafletRegionId)
+      .maybeSingle();
+
+    if (error) {
+      return NextResponse.json({ error: "Unable to validate leaflet_region_id." }, { status: 500 });
+    }
+
+    const catalog = String(data?.catalog ?? "");
+    const scope = String(data?.scope ?? "");
+    const type = String(data?.type ?? "");
+    const ok = catalog === "hungaryRegions" && scope === "hungary" && type === "spa";
+
+    if (!ok) {
+      return NextResponse.json(
+        { error: "leaflet_region_id must reference a HU Natura 2000 SPA catalog item." },
+        { status: 400 }
+      );
+    }
+
+    regionNameFromCatalog = String(data?.name ?? "").trim() || null;
+
+    const { data: existingRows, error: existingError } = await supabaseServerClient
+      .from("places")
+      .select("id,name,slug")
+      .eq("leaflet_region_id", leafletRegionId)
+      .order("created_at", { ascending: true })
+      .limit(1);
+
+    if (existingError) {
+      return NextResponse.json({ error: "Unable to validate existing places." }, { status: 500 });
+    }
+
+    const existing = (existingRows ?? []) as Array<Record<string, unknown>>;
+    if (existing.length > 0) {
+      return NextResponse.json(
+        {
+          error: "A place already exists for this SPA region.",
+          data: {
+            existing_place: {
+              id: String(existing[0]?.id ?? ""),
+              name: String(existing[0]?.name ?? ""),
+              slug: String(existing[0]?.slug ?? ""),
+            },
+          },
+        },
+        { status: 409 }
+      );
+    }
+  }
+
+  const name = requestedName || regionNameFromCatalog || "";
 
   if (!name) {
     return NextResponse.json({ error: "name is required." }, { status: 400 });
@@ -70,6 +132,7 @@ export async function POST(request: Request) {
       location_precision: placeMeta.location_precision,
       sensitivity_level: placeMeta.sensitivity_level,
       is_beginner_friendly: placeMeta.is_beginner_friendly,
+      leaflet_region_id: leafletRegionId ?? undefined,
       access_note: placeMeta.access_note,
       parking_note: placeMeta.parking_note,
       best_visit_note: placeMeta.best_visit_note,

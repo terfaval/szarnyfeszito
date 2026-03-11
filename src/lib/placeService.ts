@@ -57,6 +57,23 @@ export async function listPlaces(options: ListPlacesOptions = {}): Promise<Place
   return (data ?? []) as Place[];
 }
 
+export async function listAllPlaceLeafletRegionIds(): Promise<string[]> {
+  const { data, error } = await supabaseServerClient
+    .from("places")
+    .select("leaflet_region_id")
+    .not("leaflet_region_id", "is", null)
+    .limit(5000);
+
+  if (error) {
+    throw error;
+  }
+
+  const rows = (data ?? []) as Array<Record<string, unknown>>;
+  return Array.from(
+    new Set(rows.map((row) => String(row.leaflet_region_id ?? "").trim()).filter(Boolean))
+  );
+}
+
 export async function getPlaceById(id: string): Promise<Place | null> {
   const { data, error } = await supabaseServerClient
     .from("places")

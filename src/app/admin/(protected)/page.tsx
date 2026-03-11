@@ -4,6 +4,7 @@ import { listBirds } from "@/lib/birdService";
 import { listPlaces, listPublishedPlaceDashboardMarkers, listPublishedPlacesByPrimaryType } from "@/lib/placeService";
 import { listLatestDossierBlocksForBirds } from "@/lib/contentService";
 import { supabaseServerClient } from "@/lib/supabaseServerClient";
+import { habitatIconForClass } from "@/lib/habitatIcons";
 import { getSignedImageUrl, listCurrentIconicImagesForBirds } from "@/lib/imageService";
 import { BirdStatus, BIRD_STATUS_VALUES } from "@/types/bird";
 import type { PlaceType } from "@/types/place";
@@ -20,27 +21,6 @@ export const metadata = {
 };
 
 export const dynamic = "force-dynamic";
-
-const habitatIconForClass = (habitatClass: unknown) => {
-  if (typeof habitatClass !== "string") {
-    return null;
-  }
-
-  switch (habitatClass.trim().toLowerCase()) {
-    case "erdő":
-      return "/BIRDS/ICONS/BACKGROUND/ICON_FOREST.svg";
-    case "vízpart":
-      return "/BIRDS/ICONS/BACKGROUND/ICON_WATER.svg";
-    case "puszta":
-      return "/BIRDS/ICONS/BACKGROUND/ICON_GRASSLAND.svg";
-    case "hegy":
-      return "/BIRDS/ICONS/BACKGROUND/ICON_MOUNTAIN.svg";
-    case "város":
-      return "/BIRDS/ICONS/BACKGROUND/ICON_CITY.svg";
-    default:
-      return null;
-  }
-};
 
 export default async function AdminPage() {
   const admin = await getAdminUserFromCookies();

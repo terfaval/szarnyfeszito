@@ -17,11 +17,12 @@ import {
 
 type PlaceListShellProps = {
   places: Place[];
+  missingSpaRegions: Array<{ region_id: string; name: string }>;
 };
 
 type SortKey = "updated_desc" | "name_asc";
 
-export default function PlaceListShell({ places }: PlaceListShellProps) {
+export default function PlaceListShell({ places, missingSpaRegions }: PlaceListShellProps) {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<PlaceStatus | "all">("all");
   const [typeFilter, setTypeFilter] = useState<PlaceType | "all">("all");
@@ -162,7 +163,7 @@ export default function PlaceListShell({ places }: PlaceListShellProps) {
         </Card>
 
         <div className="space-y-4">
-          <PlaceCreateForm />
+          <PlaceCreateForm missingSpaRegions={missingSpaRegions} />
           <Card className="space-y-2 text-sm">
             <p className="admin-subheading">Public surface</p>
             <p className="admin-note-small">

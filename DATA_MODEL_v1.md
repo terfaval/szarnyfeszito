@@ -46,11 +46,24 @@ Bird retains the full state machine—draft → text_generated → text_approved
 - entity_type
 - entity_id
 - style_family (scientific/iconic)
-- variant (main_habitat/standing_clean/flight_clean/fixed_pose_icon_v1)
+- variant (main_habitat/standing_clean/flight_clean/nesting_clean/main_habitat_pair_sexes_v1/place_hero_spring_v1/habitat_square_v1/fixed_pose_icon_v1)
 - storage_path
 - review_status
 - version
 - created_at
+
+---
+
+### habitat_stock_assets (D51)
+
+- id (uuid)
+- key (unique; text)
+- label_hu (text)
+- place_types (place_type[])
+- sort (int)
+- is_active (bool)
+- created_at
+- updated_at
 
 ---
 

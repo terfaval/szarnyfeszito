@@ -11,6 +11,7 @@ import { generateUniqueBirdSlug } from "@/lib/slug";
 import { AI_MODEL_TEXT } from "@/lib/aiConfig";
 import { AISchemaMismatchError, AIJsonParseError } from "@/lib/aiUtils";
 import { supabaseServerClient } from "@/lib/supabaseServerClient";
+import { generateSexComparisonDraft } from "@/lib/sexComparisonService";
 
 export async function POST(request: Request) {
   const user = await getAdminUserFromCookies();
@@ -61,6 +62,17 @@ export async function POST(request: Request) {
 
   try {
     const dossierResult = await generateAndPersistDossierForBird(bird);
+    let sexComparisonResult:
+      | { ok: true }
+      | { ok: false; error: string } = { ok: true };
+
+    try {
+      await generateSexComparisonDraft({ birdId: dossierResult.bird.id });
+    } catch (sexError) {
+      const message =
+        sexError instanceof Error ? sexError.message : "Unable to generate sex comparison.";
+      sexComparisonResult = { ok: false, error: message };
+    }
 
     let placeLinkResult:
       | { ok: true; place_id: string; place_bird_id: string }
@@ -124,7 +136,16 @@ export async function POST(request: Request) {
       }
     }
 
-    return NextResponse.json({ data: { ...dossierResult, place_link: placeLinkResult } }, { status: 201 });
+    return NextResponse.json(
+      {
+        data: {
+          ...dossierResult,
+          sex_comparison: sexComparisonResult,
+          place_link: placeLinkResult,
+        },
+      },
+      { status: 201 }
+    );
   } catch (error) {
     await cleanupBird();
     if (error instanceof ZodError) {

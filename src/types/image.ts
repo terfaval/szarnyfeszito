@@ -7,13 +7,14 @@ export type ImageVariant =
   | "nesting_clean"
   | "main_habitat_pair_sexes_v1"
   | "place_hero_spring_v1"
+  | "habitat_square_v1"
   | "fixed_pose_icon_v1";
 
 export type ImageReviewStatus = "draft" | "reviewed" | "approved";
 
 export type ImageRecord = {
   id: string;
-  entity_type: "bird" | "place" | "phenomenon";
+  entity_type: "bird" | "place" | "phenomenon" | "habitat_stock_asset";
   entity_id: string;
   style_family: ImageStyleFamily;
   variant: ImageVariant;

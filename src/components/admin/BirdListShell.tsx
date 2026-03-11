@@ -264,6 +264,12 @@ export default function BirdListShell({ birds }: BirdListShellProps) {
           <Link className="admin-nav-link" href="/admin/birds/sorting">
             Bird classification
           </Link>
+          <Link className="admin-nav-link" href="/admin/birds/habitat-assets">
+            Habitat assets
+          </Link>
+          <Link className="admin-nav-link" href="/admin/birds/distribution-maps">
+            Distribution maps
+          </Link>
           <Link className="admin-nav-link" href="/admin/birds/refill/sex-comparison">
             Refill: male vs female
           </Link>

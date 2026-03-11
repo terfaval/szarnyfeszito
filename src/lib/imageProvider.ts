@@ -8,7 +8,7 @@ import { AI_MODEL_IMAGE, OPENAI_API_KEY } from "@/lib/aiConfig";
 import type { ImageStyleFamily, ImageVariant } from "@/types/image";
 
 export type GenerateImageInput = {
-  entityType: "bird" | "place" | "phenomenon";
+  entityType: "bird" | "place" | "phenomenon" | "habitat_stock_asset";
   entityId: string;
   entitySlug: string;
   styleFamily: ImageStyleFamily;
@@ -114,6 +114,9 @@ function buildOpenAIPrompt(input: GenerateImageInput) {
     input.entityType !== "bird"
       ? "- Do NOT include birds/animals unless explicitly requested by the structured JSON hints."
       : "",
+    input.entityType === "habitat_stock_asset"
+      ? "- Habitat tiles: do NOT include birds, people, or identifiable animals. Environment only."
+      : "",
     input.entityType === "place" && input.variant === "place_hero_spring_v1"
       ? requestedBirdsPayload?.mode === "specific" && requestedBirdNamesHu.length
         ? `- Requested birds (include a few, small and distant): ${requestedBirdNamesHu.join(", ")}.`
@@ -147,6 +150,14 @@ function buildOpenAIPrompt(input: GenerateImageInput) {
         ]
           .filter(Boolean)
           .join("\n")
+      : input.variant === "habitat_square_v1"
+      ? [
+          "- Iconic habitat tile illustration.",
+          "- Full-frame environment (fill the whole square). No transparent background.",
+          "- Minimal flat shapes. No gradients, no texture, no shadows.",
+          "- 4–6 flat colors maximum. Keep a consistent palette across tiles.",
+          "- No birds, no people, no text, no symbols. Focus on the habitat mood.",
+        ].join("\n")
       : [
           "- Minimal flat icon illustration.",
           "- Full body, centered, side view, simple geometric shapes.",
@@ -188,7 +199,9 @@ export class OpenAIImageProvider implements ImageProvider {
     const { width, height } = parseSizePx(size);
 
     const background =
-      input.styleFamily === "iconic" ? "transparent" : "opaque";
+      input.styleFamily === "iconic" && input.variant !== "habitat_square_v1"
+        ? "transparent"
+        : "opaque";
 
     const quality = (IMAGE_QUALITY ?? "auto").toLowerCase();
     const qualityParam =

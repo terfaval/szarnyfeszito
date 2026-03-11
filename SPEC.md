@@ -90,6 +90,15 @@ Optional add-ons (D50):
 - `images.variant="main_habitat_pair_sexes_v1"` (scientific duo illustration; optional, not a publish gate)
 - Studio refill page: `/admin/birds/refill/sex-comparison` (backfill missing block/image for published birds)
 
+Habitat stock assets (D51):
+- Canonical catalog: `habitat_stock_assets` (grouped habitat categories derived from `places.place_type`).
+- Studio tool page: `/admin/birds/habitat-assets`
+- Tile images are stored in the canonical `images` table with:
+  - `entity_type="habitat_stock_asset"`
+  - `style_family="iconic"`
+  - `variant="habitat_square_v1"` (full-frame square habitat tile; no birds)
+- Review flow: draft → reviewed → approved (approved tiles are locked in v1).
+
 Kiegészítő meta (D18):
 - A Studio `/admin/birds` oldalon a madarak szűrhetők/rendezhetők `size_category` (méret) és `visibility_category` (észlelhetőség) alapján.
 - A kategóriák nem publish-gate feltételek (nem blokkolják a publish-t), kizárólag admin taxonómia / registry célokra szolgálnak.
@@ -111,6 +120,7 @@ Core mezők:
 - id
 - slug
 - name
+- leaflet_region_id (optional; HU region overlay reference for Leaflet; must be a `hungaryRegions` SPA or microregion id)
 - region_landscape
 - place_type
 - place_types (optional; always includes place_type)
@@ -159,6 +169,10 @@ Place → Birds relations (D35):
   - on editor manual trigger ("Suggest birds")
   - on Places list batch refill (published Places; existing published Birds only; optional auto-approve)
 - Explorer/public endpoints only show `place_birds.review_status="approved"` rows (no AI suggestions leaking to public).
+
+Place quick-create SPA helper (D52):
+- Studio `/admin/places` Quick Create can optionally set `leaflet_region_id` from the HU SPA catalog.
+- UI shows a dropdown of SPA catalog items that are **missing** from `places.leaflet_region_id` (to avoid duplicates during SPA-first bootstrapping).
 
 ---
 

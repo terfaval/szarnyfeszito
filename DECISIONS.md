@@ -29,6 +29,37 @@
 
 ---
 
+## D51 — Habitat stock assets (grouped place-type habitat tiles) v1 (Studio)
+
+**Status:** Accepted  
+**Date:** 2026-03-11  
+**Scope:** Studio only (admin tooling). No Explorer/runtime AI changes.
+
+### Context
+- The app already uses `places.place_type` (14 values), but bird-facing habitat visuals are currently limited to a coarse 5-class icon.
+- Editors need a controlled, reviewable “stock asset” library of iconic habitat tiles that can be reused consistently.
+
+### Decision
+1) **Introduce a canonical habitat catalog.**
+   - New table: `habitat_stock_assets`
+   - Each row defines a grouped habitat category derived from `place_type[]` (e.g. lakes vs rivers vs wetlands).
+2) **Generate iconic full-frame square habitat tiles (no birds).**
+   - Stored in canonical `images` with:
+     - `entity_type="habitat_stock_asset"`
+     - `style_family="iconic"`
+     - `variant="habitat_square_v1"`
+   - Review flow: `draft → reviewed → approved`.
+   - Approved tiles are locked in v1 (regenerate requires a request-fix workflow).
+3) **Add Studio access under Birds.**
+   - New admin page: `/admin/birds/habitat-assets` (list + generate/regenerate + review/approve).
+
+### Out of scope (v1)
+- Adding new `place_type` values (e.g. floodplain).
+- Treating “protected area” as a separate habitat asset category.
+- Wiring tiles into public Explorer UI.
+
+---
+
 ## D29 — Continuous mobile UX iteration + paired checks (Studio)
 
 **Status:** Accepted  
@@ -942,3 +973,20 @@ Birdwatch logging should reflect “I saw X at place Y”, and help selection by
 ### Out of scope (v1)
 - Hosszú futású szerver-oldali batch/queue/worker; a batch a böngésző session-höz kötött.
 - Draft/reviewed Bird-ek automatikus linkelése.
+
+---
+
+## D52 – Place quick-create: missing SPA dropdown (Studio)
+
+**Status:** Accepted  
+**Date:** 2026-03-11  
+**Scope:** Studio `/admin/places` quick-create only. Explorer out of scope. No runtime AI.
+
+### Context
+- A Place editor supports `leaflet_region_id` to bind a Place to a HU region overlay (SPA/microregion).
+- When bootstrapping Places from the HU Natura 2000 SPA catalog, it’s easy to create duplicates without a “what’s missing” view.
+
+### Decision
+- Add an optional dropdown to the `/admin/places` Quick Create panel that lists HU SPA catalog items that are not yet present in `places.leaflet_region_id`.
+- Quick-create accepts an optional `leaflet_region_id`; server validates it is a HU `hungaryRegions` SPA item and rejects duplicates with `409 Conflict`.
+- Selecting a region can prefill the Place name with the catalog name; the rest of the workflow remains the existing AI draft generation (D33).

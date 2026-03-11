@@ -271,6 +271,10 @@ export default function BirdTextReview({
   });
   const [distributionHover, setDistributionHover] =
     useState<DistributionMapHoverInfo | null>(null);
+  const [sexComparisonBusy, setSexComparisonBusy] = useState(false);
+  const [sexComparisonNote, setSexComparisonNote] = useState("");
+  const [sexComparisonError, setSexComparisonError] = useState<string | null>(null);
+  const [sexComparisonMessage, setSexComparisonMessage] = useState<string | null>(null);
 
   useEffect(() => {
     setEditableContent({
@@ -616,6 +620,123 @@ export default function BirdTextReview({
     }
   };
 
+  const handleGenerateSexComparison = async () => {
+    if (!contentBlock) {
+      setError("Generate the dossier before generating sex comparison.");
+      return;
+    }
+
+    setSexComparisonBusy(true);
+    setSexComparisonError(null);
+    setSexComparisonMessage(null);
+
+    try {
+      const response = await fetch(`/api/birds/${birdId}/sex-comparison/generate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+
+      const payload = await response.json().catch(() => null);
+
+      if (!response.ok || !payload?.data?.content_block) {
+        throw new Error(payload?.error ?? "Unable to generate sex comparison.");
+      }
+
+      setContentBlock(payload.data.content_block);
+      setSexComparisonMessage("Generated sex comparison draft.");
+    } catch (err) {
+      setSexComparisonError(
+        err instanceof Error
+          ? err.message
+          : "Unable to generate sex comparison right now."
+      );
+    } finally {
+      setSexComparisonBusy(false);
+    }
+  };
+
+  const handleApproveSexComparison = async () => {
+    const sc = contentBlock?.blocks_json?.sex_comparison;
+    if (!sc) {
+      setSexComparisonError("Generate sex comparison before approving it.");
+      return;
+    }
+
+    setSexComparisonBusy(true);
+    setSexComparisonError(null);
+    setSexComparisonMessage(null);
+
+    try {
+      const response = await fetch(`/api/birds/${birdId}/sex-comparison/approve`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          summary: sc.summary,
+          key_differences: sc.key_differences,
+        }),
+      });
+
+      const payload = await response.json().catch(() => null);
+
+      if (!response.ok || !payload?.data?.content_block) {
+        throw new Error(payload?.error ?? "Unable to approve sex comparison.");
+      }
+
+      setContentBlock(payload.data.content_block);
+      setSexComparisonMessage("Sex comparison approved.");
+    } catch (err) {
+      setSexComparisonError(
+        err instanceof Error
+          ? err.message
+          : "Unable to approve sex comparison right now."
+      );
+    } finally {
+      setSexComparisonBusy(false);
+    }
+  };
+
+  const handleRequestSexComparisonFix = async () => {
+    const sc = contentBlock?.blocks_json?.sex_comparison;
+    if (!sc) {
+      setSexComparisonError("Generate sex comparison before requesting changes.");
+      return;
+    }
+
+    const trimmed = sexComparisonNote.trim();
+    if (!trimmed) {
+      setSexComparisonError("Add a short note before requesting changes.");
+      return;
+    }
+
+    setSexComparisonBusy(true);
+    setSexComparisonError(null);
+    setSexComparisonMessage(null);
+
+    try {
+      const response = await fetch(`/api/birds/${birdId}/sex-comparison/request-fix`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ comment: trimmed }),
+      });
+
+      const payload = await response.json().catch(() => null);
+
+      if (!response.ok || !payload?.data?.content_block) {
+        throw new Error(payload?.error ?? "Unable to request changes.");
+      }
+
+      setContentBlock(payload.data.content_block);
+      setSexComparisonNote("");
+      setSexComparisonMessage("Sex comparison marked for fixes.");
+    } catch (err) {
+      setSexComparisonError(
+        err instanceof Error ? err.message : "Unable to request changes right now."
+      );
+    } finally {
+      setSexComparisonBusy(false);
+    }
+  };
+
   const beginEditing = (slot: EditSlot, value: string) => {
     setEditingSlot(slot);
     setEditBuffer(value);
@@ -867,14 +988,74 @@ export default function BirdTextReview({
               <div className="admin-stat-card">
                 <p className="admin-stat-label">Male vs female comparison</p>
                 {dossier.sex_comparison?.review_status === "approved" ? (
-                  <div className="stack">
-                    {sexPairPreviewUrl ? (
-                      <div className="admin-stat-card">
-                        <img src={sexPairPreviewUrl} alt="Male + female duo illustration" />
+                  <div className={styles.mediaRow}>
+                    <article className={styles.migrationColumn}>
+                      <p className={styles.sectionLabel}>Text</p>
+                      <p className="admin-stat-note" style={{ whiteSpace: "pre-wrap" }}>
+                        {dossier.sex_comparison.summary}
+                      </p>
+                      <ul
+                        className="admin-stat-note"
+                        style={{ paddingLeft: 18, listStyleType: "disc" }}
+                      >
+                        {dossier.sex_comparison.key_differences.map((diff, idx) => (
+                          <li key={`${idx}-${diff}`}>{diff}</li>
+                        ))}
+                      </ul>
+                    </article>
+                    <div className={styles.flightColumn}>
+                      <div className={styles.imageFrameLarge}>
+                        {sexPairPreviewUrl ? (
+                          <img
+                            src={sexPairPreviewUrl}
+                            alt="Male + female duo illustration"
+                            className={styles.imageFrameImageContain}
+                          />
+                        ) : (
+                          <div className={styles.imageFramePlaceholder}>
+                            <p>No approved duo image yet.</p>
+                          </div>
+                        )}
                       </div>
-                    ) : (
-                      <p className="admin-stat-note">No approved duo image yet.</p>
-                    )}
+                    </div>
+                  </div>
+                ) : (
+                  <p className="admin-stat-note">Missing approved sex comparison.</p>
+                )}
+              </div>
+            ) : null}
+
+            {!isPublishMode ? (
+              <div className="admin-stat-card">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <p className="admin-stat-label">Sex comparison (male vs female)</p>
+                    <p className="admin-stat-note">
+                      Status: {dossier.sex_comparison?.review_status ?? "missing"}
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Button
+                      type="button"
+                      onClick={handleGenerateSexComparison}
+                      disabled={sexComparisonBusy || regenerating || approving}
+                    >
+                      <Icon name="generate" size={16} />
+                      {dossier.sex_comparison ? "Regenerate" : "Generate"}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      onClick={handleApproveSexComparison}
+                      disabled={sexComparisonBusy || !dossier.sex_comparison}
+                    >
+                      Approve
+                    </Button>
+                  </div>
+                </div>
+
+                {dossier.sex_comparison ? (
+                  <div className="mt-3">
                     <p className="admin-stat-note" style={{ whiteSpace: "pre-wrap" }}>
                       {dossier.sex_comparison.summary}
                     </p>
@@ -885,8 +1066,43 @@ export default function BirdTextReview({
                     </ul>
                   </div>
                 ) : (
-                  <p className="admin-stat-note">Missing approved sex comparison.</p>
+                  <p className="admin-stat-note mt-3">
+                    No sex comparison yet. Generate it to backfill this optional section.
+                  </p>
                 )}
+
+                <div className="mt-3 flex flex-wrap items-end gap-2">
+                  <label className="form-field flex-1">
+                    <span className="form-field__label">Review note</span>
+                    <div className="form-field__row">
+                      <input
+                        className="input flex-1"
+                        value={sexComparisonNote}
+                        onChange={(event) => setSexComparisonNote(event.target.value)}
+                        placeholder="What should change in the next generation?"
+                      />
+                    </div>
+                  </label>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={handleRequestSexComparisonFix}
+                    disabled={sexComparisonBusy || !dossier.sex_comparison}
+                  >
+                    Request changes
+                  </Button>
+                </div>
+
+                {sexComparisonMessage ? (
+                  <p className="admin-message admin-message--success mt-3" aria-live="polite">
+                    {sexComparisonMessage}
+                  </p>
+                ) : null}
+                {sexComparisonError ? (
+                  <p className="admin-message admin-message--error mt-3" aria-live="assertive">
+                    {sexComparisonError}
+                  </p>
+                ) : null}
               </div>
             ) : null}
 
