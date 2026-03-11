@@ -97,6 +97,27 @@ function buildOpenAIPrompt(input: GenerateImageInput) {
           .slice(0, 6)
       : [];
 
+  const nestingParentSexHint = (() => {
+    if (input.entityType !== "bird" || input.variant !== "nesting_clean") return null;
+
+    const visualBrief = (input.promptPayload as { visual_brief?: unknown } | null)
+      ?.visual_brief as
+      | {
+          scientific?: {
+            nesting_clean?: {
+              parent_sex_hint?: unknown;
+            };
+          };
+        }
+      | undefined;
+
+    const raw = visualBrief?.scientific?.nesting_clean?.parent_sex_hint;
+    if (raw === "female" || raw === "male" || raw === "both" || raw === "none") {
+      return raw;
+    }
+    return null;
+  })();
+
   const base = [
     "You are generating a PNG image for a Hungarian nature guide app.",
     "High priority: accuracy, recognizability, consistency, educational natural-history illustration (not artistic).",
@@ -141,11 +162,19 @@ function buildOpenAIPrompt(input: GenerateImageInput) {
            input.variant === "place_hero_spring_v1"
              ? "- place_hero_spring_v1: spring highlight moment for the place; realistic, scientific illustration feel; wide scenic composition; no people; no buildings unless clearly implied by the place metadata; no animals unless requested."
              : "",
-           input.variant === "flight_clean"
+          input.variant === "flight_clean"
               ? "- flight_clean: clean neutral background, bird in flight, wings fully visible, wing structure readable."
              : "",
           input.variant === "nesting_clean"
-             ? "- nesting_clean: bird at nest with chicks visible if possible; natural scene, not cartoonish."
+             ? nestingParentSexHint === "none"
+               ? "- nesting_clean: nest + chicks only; do NOT depict an adult bird."
+               : nestingParentSexHint === "female"
+                 ? "- nesting_clean: depict the adult female at the nest (with chicks if possible); natural scene, not cartoonish."
+                 : nestingParentSexHint === "male"
+                   ? "- nesting_clean: depict the adult male at the nest (with chicks if possible); natural scene, not cartoonish."
+                   : nestingParentSexHint === "both"
+                     ? "- nesting_clean: depict both parents at/near the nest (with chicks if possible); keep the scene simple; natural, not cartoonish."
+                     : "- nesting_clean: bird at nest with chicks visible if possible; natural scene, not cartoonish."
              : "",
         ]
           .filter(Boolean)

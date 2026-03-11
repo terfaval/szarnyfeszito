@@ -43,9 +43,13 @@ export default function HabitatStockAssetsTool() {
   const load = async () => {
     setLoading(true);
     setError(null);
+    setMessage(null);
     try {
       const payload = await fetchJson("/api/birds/habitat-assets", { method: "GET" });
       setRows((payload?.data ?? []) as HabitatStockAssetRow[]);
+    } catch (e) {
+      setRows([]);
+      setError((e as Error)?.message ?? "Unable to load habitat assets.");
     } finally {
       setLoading(false);
     }

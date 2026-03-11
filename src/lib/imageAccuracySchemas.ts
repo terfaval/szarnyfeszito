@@ -43,6 +43,10 @@ const visualBriefScientificNestingCleanSchemaV1 = z
     nest_material: z.string().min(1),
     chicks_visible: z.boolean(),
     confidence: nestingConfidenceSchemaV1,
+    parent_sex_hint: z
+      .enum(["female", "male", "both", "none"])
+      .optional()
+      .default("none"),
   })
   .strict();
 

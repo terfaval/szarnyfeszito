@@ -60,6 +60,26 @@
 
 ---
 
+## D53 - Bird: sex comparison auto-approval for new birds v1 (Studio)
+
+**Status:** Accepted  
+**Date:** 2026-03-11  
+**Scope:** Studio only (admin workflow). No Explorer/runtime AI changes.
+
+### Context
+- New birds may have `content_blocks.blocks_json.sex_comparison` generated during quick-create (D50).
+- Requiring a separate "Approve" click for this optional section adds friction, even though it is reviewed together with the rest of the text.
+
+### Decision
+- When approving the main bird text (`content_blocks.review_status -> approved`), auto-approve `blocks_json.sex_comparison` if it exists and is valid.
+- Keep the explicit approve action for the refill/backfill workflow (`/admin/birds/refill/sex-comparison`).
+
+### Out of scope (v1)
+- Changing the publish gate (D6). This remains optional.
+- Schema changes to the sex comparison payload.
+
+---
+
 ## D29 — Continuous mobile UX iteration + paired checks (Studio)
 
 **Status:** Accepted  
@@ -990,3 +1010,29 @@ Birdwatch logging should reflect “I saw X at place Y”, and help selection by
 - Add an optional dropdown to the `/admin/places` Quick Create panel that lists HU SPA catalog items that are not yet present in `places.leaflet_region_id`.
 - Quick-create accepts an optional `leaflet_region_id`; server validates it is a HU `hungaryRegions` SPA item and rejects duplicates with `409 Conflict`.
 - Selecting a region can prefill the Place name with the catalog name; the rest of the workflow remains the existing AI draft generation (D33).
+
+---
+
+## D53 - Birds: nesting_clean parent sex hint (Visual Brief v1)
+
+**Status:** Accepted  
+**Date:** 2026-03-11  
+**Scope:** Studio image generation inputs only (server-side). Explorer out of scope. No runtime AI.
+
+### Context
+- The optional scientific `nesting_clean` image prefers "nest + chicks visible", and the nest is the primary focus.
+- For some species, one parent sex is more commonly present with chicks; we want to bias the illustration accordingly.
+- We must avoid guessing: if uncertain, we should omit the adult bird rather than depict the wrong sex or invent dimorphism.
+
+### Decision
+- Extend `bird_visual_briefs.payload` (schema v1) at `scientific.nesting_clean` with `parent_sex_hint`:
+  - enum: `female` | `male` | `both` | `none`
+  - default: `none`
+- Visual Brief generation (AI) may infer `parent_sex_hint` from general species knowledge. If not confident, it MUST use `none`.
+- Image generation prompts follow `parent_sex_hint` when present:
+  - `none` => nest + chicks only; no adult bird in the frame
+  - `female`/`male`/`both` => include the specified parent(s) without inventing sexual dimorphism details
+
+### Out of scope
+- Adding new image variants or publish gates.
+- Client-side inference or re-interpretation in Explorer.

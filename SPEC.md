@@ -86,7 +86,7 @@ Kapcsolódó:
 - images
 
 Optional add-ons (D50):
-- `content_blocks.blocks_json.sex_comparison` (male vs female; review-gated)
+- `content_blocks.blocks_json.sex_comparison` (male vs female; auto-approved together with main bird text approval; refill/backfill remains review-gated)
 - `images.variant="main_habitat_pair_sexes_v1"` (scientific duo illustration; optional, not a publish gate)
 - Studio refill page: `/admin/birds/refill/sex-comparison` (backfill missing block/image for published birds)
 
@@ -592,6 +592,8 @@ images is canonical for generated assets with:
     - nest_material
     - chicks_visible (bool)
     - confidence (high|med|low)
+    - parent_sex_hint (optional; female|male|both|none)
+      - if "none": nest + chicks only; no adult bird
 - iconic:
   - silhouette_focus (2–3 key traits)
   - simplify_features (list)

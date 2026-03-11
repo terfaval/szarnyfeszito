@@ -655,46 +655,6 @@ export default function BirdTextReview({
     }
   };
 
-  const handleApproveSexComparison = async () => {
-    const sc = contentBlock?.blocks_json?.sex_comparison;
-    if (!sc) {
-      setSexComparisonError("Generate sex comparison before approving it.");
-      return;
-    }
-
-    setSexComparisonBusy(true);
-    setSexComparisonError(null);
-    setSexComparisonMessage(null);
-
-    try {
-      const response = await fetch(`/api/birds/${birdId}/sex-comparison/approve`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          summary: sc.summary,
-          key_differences: sc.key_differences,
-        }),
-      });
-
-      const payload = await response.json().catch(() => null);
-
-      if (!response.ok || !payload?.data?.content_block) {
-        throw new Error(payload?.error ?? "Unable to approve sex comparison.");
-      }
-
-      setContentBlock(payload.data.content_block);
-      setSexComparisonMessage("Sex comparison approved.");
-    } catch (err) {
-      setSexComparisonError(
-        err instanceof Error
-          ? err.message
-          : "Unable to approve sex comparison right now."
-      );
-    } finally {
-      setSexComparisonBusy(false);
-    }
-  };
-
   const handleRequestSexComparisonFix = async () => {
     const sc = contentBlock?.blocks_json?.sex_comparison;
     if (!sc) {
@@ -985,44 +945,43 @@ export default function BirdTextReview({
             </div>
 
             {isPublishMode ? (
-              <div className="admin-stat-card">
-                <p className="admin-stat-label">Male vs female comparison</p>
-                {dossier.sex_comparison?.review_status === "approved" ? (
-                  <div className={styles.mediaRow}>
-                    <article className={styles.migrationColumn}>
-                      <p className={styles.sectionLabel}>Text</p>
-                      <p className="admin-stat-note" style={{ whiteSpace: "pre-wrap" }}>
-                        {dossier.sex_comparison.summary}
-                      </p>
-                      <ul
-                        className="admin-stat-note"
-                        style={{ paddingLeft: 18, listStyleType: "disc" }}
-                      >
-                        {dossier.sex_comparison.key_differences.map((diff, idx) => (
-                          <li key={`${idx}-${diff}`}>{diff}</li>
-                        ))}
-                      </ul>
-                    </article>
-                    <div className={styles.flightColumn}>
-                      <div className={styles.imageFrameLarge}>
-                        {sexPairPreviewUrl ? (
-                          <img
-                            src={sexPairPreviewUrl}
-                            alt="Male + female duo illustration"
-                            className={styles.imageFrameImageContain}
-                          />
-                        ) : (
-                          <div className={styles.imageFramePlaceholder}>
-                            <p>No approved duo image yet.</p>
-                          </div>
-                        )}
-                      </div>
+              dossier.sex_comparison?.review_status === "approved" ? (
+                <div className={styles.mediaRow}>
+                  <article className={styles.migrationColumn}>
+                    <p className={styles.sectionLabel}>Male vs female</p>
+                    <div className={styles.migrationList}>
+                      {dossier.sex_comparison.key_differences.map((diff, idx) => (
+                        <div key={`${idx}-${diff}`} className={styles.migrationItem}>
+                          <span>{diff}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <p className={styles.migrationNote} style={{ whiteSpace: "pre-wrap" }}>
+                      {dossier.sex_comparison.summary}
+                    </p>
+                  </article>
+                  <div className={styles.flightColumn}>
+                    <div className={styles.imageFrameLarge}>
+                      {sexPairPreviewUrl ? (
+                        <img
+                          src={sexPairPreviewUrl}
+                          alt="Male + female duo illustration"
+                          className={styles.imageFrameImageContain}
+                        />
+                      ) : (
+                        <div className={styles.imageFramePlaceholder}>
+                          <p>No approved duo image yet.</p>
+                        </div>
+                      )}
                     </div>
                   </div>
-                ) : (
-                  <p className="admin-stat-note">Missing approved sex comparison.</p>
-                )}
-              </div>
+                </div>
+              ) : (
+                <article className={styles.migrationColumn}>
+                  <p className={styles.sectionLabel}>Male vs female</p>
+                  <p className={styles.migrationNote}>Missing approved sex comparison.</p>
+                </article>
+              )
             ) : null}
 
             {!isPublishMode ? (
@@ -1031,7 +990,7 @@ export default function BirdTextReview({
                   <div>
                     <p className="admin-stat-label">Sex comparison (male vs female)</p>
                     <p className="admin-stat-note">
-                      Status: {dossier.sex_comparison?.review_status ?? "missing"}
+                      Status: {dossier.sex_comparison?.review_status ?? "missing"} (auto-approved with bird text)
                     </p>
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
@@ -1042,14 +1001,6 @@ export default function BirdTextReview({
                     >
                       <Icon name="generate" size={16} />
                       {dossier.sex_comparison ? "Regenerate" : "Generate"}
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      onClick={handleApproveSexComparison}
-                      disabled={sexComparisonBusy || !dossier.sex_comparison}
-                    >
-                      Approve
                     </Button>
                   </div>
                 </div>

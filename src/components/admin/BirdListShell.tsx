@@ -82,7 +82,7 @@ export default function BirdListShell({ birds }: BirdListShellProps) {
     setSuggestedQueueLoading(true);
     setSuggestedQueueError(null);
 
-    const response = await fetch("/api/birds/suggested-queue", { method: "GET" });
+    const response = await fetch("/api/birds/suggested-queue", { method: "GET", cache: "no-store" });
     const payload = await response.json().catch(() => null);
 
     if (!response.ok) {
@@ -390,6 +390,17 @@ export default function BirdListShell({ birds }: BirdListShellProps) {
               <p className="admin-note-small">
                 Unique pending bird names from Place → Bird suggestions (review_status=suggested, not linked yet).
               </p>
+            </div>
+
+            <div className="flex items-center justify-end">
+              <Button
+                type="button"
+                variant="secondary"
+                disabled={suggestedQueueLoading || Boolean(creatingQueueKey)}
+                onClick={refreshSuggestedQueue}
+              >
+                {suggestedQueueLoading ? "Refreshing…" : "Refresh"}
+              </Button>
             </div>
 
             {suggestedQueueLoading ? (

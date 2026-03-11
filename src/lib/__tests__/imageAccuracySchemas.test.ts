@@ -74,6 +74,7 @@ describe("visualBriefSchemaV1", () => {
     });
 
     expect(payload.scientific.nesting_clean?.confidence).toBe("med");
+    expect(payload.scientific.nesting_clean?.parent_sex_hint).toBe("none");
   });
 
   it("drops invalid optional variants instead of failing the whole payload", () => {

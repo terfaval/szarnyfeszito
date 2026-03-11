@@ -17,6 +17,42 @@ export async function approveBirdText(
     throw new Error("No generated content block found for this bird.");
   }
 
+  const dossier = block.blocks_json;
+  const sexComparison = dossier?.sex_comparison;
+  const shouldAutoApproveSexComparison =
+    !!sexComparison && sexComparison.review_status !== "approved";
+  const normalizedSexComparison =
+    shouldAutoApproveSexComparison && typeof sexComparison === "object"
+      ? (() => {
+          const summary =
+            typeof sexComparison.summary === "string"
+              ? sexComparison.summary.trim()
+              : "";
+          const diffsRaw = Array.isArray(sexComparison.key_differences)
+            ? sexComparison.key_differences
+            : [];
+          const diffs = (diffsRaw as unknown[]).map((d) =>
+            typeof d === "string" ? d.trim() : ""
+          );
+
+          if (!summary) return null;
+          if (diffs.length !== 3 || diffs.some((d) => !d)) return null;
+
+          const keyDifferences = [diffs[0], diffs[1], diffs[2]] as [
+            string,
+            string,
+            string,
+          ];
+
+          return {
+            ...sexComparison,
+            review_status: "approved" as const,
+            summary,
+            key_differences: keyDifferences,
+          };
+        })()
+      : null;
+
   const content = {
     short: overrides.short ?? block.short,
     long: overrides.long ?? block.long,
@@ -27,7 +63,18 @@ export async function approveBirdText(
     review_status: "approved" as const,
   };
 
-  const updatedBlock = await updateContentBlock(block.id, content);
+  const nextBlocksJson =
+    dossier && normalizedSexComparison
+      ? {
+          ...dossier,
+          sex_comparison: normalizedSexComparison,
+        }
+      : null;
+
+  const updatedBlock = await updateContentBlock(block.id, {
+    ...content,
+    ...(nextBlocksJson ? { blocks_json: nextBlocksJson } : {}),
+  });
   const updatedBird = await updateBird({ id: birdId, status: "text_approved" });
 
   return { bird: updatedBird, content_block: updatedBlock };
