@@ -48,6 +48,38 @@ export async function listDistributionRegionCatalogMeta(
   }));
 }
 
+export async function getDistributionRegionCatalogMetaById(
+  regionId: string
+): Promise<DistributionRegionCatalogItemMeta | null> {
+  const id = regionId.trim();
+  if (!id) return null;
+
+  const { data, error } = await supabaseServerClient
+    .from("distribution_region_catalog_items")
+    .select("region_id,name,scope,type,source,bbox")
+    .eq("region_id", id)
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  if (!data) return null;
+
+  const row = data as Record<string, unknown>;
+  const scopeRaw = String(row.scope ?? "");
+  const scope: "global" | "hungary" = scopeRaw === "hungary" ? "hungary" : "global";
+
+  return {
+    region_id: String(row.region_id ?? ""),
+    name: String(row.name ?? ""),
+    scope,
+    type: String(row.type ?? ""),
+    source: String(row.source ?? ""),
+    bbox: parseBbox(row.bbox),
+  };
+}
+
 export async function getDistributionRegionGeometriesById(regionIds: string[]): Promise<
   Record<string, unknown>
 > {

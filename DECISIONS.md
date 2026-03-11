@@ -492,6 +492,28 @@ Indok: ez teszi lehetővé a szigorú validálást, a generációk verifikálás
 
 ---
 
+## D48 – Phenomenon: SPA migration peak generation + bird linking v1 (Studio)
+
+- Phenomenon v1 targets a **region catalog entry** (not a Place):
+  - `phenomena.region_id` references `distribution_region_catalog_items.region_id` and is restricted to `type="spa"` entries for the HU scope.
+- The canonical v1 use-case is “**vonulási csúcs**”:
+  - `phenomenon_type="migration_peak"`, plus a required `season` (`spring` or `autumn`) and a `typical_start_mmdd` → `typical_end_mmdd` yearly window (MM-DD).
+  - Drafts may leave timing null; publish requires timing fields to be present and valid.
+- “Minden SPA-hoz legalább 1” enforcement (v1):
+  - The system ensures **at least one** `migration_peak` phenomenon per SPA (default: `autumn`).
+  - A second season (typically `spring`) is created only by an explicit editor action (to avoid “hallucinated” events).
+- Text generation contract (v1):
+  - Phenomenon narratives are stored in `content_blocks.blocks_json` as a strict UI contract `schema_version="phenomenon_ui_variants_v1"`, `language="hu"`.
+  - The contract is Zod-validated; AI output must be JSON-only; generation is server-side only.
+- Bird linking (v1):
+  - Phenomenon links visible birds via `phenomenon_birds` with `review_status` (`suggested|approved`) mirroring Place behavior.
+  - Bird suggestion can run automatically during generation and/or via a manual “Suggest birds” editor button, and it must only consider **published** Bird entities as link targets.
+  - Publish gate requires at least **one** `phenomenon_birds.review_status="approved"` link (editorial guideline: 5–12).
+
+Indok: A SPA-scoped migration peak is a stable, deterministic primitive that can be generated and reviewed in Studio without leaking runtime AI to Explorer, while still producing a publish-gated, linkable phenomenon contract for future read-only rendering.
+
+---
+
 ## D15 â€“ F3 builds mandate paired F4 checks
 
 - Every F3 (Build) engagement that touches implementation code — especially any high-impact or “really big” change — must simultaneously plan, trigger, and document the corresponding F4 (Check) work before the change is closed, so the audit workflow always shows the validation evidence alongside the build.
@@ -850,3 +872,26 @@ Birdwatch logging should reflect “I saw X at place Y”, and help selection by
 ### Out of scope (v1)
 - Note lokalizáció több nyelvre.
 - Régió-lista UI (region_ids) részletezés a hoverben.
+
+---
+
+## D49 – Places: batch refill Place→Bird links (published-only) v1 (Studio)
+
+**Status:** Accepted  
+**Date:** 2026-03-11  
+**Scope:** Studio `/admin/places` only. Explorer out of scope. No runtime AI.
+
+### Context
+- A Place szerkesztőben van manuális “Suggest birds” trigger (D35), ami `place_birds` sorokat szúr be `review_status="suggested"` státusszal.
+- A workflow-ban gyakori, hogy új Bird-ek publikálása után több published Place-hez is gyorsan fel kell tölteni a hiányzó Place→Bird linkeket.
+
+### Decision
+- Az `/admin/places` listában megjelenik egy batch “Refill links” eszköz.
+- A batch kliens-oldalról sorban hívja a meglévő endpointot: `POST /api/places/:id/birds/suggest?existing_published_only=true`.
+- `existing_published_only=true` módban a suggestion engine **csak** már létező, **published** Bird rekordokra linkel (nem szúr be `pending_bird_name_hu` sorokat).
+- A beszúrt linkek `review_status="suggested"` státuszban maradnak; publikussá csak explicit editor approval után válhatnak.
+
+### Out of scope (v1)
+- Automatikus `approved`-ra emelés.
+- Hosszú futású szerver-oldali batch/queue/worker; a batch a böngésző session-höz kötött.
+- Draft/reviewed Bird-ek automatikus linkelése.

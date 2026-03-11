@@ -18,7 +18,7 @@ export const IMAGE_STYLE_CONFIG_ID_ICONIC =
 
 export const IMAGE_SIZE = optionalEnv("IMAGE_SIZE", "1024x1024") ?? "1024x1024";
 export const IMAGE_SIZE_PLACE_HERO =
-  optionalEnv("IMAGE_SIZE_PLACE_HERO", "1792x1024") ?? "1792x1024";
+  optionalEnv("IMAGE_SIZE_PLACE_HERO", "1536x1024") ?? "1536x1024";
 export const IMAGE_QUALITY = optionalEnv("IMAGE_QUALITY", "auto") ?? "auto";
 
 // Controls whether Science Dossier + Visual Brief are used as prompt inputs during image generation.

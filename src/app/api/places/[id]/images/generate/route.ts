@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAdminUserFromCookies } from "@/lib/auth";
-import { getPlaceById } from "@/lib/placeService";
+import { isUuid } from "@/lib/birdService";
+import { getPlaceById, getPlaceBySlug } from "@/lib/placeService";
 import { generateHeroImageForPlace } from "@/lib/imageService";
 
 export async function POST(request: Request, ctx: { params: Promise<{ id: string }> }) {
@@ -10,7 +11,14 @@ export async function POST(request: Request, ctx: { params: Promise<{ id: string
   }
 
   const { id } = await ctx.params;
-  const place = await getPlaceById(id);
+  const normalizedId = typeof id === "string" ? id.trim() : "";
+  if (!normalizedId) {
+    return NextResponse.json({ error: "Missing place id." }, { status: 400 });
+  }
+
+  const place = isUuid(normalizedId)
+    ? (await getPlaceById(normalizedId)) ?? (await getPlaceBySlug(normalizedId))
+    : await getPlaceBySlug(normalizedId);
   if (!place) {
     return NextResponse.json({ error: "Place not found." }, { status: 404 });
   }

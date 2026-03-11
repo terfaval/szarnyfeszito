@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import PlaceCreateForm from "@/components/admin/PlaceCreateForm";
+import PlaceBirdRefillBatchTool from "@/components/admin/PlaceBirdRefillBatchTool";
 import { Card } from "@/ui/components/Card";
 import { Input } from "@/ui/components/Input";
 import { StatusPill } from "@/ui/components/StatusPill";
@@ -170,6 +171,18 @@ export default function PlaceListShell({ places }: PlaceListShellProps) {
             <Link className="admin-nav-link" href="/places" target="_blank" rel="noreferrer">
               Open public place map
             </Link>
+          </Card>
+
+          <Card className="space-y-3 text-sm">
+            <p className="admin-subheading">Refill links</p>
+            <p className="admin-note-small">
+              Runs the Place→Bird suggestion engine for every <code className="rounded bg-zinc-100 px-1 text-xs">status=published</code>{" "}
+              place, but only inserts links that match already-published Birds (no pending names). Inserted rows stay{" "}
+              <code className="rounded bg-zinc-100 px-1 text-xs">review_status=suggested</code>.
+            </p>
+            <PlaceBirdRefillBatchTool
+              places={places.map((place) => ({ id: place.id, name: place.name, place_status: place.status }))}
+            />
           </Card>
         </div>
       </div>

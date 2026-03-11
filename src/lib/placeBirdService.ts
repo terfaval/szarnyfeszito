@@ -1,5 +1,6 @@
 import { supabaseServerClient } from "@/lib/supabaseServerClient";
 import type { PlaceBirdLink, PlaceBirdReviewStatus, PlaceFrequencyBand } from "@/types/place";
+import { normalizeBirdSlug } from "@/lib/slug";
 
 function normalizePendingBirdName(name: string) {
   return name.trim().replace(/\s+/g, " ");
@@ -227,11 +228,12 @@ export async function listSuggestedBirdQueue(): Promise<SuggestedBirdQueueItem[]
     const raw = typeof row.pending_bird_name_hu === "string" ? row.pending_bird_name_hu : "";
     const normalized = normalizePendingBirdName(raw);
     if (!normalized) return;
-    const key = normalized.toLowerCase();
+    const slugKey = normalizeBirdSlug(normalized);
+    if (!slugKey) return;
 
-    const existing = groups.get(key);
+    const existing = groups.get(slugKey);
     if (!existing) {
-      groups.set(key, { name_hu: normalized, rows: [row] });
+      groups.set(slugKey, { name_hu: normalized, rows: [row] });
       return;
     }
 

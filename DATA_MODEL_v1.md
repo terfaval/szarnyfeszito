@@ -165,3 +165,30 @@ Hidden location nem kerülhet publikus térképre.
 - phenomenon_id (uuid)
 - place_id (uuid, fk → places)
 - created_at
+
+---
+
+## Phenomena – planned (SPA migration peaks)
+
+### phenomena
+
+- id (uuid, pk)
+- slug (text, unique)
+- title (text)
+- phenomenon_type (text) — v1: migration_peak
+- season (enum) — spring | autumn
+- region_id (text, fk → distribution_region_catalog_items.region_id; HU SPA only in v1)
+- typical_start_mmdd / typical_end_mmdd (text, MM-DD, publish-gated)
+- status (enum) — draft | reviewed | published
+- generation_input (text, nullable)
+- published_at (timestamptz, nullable)
+- created_at, updated_at
+
+### phenomenon_birds
+
+- phenomenon_id (uuid, fk → phenomena)
+- bird_id (uuid, nullable, fk → birds)
+- pending_bird_name_hu (text, nullable)
+- review_status (enum) — suggested | approved
+- rank (int)
+- created_at, updated_at

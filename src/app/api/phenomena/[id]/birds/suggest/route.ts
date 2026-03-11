@@ -1,30 +1,30 @@
 import { NextResponse } from "next/server";
 import { getAdminUserFromCookies } from "@/lib/auth";
-import { getPlaceById } from "@/lib/placeService";
-import { suggestPlaceBirdLinksV1 } from "@/lib/placeBirdSuggestion";
+import { getPhenomenonById } from "@/lib/phenomenonService";
+import { getDistributionRegionCatalogMetaById } from "@/lib/distributionRegionCatalogService";
+import { suggestPhenomenonBirdLinksV1 } from "@/lib/phenomenonBirdSuggestion";
 import { AIJsonParseError, AISchemaMismatchError } from "@/lib/aiUtils";
 import { AI_MODEL_TEXT } from "@/lib/aiConfig";
 
-export async function POST(request: Request, ctx: { params: Promise<{ id: string }> }) {
+export async function POST(_request: Request, ctx: { params: Promise<{ id: string }> }) {
   const user = await getAdminUserFromCookies();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { id } = await ctx.params;
-  const place = await getPlaceById(id);
-  if (!place) return NextResponse.json({ error: "Place not found." }, { status: 404 });
+  const phenomenon = await getPhenomenonById(id);
+  if (!phenomenon) return NextResponse.json({ error: "Phenomenon not found." }, { status: 404 });
 
-  const url = new URL(request.url);
-  const existingPublishedOnly = url.searchParams.get("existing_published_only") === "true";
+  const region = await getDistributionRegionCatalogMetaById(phenomenon.region_id);
+  if (!region) {
+    return NextResponse.json({ error: "Region catalog entry not found for this phenomenon." }, { status: 404 });
+  }
 
   try {
-    const result = await suggestPlaceBirdLinksV1({
-      place,
-      review_status: "suggested",
-      existing_published_only: existingPublishedOnly,
-    });
+    const result = await suggestPhenomenonBirdLinksV1({ phenomenon, region_name: region.name });
     return NextResponse.json({
       data: {
-        place_id: place.id,
+        phenomenon_id: phenomenon.id,
+        deleted_count: result.deleted_count,
         inserted_count: result.inserted.length,
         inserted: result.inserted,
         generation_meta: {
@@ -69,8 +69,9 @@ export async function POST(request: Request, ctx: { params: Promise<{ id: string
     }
 
     return NextResponse.json(
-      { error: (error as Error)?.message ?? "Unable to suggest birds for this place." },
+      { error: (error as Error)?.message ?? "Unable to suggest birds for this phenomenon." },
       { status: 502 }
     );
   }
 }
+

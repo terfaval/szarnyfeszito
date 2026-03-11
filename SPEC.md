@@ -48,7 +48,7 @@ and persists `bird_distribution_maps.ranges[]`.
 - Promptolható képgenerálás
 
 Explorer skeleton is a future phase, but a minimal, read-only Place map + panel is now in scope (D31) so Place entities can be previewed and published without waiting for the full Explorer buildout.
-Current active scope: Studio generative engine for Bird content + Place system foundation (CRUD, AI text generation, review, publish gating) + minimal public Place map surface. Phenomenon workstream remains limited to planning until its data contracts and rendering are formally scoped.
+Current active scope: Studio generative engine for Bird content + Place system foundation (CRUD, AI text generation, review, publish gating) + minimal public Place map surface + Phenomenon data contracts + Studio-only generation workflow planning. Explorer rendering for Phenomena remains a future phase.
 
 ### 2.x Leaflet map defaults (D39)
 
@@ -152,18 +152,36 @@ Place → Birds relations (D35):
   - on Place quick-create generation
   - on Place content regeneration
   - on editor manual trigger ("Suggest birds")
+  - on Places list batch refill (published Places; existing published Birds only)
 - Explorer/public endpoints only show `place_birds.review_status="approved"` rows (no AI suggestions leaking to public).
 
 ---
 
 ### 3.3 Phenomenon
 
-Core mezők:
+Core mezők (v1, Studio-first):
 - id
 - slug
 - title
-- phenomenon_type
-- status
+- phenomenon_type (v1: migration_peak)
+- season (spring|autumn)
+- region_id (SPA catalog entry; `distribution_region_catalog_items.region_id`, `type="spa"`)
+- typical_start_mmdd / typical_end_mmdd (MM-DD; 1–2 hetes, évente ismétlődő időablak)
+- status (draft|reviewed|published)
+
+Phenomenon → Birds relations (v1):
+- Stored in `phenomenon_birds` (join table), using either:
+  - `bird_id` (linked) OR
+  - `pending_bird_name_hu` (pending; editor can later link/create a Bird)
+- `review_status` is enforced server-side:
+  - `suggested` = editor-assist suggestion; not public
+  - `approved` = reviewed by editor; public
+- Explorer/public endpoints only show `phenomenon_birds.review_status="approved"` rows (no AI suggestions leaking to public).
+
+Phenomenon text content (v1):
+- Stored in `content_blocks.blocks_json` as a strict, versioned UI contract `schema_version="phenomenon_ui_variants_v1"`, `language="hu"`.
+- Canonical UI variants include: `teaser`, `short`, `long`, `spectacular_moment`, `timing`, `how_to_watch`, `what_to_look_for`, `ethics_tip`, `did_you_know`.
+- AI generation is server-side only, and must be Zod-validated.
 
 ---
 

@@ -79,6 +79,7 @@ type BirdLookupRow = {
   id: string;
   slug: string;
   name_hu: string;
+  status?: string;
 };
 
 type ExistingPlaceBirdRow = {
@@ -98,15 +99,24 @@ function coerceExistingPlaceBirdRow(row: unknown): ExistingPlaceBirdRow | null {
   return { rank, bird_id: birdId, pending_bird_name_hu: pendingName };
 }
 
-async function findBirdByHungarianName(nameHu: string): Promise<{ id: string; slug: string; name_hu: string } | null> {
+async function findBirdByHungarianName(
+  nameHu: string,
+  options?: { onlyPublished?: boolean }
+): Promise<{ id: string; slug: string; name_hu: string } | null> {
   const needle = normalizeName(nameHu);
   if (!needle) return null;
 
-  const { data, error } = await supabaseServerClient
+  let query = supabaseServerClient
     .from("birds")
-    .select("id,slug,name_hu")
+    .select("id,slug,name_hu,status")
     .ilike("name_hu", needle)
     .limit(2);
+
+  if (options?.onlyPublished) {
+    query = query.eq("status", "published");
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     throw error;
@@ -206,6 +216,7 @@ export async function generatePlaceBirdSuggestionsV1(args: {
 export async function suggestPlaceBirdLinksV1(args: {
   place: Place;
   review_status?: "suggested";
+  existing_published_only?: boolean;
 }): Promise<{
   inserted: PlaceBirdLink[];
   suggestions: PlaceBirdSuggestionsV1;
@@ -265,7 +276,13 @@ export async function suggestPlaceBirdLinksV1(args: {
   const insertRows: Array<Record<string, unknown>> = [];
   let rankOffset = 0;
   for (const row of deduped) {
-    const matchedBird = await findBirdByHungarianName(row.name_hu);
+    const matchedBird = await findBirdByHungarianName(row.name_hu, {
+      onlyPublished: args.existing_published_only === true,
+    });
+
+    if (!matchedBird && args.existing_published_only) {
+      continue;
+    }
 
     const birdId = matchedBird?.id ?? null;
     const pendingName = birdId ? null : row.name_hu;

@@ -53,6 +53,30 @@ function parseSizePx(size: string) {
   return { width: Number(match[1]), height: Number(match[2]) };
 }
 
+function normalizeOpenAIImageSize(size: string) {
+  const value = size.trim().toLowerCase();
+  if (value === "auto") return "auto";
+
+  if (
+    value === "1024x1024" ||
+    value === "1024x1536" ||
+    value === "1536x1024"
+  ) {
+    return value;
+  }
+
+  // Backward-compatible mapping: OpenAI no longer accepts 1792x1024 / 1024x1792.
+  if (value === "1792x1024") return "1536x1024";
+  if (value === "1024x1792") return "1024x1536";
+
+  const parsed = parseSizePx(value);
+  if (!parsed.width || !parsed.height) return "1024x1024";
+
+  if (parsed.width > parsed.height) return "1536x1024";
+  if (parsed.height > parsed.width) return "1024x1536";
+  return "1024x1024";
+}
+
 function buildOpenAIPrompt(input: GenerateImageInput) {
   const requestedBirdsPayload = (input.promptPayload as { requested_birds?: unknown } | null)
     ?.requested_birds as
@@ -144,10 +168,20 @@ type OpenAIImagesGenerationResponse = {
 export class OpenAIImageProvider implements ImageProvider {
   async generate(input: GenerateImageInput): Promise<GeneratedImage> {
     const prompt = buildOpenAIPrompt(input);
-    const size =
+    const rawSize =
       input.entityType === "place" && input.variant === "place_hero_spring_v1"
         ? IMAGE_SIZE_PLACE_HERO
         : IMAGE_SIZE;
+    const size = normalizeOpenAIImageSize(rawSize);
+    if (size !== rawSize) {
+      console.info("[image-gen] normalized size", {
+        entity_type: input.entityType,
+        entity_id: input.entityId,
+        variant: input.variant,
+        raw_size: rawSize,
+        size,
+      });
+    }
     const { width, height } = parseSizePx(size);
 
     const background =
