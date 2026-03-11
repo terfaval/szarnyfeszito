@@ -12,10 +12,26 @@ import type { ImageVariant } from "@/types/image";
 import type { BirdDistributionMapRecord, DistributionStatus, DistributionRange } from "@/types/distributionMap";
 import ReviewRequestOverlay from "@/components/admin/ReviewRequestOverlay";
 import BirdIcon from "@/components/admin/BirdIcon";
-import BirdDistributionMap from "@/components/maps/BirdDistributionMap";
+import BirdDistributionMap, {
+  type DistributionMapHoverInfo,
+} from "@/components/maps/BirdDistributionMap";
 import DistributionLegend from "@/components/maps/DistributionLegend";
 import { distributionRangeSchema } from "@/lib/distributionMapSchema";
 import styles from "./BirdTextReview.module.css";
+
+const DISTRIBUTION_STATUS_LABELS: Record<DistributionStatus, string> = {
+  resident: "Resident",
+  breeding: "Breeding",
+  wintering: "Wintering",
+  passage: "Passage",
+};
+
+const DISTRIBUTION_STATUS_COLORS: Record<DistributionStatus, string> = {
+  resident: "#BE2D12",
+  breeding: "#D9480F",
+  wintering: "#F76707",
+  passage: "#FFD43B",
+};
 
 const formatRange = (
   range?: { min: number | null; max: number | null },
@@ -253,6 +269,8 @@ export default function BirdTextReview({
     wintering: true,
     passage: true,
   });
+  const [distributionHover, setDistributionHover] =
+    useState<DistributionMapHoverInfo | null>(null);
 
   useEffect(() => {
     setEditableContent({
@@ -768,22 +786,32 @@ export default function BirdTextReview({
               </div>
             ) : null}
 
-            <div className={styles.layerStack}>
-              <div className={styles.backgroundLayer}>
-                <div className={styles.mainImageFrame}>
-                  {mainHabitatPreviewUrl ? (
-                    <img
-                      src={mainHabitatPreviewUrl}
-                      alt="Main bird image"
-                      className={styles.fullBodyImage}
-                    />
-                  ) : (
-                    <div className={styles.fullBodyPlaceholder}>
-                      <p>Main bird image</p>
-                    </div>
-                  )}
+              <div className={styles.layerStack}>
+                <div className={styles.backgroundLayer}>
+                  <div className={styles.mainImageFrame}>
+                    {mainHabitatPreviewUrl ? (
+                      <div
+                        className={`${styles.fullBodyImage} ${
+                          isPublishMode ? styles.fullBodyImagePublish : ""
+                        }`}
+                      >
+                        <img
+                          src={mainHabitatPreviewUrl}
+                          alt="Main bird image"
+                          className={styles.fullBodyImageImg}
+                        />
+                      </div>
+                    ) : (
+                      <div
+                        className={`${styles.fullBodyPlaceholder} ${
+                          isPublishMode ? styles.fullBodyPlaceholderPublish : ""
+                        }`}
+                      >
+                        <p>Main bird image</p>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
               <div className={styles.overlayLayer}>
                 {dossier.identification.key_features.map((feature, index) => (
                   <article
@@ -873,6 +901,7 @@ export default function BirdTextReview({
                     ranges={distributionRanges}
                     activeStatuses={activeStatuses}
                     speciesSummary={speciesSummary}
+                    onHover={setDistributionHover}
                   />
                 ) : (
                   <div className={styles.mapPlaceholder}>
@@ -893,6 +922,7 @@ export default function BirdTextReview({
                     ranges={distributionRanges}
                     activeStatuses={activeStatuses}
                     speciesSummary={speciesSummary}
+                    onHover={setDistributionHover}
                   />
                 ) : (
                   <div className={styles.mapPlaceholder}>
@@ -917,6 +947,46 @@ export default function BirdTextReview({
                   active={activeStatuses}
                   onToggle={toggleDistributionStatus}
                 />
+                <div className={styles.distributionInfo}>
+                  <p className={styles.distributionInfoTitle}>Info</p>
+                  <p className={styles.distributionInfoSummary}>{speciesSummary}</p>
+                  {distributionHover ? (
+                    <div className={styles.distributionInfoBody}>
+                      <div className={styles.distributionInfoRow}>
+                        <span className={styles.distributionInfoLabel}>Status</span>
+                        <span className={styles.distributionInfoValue}>
+                          <span
+                            className={styles.distributionInfoSwatch}
+                            style={{
+                              backgroundColor:
+                                DISTRIBUTION_STATUS_COLORS[distributionHover.status],
+                            }}
+                            aria-hidden="true"
+                          />
+                          {DISTRIBUTION_STATUS_LABELS[distributionHover.status]}
+                        </span>
+                      </div>
+                      <div className={styles.distributionInfoRow}>
+                        <span className={styles.distributionInfoLabel}>Confidence</span>
+                        <span className={styles.distributionInfoValue}>
+                          {distributionHover.confidence == null
+                            ? "—"
+                            : `${Math.round(distributionHover.confidence * 100)}%`}
+                        </span>
+                      </div>
+                      <div className={styles.distributionInfoRow}>
+                        <span className={styles.distributionInfoLabel}>Note</span>
+                        <span className={styles.distributionInfoValue}>
+                          {distributionHover.note?.trim() ? distributionHover.note : "—"}
+                        </span>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className={styles.distributionInfoHint}>
+                      Hover a colored area to see details here.
+                    </p>
+                  )}
+                </div>
               </div>
             </div>
 

@@ -757,3 +757,25 @@ Birdwatch logging should reflect “I saw X at place Y”, and help selection by
 - Iconic Place images.
 - Any runtime generation on Explorer/public surfaces.
 
+---
+
+## D43 – Admin dashboard Places map: bounded HU pan/zoom v1
+
+**Status:** Accepted  
+**Date:** 2026-03-11  
+**Scope:** Studio `/admin` dashboard Places map only.
+
+### Context
+- D39 sets display-only maps to be fully static to avoid scroll/zoom conflicts.
+- On the Studio dashboard we still want lightweight exploration (move/zoom a bit) while staying Hungary-focused.
+
+### Decision
+- Add a dashboard-only interaction mode for the Places map:
+  - Panning enabled but constrained to a Hungary bounding box (`maxBounds` + `maxBoundsViscosity=1`).
+  - Zoom enabled via zoom controls and touch gestures (scroll-wheel zoom stays off).
+  - Tight zoom range (v1: `minZoom=6`, `maxZoom=10`) to keep the view Hungary-focused.
+- Other display-only map surfaces remain D39-static by default.
+
+### Out of scope (v1)
+- Free pan/zoom or world navigation.
+- Changing public `/places` interaction defaults.

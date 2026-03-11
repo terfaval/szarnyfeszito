@@ -3,7 +3,7 @@
 import type { ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { CircleMarker, GeoJSON, MapContainer, TileLayer } from "react-leaflet";
-import type { LeafletEventHandlerFnMap } from "leaflet";
+import type { LatLngBoundsExpression, LeafletEventHandlerFnMap } from "leaflet";
 import "leaflet/dist/leaflet.css";
 import styles from "./PlacesMap.module.css";
 import { DEFAULT_BASEMAP, getBasemapTileLayerArgs } from "./basemaps";
@@ -14,6 +14,12 @@ import PlacesRegionVisualization, { type PlacesRegionVisualizationVariant } from
 import type { PlacesMapLayersV1 } from "@/types/placesMap";
 
 export type PlacesMapMarkerColorMode = "uniform_v1" | "water_highlight_v1" | "place_type_category_v1";
+export type PlacesMapInteractionMode = "static" | "bounded_hu_v1";
+
+const HUNGARY_MAX_BOUNDS_V1: LatLngBoundsExpression = [
+  [45.3, 15.7],
+  [48.7, 23.2],
+];
 
 type PlaceTypeCategoryV1 = "waterfront" | "forest" | "mountains" | "other";
 
@@ -84,6 +90,7 @@ export type PlacesMapProps = {
   regionVisualization?: PlacesRegionVisualizationVariant;
   layers?: PlacesMapLayersV1 | null;
   markerColorMode?: PlacesMapMarkerColorMode;
+  interactionMode?: PlacesMapInteractionMode;
   markerEventHandlers?: (marker: PlaceMarker) => LeafletEventHandlerFnMap | undefined;
   renderMarkerChildren?: (args: {
     marker: PlaceMarker;
@@ -101,6 +108,7 @@ export default function PlacesMap({
   regionVisualization = "places_regions_v1",
   layers = null,
   markerColorMode = "uniform_v1",
+  interactionMode = "static",
   markerEventHandlers,
   renderMarkerChildren,
 }: PlacesMapProps) {
@@ -120,19 +128,55 @@ export default function PlacesMap({
     return getBasemapTileLayerArgs({ basemap, isDark });
   }, [basemap, isDark]);
 
+  const interactions = useMemo(() => {
+    if (interactionMode === "bounded_hu_v1") {
+      return {
+        zoomControl: true,
+        scrollWheelZoom: false,
+        doubleClickZoom: false,
+        dragging: true,
+        keyboard: false,
+        boxZoom: false,
+        touchZoom: true,
+        minZoom: 6,
+        maxZoom: 10,
+        maxBounds: HUNGARY_MAX_BOUNDS_V1,
+        maxBoundsViscosity: 1.0,
+      } as const;
+    }
+
+    return {
+      zoomControl: false,
+      scrollWheelZoom: false,
+      doubleClickZoom: false,
+      dragging: false,
+      keyboard: false,
+      boxZoom: false,
+      touchZoom: false,
+      minZoom: undefined,
+      maxZoom: undefined,
+      maxBounds: undefined,
+      maxBoundsViscosity: undefined,
+    } as const;
+  }, [interactionMode]);
+
   return (
     <div className={`places-map ${styles.layout}`}>
       <MapContainer
         className={styles.map}
         center={center}
         zoom={7}
-        zoomControl={false}
-        scrollWheelZoom={false}
-        doubleClickZoom={false}
-        dragging={false}
-        keyboard={false}
-        boxZoom={false}
-        touchZoom={false}
+        zoomControl={interactions.zoomControl}
+        scrollWheelZoom={interactions.scrollWheelZoom}
+        doubleClickZoom={interactions.doubleClickZoom}
+        dragging={interactions.dragging}
+        keyboard={interactions.keyboard}
+        boxZoom={interactions.boxZoom}
+        touchZoom={interactions.touchZoom}
+        minZoom={interactions.minZoom}
+        maxZoom={interactions.maxZoom}
+        maxBounds={interactions.maxBounds}
+        maxBoundsViscosity={interactions.maxBoundsViscosity}
         attributionControl={false}
       >
         {tileLayerArgs ? (

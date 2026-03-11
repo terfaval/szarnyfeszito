@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { Feature, FeatureCollection } from "geojson";
 import type { DistributionRange, DistributionStatus } from "@/types/distributionMap";
 import { MapContainer, TileLayer, GeoJSON } from "react-leaflet";
-import type { PathOptions } from "leaflet";
+import type { LatLngBoundsExpression, PathOptions } from "leaflet";
 import "leaflet/dist/leaflet.css";
 import styles from "./BirdDistributionMap.module.css";
 import { getBasemapTileLayerArgs } from "./basemaps";
@@ -28,6 +28,13 @@ export type BirdDistributionMapProps = {
   ranges: DistributionRange[];
   activeStatuses: Record<DistributionStatus, boolean>;
   speciesSummary: string;
+  onHover?: (info: DistributionMapHoverInfo | null) => void;
+};
+
+export type DistributionMapHoverInfo = {
+  status: DistributionStatus;
+  confidence: number | null; // 0..1
+  note: string | null;
 };
 
 function toFeature(range: DistributionRange): Feature {
@@ -38,14 +45,14 @@ function toFeature(range: DistributionRange): Feature {
       confidence: range.confidence,
       note: range.note ?? null,
     },
-    geometry: range.geometry as any,
+    geometry: range.geometry as Feature["geometry"],
   };
 }
 
 function buildCollection(ranges: DistributionRange[]): FeatureCollection {
   return {
     type: "FeatureCollection",
-    features: ranges.map(toFeature) as any,
+    features: ranges.map(toFeature),
   };
 }
 
@@ -54,6 +61,7 @@ export default function BirdDistributionMap({
   ranges,
   activeStatuses,
   speciesSummary,
+  onHover,
 }: BirdDistributionMapProps) {
   const [isDark, setIsDark] = useState(false);
 
@@ -65,9 +73,6 @@ export default function BirdDistributionMap({
     return () => media.removeEventListener("change", update);
   }, []);
 
-  const center: [number, number] =
-    mapType === "global" ? [20, 0] : [47.16, 19.5];
-  const zoom = mapType === "global" ? 2 : 6;
   const tileLayerArgs = useMemo(
     () => getBasemapTileLayerArgs({ basemap: "bird", isDark }),
     [isDark]
@@ -83,6 +88,22 @@ export default function BirdDistributionMap({
     ranges.forEach((r) => grouped[r.status].push(r));
     return grouped;
   }, [ranges]);
+
+  const bounds: LatLngBoundsExpression = useMemo(() => {
+    if (mapType === "hungary") {
+      // Deterministic "show full HU" viewport for a static display map.
+      return [
+        [45.7, 16.0], // southWest [lat, lng]
+        [48.7, 22.9], // northEast [lat, lng]
+      ];
+    }
+
+    // Leaflet WebMercator clamps to ~±85 deg; using ~±80 keeps "full Earth" framing stable.
+    return [
+      [-80, -180],
+      [80, 180],
+    ];
+  }, [mapType]);
 
   const collections = useMemo(() => {
     const out: Partial<Record<DistributionStatus, FeatureCollection>> = {};
@@ -107,31 +128,47 @@ export default function BirdDistributionMap({
     const note = typeof props.note === "string" ? props.note.trim() : "";
     const confidenceRaw =
       typeof props.confidence === "number" ? props.confidence : null;
-    const confidence =
-      confidenceRaw === null ? null : Math.round(confidenceRaw * 100);
 
-    const lines = [
-      speciesSummary,
-      status ? `Status: ${status}` : "",
-      note ? `Note: ${note}` : "",
-      confidence === null ? "" : `Confidence: ${confidence}%`,
-    ].filter(Boolean);
+    const lines = [speciesSummary, status ? `Status: ${status}` : ""].filter(Boolean);
 
+    if (onHover) {
+      const maybeStatus = status as DistributionStatus;
+      const hoverInfo: DistributionMapHoverInfo | null =
+        maybeStatus && (STATUS_COLORS as Record<string, string>)[maybeStatus]
+          ? { status: maybeStatus, confidence: confidenceRaw, note: note || null }
+          : null;
+
+      const layerWithEvents = layer as unknown as {
+        on: (handlers: Record<string, () => void>) => void;
+      };
+
+      layerWithEvents.on({
+        mouseover: () => onHover(hoverInfo),
+        mouseout: () => onHover(null),
+        focus: () => onHover(hoverInfo),
+        blur: () => onHover(null),
+      });
+    }
+
+    // Keep a minimal in-map tooltip as a fallback when the legend panel is absent.
     const layerWithTooltip = layer as {
-      bindTooltip: (html: string, options: { sticky: boolean; opacity: number }) => void;
+      bindTooltip?: (html: string, options: { sticky: boolean; opacity: number }) => void;
     };
-    layerWithTooltip.bindTooltip(lines.join("<br/>"), {
-      sticky: true,
-      opacity: 0.95,
-    });
+
+    if (layerWithTooltip.bindTooltip && !onHover) {
+      layerWithTooltip.bindTooltip(lines.join("<br/>"), {
+        sticky: true,
+        opacity: 0.95,
+      });
+    }
   };
 
   return (
     <div className={styles.wrap}>
       <MapContainer
         className={styles.map}
-        center={center}
-        zoom={zoom}
+        bounds={bounds}
+        boundsOptions={{ padding: [12, 12] }}
         zoomControl={false}
         scrollWheelZoom={false}
         doubleClickZoom={false}
@@ -141,7 +178,11 @@ export default function BirdDistributionMap({
         touchZoom={false}
         attributionControl={false}
       >
-        <TileLayer url={tileLayerArgs.url} attribution={tileLayerArgs.attribution} />
+        <TileLayer
+          url={tileLayerArgs.url}
+          attribution={tileLayerArgs.attribution}
+          noWrap={true}
+        />
         {LAYER_ORDER.map((status) => {
           const data = collections[status];
           if (!data) return null;

@@ -129,7 +129,8 @@ export default function DashboardPlacesMap({
           selectedSlug={activeSlug}
           selectedRegionId={selectedRegionId}
           basemap="bird"
-          regionVisualization="places_regions_v1"
+          regionVisualization="places_regions_v1_countries_filled"
+          interactionMode="bounded_hu_v1"
           markerColorMode="water_highlight_v1"
           onSelect={(slug) => setPinnedSlug((prev) => (prev === slug ? null : slug))}
           markerEventHandlers={(marker) => ({

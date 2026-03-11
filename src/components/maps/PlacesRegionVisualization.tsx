@@ -6,7 +6,10 @@ import { GeoJSON } from "react-leaflet";
 
 import type { PlacesMapLayersV1 } from "@/types/placesMap";
 
-export type PlacesRegionVisualizationVariant = "none" | "places_regions_v1";
+export type PlacesRegionVisualizationVariant =
+  | "none"
+  | "places_regions_v1"
+  | "places_regions_v1_countries_filled";
 
 export default function PlacesRegionVisualization({
   variant,
@@ -20,11 +23,19 @@ export default function PlacesRegionVisualization({
   if (variant === "none") return null;
   if (!layers) return null;
 
-  const countryStyle: PathOptions = {
-    color: "rgba(var(--brand-ink-rgb), 0.35)",
-    weight: 1,
-    fillOpacity: 0,
-  };
+  const countryStyle: PathOptions =
+    variant === "places_regions_v1_countries_filled"
+      ? {
+          color: "rgba(var(--brand-ink-rgb), 0.32)",
+          weight: 1,
+          fillColor: "rgba(var(--brand-ink-rgb), 0.06)",
+          fillOpacity: 1,
+        }
+      : {
+          color: "rgba(var(--brand-ink-rgb), 0.35)",
+          weight: 1,
+          fillOpacity: 0,
+        };
 
   const regionStyle = (feature?: Feature): PathOptions => {
     const props = (feature?.properties ?? {}) as Record<string, unknown>;
