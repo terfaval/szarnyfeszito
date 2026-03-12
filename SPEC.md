@@ -66,6 +66,19 @@ Rules:
   - Bird icons: only approved current `images.variant="fixed_pose_icon_v1"` are shown.
 
 Sections:
+- Hero: logo + intro copy + CTA to `/places`.
+- "Mi a Szárnyfeszítő?" editorial panel (static): 3 short blocks (title + short copy).
+- Map intro panel (static): short title + short copy.
+- "Dashboard Places map" preview (Leaflet) to validate markers + region overlays.
+- Map helper panel (static): what to do with / why the map is useful.
+- "Madárvonulások" editorial section (static copy).
+- "Madarak" spotlight panel: 5 random published Birds, with diversity across `birds.visibility_category` when possible (preview-only; not a Field Guide).
+- "Helyszínek" spotlight panel: 3 published Places with hero image, teaser/short description, and up to 5 bird icons from approved Place→Bird links.
+- "Kinek szól?" editorial panel (static): 2×2 grid.
+- "Hogyan kezdj bele?" editorial panel (static): 3-step intro flow.
+- Closing CTA panel (static): short title + short copy + CTA to `/places`.
+
+Public dashboard (`/public`):
 - "Dashboard Places map" preview (Leaflet) to validate markers + region overlays.
 - "Élőhely spotlights": published Places alapján szezonális publikált Birds listák.
 - "Felfedezés" panel: linkek a publikus `/birds` és `/places/list` oldalakra.

@@ -1,16 +1,9 @@
+import Image from "next/image";
 import Link from "next/link";
-import PublicShell from "@/ui/components/PublicShell";
-import { Card } from "@/ui/components/Card";
-import DashboardPlacesMap from "@/components/admin/DashboardPlacesMap";
 import BirdIcon from "@/components/admin/BirdIcon";
-import { listBirds } from "@/lib/birdService";
-import { listPublishedPlaceDashboardMarkers, listPublishedPlacesByPrimaryType } from "@/lib/placeService";
-import { buildPlacesMapLayersV1 } from "@/lib/placesMapLayers";
-import { supabaseServerClient } from "@/lib/supabaseServerClient";
-import { getCurrentSeasonKey } from "@/lib/season";
-import { getSignedImageUrl, listApprovedCurrentIconicImagesForBirds } from "@/lib/imageService";
-import { getSignedApprovedHabitatTileUrlsByAssetKeys } from "@/lib/habitatStockAssetService";
-import type { PlaceType } from "@/types/place";
+import LandingPlacesMap from "@/components/landing/LandingPlacesMap";
+import { getPublicLandingV1 } from "@/lib/landingService";
+import styles from "./page.module.css";
 
 export const metadata = {
   title: "Szárnyfeszítő",
@@ -19,316 +12,248 @@ export const metadata = {
 
 export const dynamic = "force-dynamic";
 
-type SpotlightPlace = { id: string; name: string; slug: string };
-type SpotlightBird = {
-  id: string;
-  slug: string;
-  name_hu: string;
-  habitatIconSrc: string | null;
-  places: SpotlightPlace[];
-  bestRank: number;
-};
+const HERO_INTRO_COPY = `A Szárnyfeszítő azoknak szól, akik szeretnének közelebb kerülni a madarak világához, de nem tudják, hol érdemes elindulni. Helyszínek, fajok és szezonális támpontok segítenek abban, hogy a madármegfigyelés ne távoli hobbinak, hanem átélhető élménynek tűnjön.`;
+
+const WHAT_IS_TITLE = "Mi a Szárnyfeszítő?";
+const WHAT_IS_BLOCKS = [
+  {
+    title: "Belépő a madármegfigyeléshez",
+    short: "Kezdőbarát felület, amely segít eligazodni a madárles világának első lépéseiben.",
+  },
+  {
+    title: "Helyszínek és fajok egy helyen",
+    short: "Összegyűjtött támpontok arról, hová érdemes menni, és milyen madarakkal találkozhatsz.",
+  },
+  {
+    title: "Élményközpontú felfedezés",
+    short: "Nem adatbázis akar lenni, hanem olyan útikalauz, ami közelebb visz a természet valódi megfigyeléséhez.",
+  },
+] as const;
+
+const MAP_INTRO_TITLE = "Találd meg, merre indulj";
+const MAP_INTRO_COPY = `A térkép segít gyorsan átlátni a már elérhető madármegfigyelő helyszíneket, hogy könnyebb legyen kiválasztani a következő úti célt.`;
+
+const MAP_HINT_TITLE = "A jó madárles a helyszínnel kezdődik";
+const MAP_HINT_COPY = `Nem kell rögtön mindent tudnod a fajokról vagy az évszakos mintázatokról. Elég egy jó hely, egy kis figyelem, és egy első alkalom, amikor a megfigyelésből élmény lesz.`;
+
+const MIGRATION_COPY = `A madárvonulás az év egyik legizgalmasabb természeti jelensége: tavasszal és ősszel fajok sokasága jelenik meg rövidebb-hosszabb időre olyan helyeken is, ahol máskor nem láthatnánk őket. A Szárnyfeszítő abban segít, hogy tudd, mikor és hol érdemes figyelni ezt a különleges mozgást.`;
+
+const BIRDS_PANEL_COPY = `A madármegfigyelés akkor válik igazán izgalmassá, amikor nemcsak egy-egy fajt látsz, hanem elkezded felismerni a visszatérő mintázatokat is. Az itt kiemelt fajok abban segítenek, hogy lásd: nem minden madár egyformán gyakori, és ez a megfigyelés élményét is teljesen megváltoztatja.`;
+
+const PLACES_PANEL_COPY = `A jó madárleshez a helyszín legalább annyira fontos, mint a türelem. Ezeken a kiemelt helyeken rövid leírást, hangulati képet és néhány jellemző fajt is találsz, hogy könnyebb legyen kiválasztani, merre indulj.`;
+
+const WHO_FOR_TITLE = "Kinek szól a Szárnyfeszítő?";
+const WHO_FOR_ITEMS = [
+  {
+    iconSrc: "/icons/icon_amateur.svg",
+    title: "Kezdőknek",
+    short: "Akik most ismerkednek a madármegfigyeléssel, és egyszerű, érthető kiindulópontot keresnek.",
+  },
+  {
+    iconSrc: "/icons/icon_photographer.svg",
+    title: "Természetfotósoknak",
+    short: "Akik nemcsak látni, hanem megörökíteni is szeretnék a helyszínek és fajok különleges pillanatait.",
+  },
+  {
+    iconSrc: "/icons/icon_school.svg",
+    title: "Iskoláknak",
+    short: "Akik élményszerű, természetközeli módon szeretnék közelebb hozni a diákokhoz a madárvilágot.",
+  },
+  {
+    iconSrc: "/icons/icon_family.svg",
+    title: "Családoknak",
+    short: "Akik közös kirándulásból szeretnének figyelmesebb, tartalmasabb természeti élményt csinálni.",
+  },
+] as const;
+
+const HOW_TO_START_TITLE = "Hogyan kezdj bele?";
+const HOW_TO_START_STEPS = [
+  {
+    title: "Válassz egy helyet",
+    short: "Indulj egy olyan helyszínnel, amely könnyen elérhető és jó első élményt ígér.",
+  },
+  {
+    title: "Ismerd meg a fajokat",
+    short: "Nézd meg, milyen madarakkal találkozhatsz, és milyen időszakban a legizgalmasabb a megfigyelés.",
+  },
+  {
+    title: "Figyelj nyitott szemmel",
+    short: "Nem kell rögtön szakértőnek lenned. Az első madárles lényege, hogy észrevedd, mennyi minden történik körülötted.",
+  },
+] as const;
+
+const CLOSING_CTA_TITLE = "Kezdd el a saját madárles történetedet";
+const CLOSING_CTA_COPY =
+  "Fedezd fel a helyszíneket, ismerd meg a fajokat, és találd meg, hol induljon az első megfigyelésed.";
 
 export default async function Home() {
-  const publishedBirds = await listBirds({ status: "published" });
-  const recentBirds = publishedBirds.slice(0, 5);
-  const recentBirdIds = recentBirds.map((bird) => bird.id);
-
-  const recentHabitatKeys = recentBirds
-    .map((bird) => (Array.isArray(bird.habitat_stock_asset_keys) ? bird.habitat_stock_asset_keys[0] : ""))
-    .filter((k): k is string => typeof k === "string" && k.trim().length > 0);
-  const recentSignedHabitatTilesByKey = await getSignedApprovedHabitatTileUrlsByAssetKeys(recentHabitatKeys);
-
-  const iconicImages = await listApprovedCurrentIconicImagesForBirds(recentBirdIds);
-  const iconicPreviewByBirdId = new Map<string, string>();
-  await Promise.all(
-    iconicImages.map(async (image) => {
-      const signedUrl = await getSignedImageUrl(image.storage_path);
-      if (signedUrl) {
-        iconicPreviewByBirdId.set(image.entity_id, signedUrl);
-      }
-    })
-  );
-
-  const publishedMarkers = await listPublishedPlaceDashboardMarkers();
-  const dashboardLayers = await buildPlacesMapLayersV1({
-    placeRegionIds: publishedMarkers.map((m) => m.leaflet_region_id ?? "").filter(Boolean),
-    includeCountries: false,
-  });
-
-  const currentSeason = getCurrentSeasonKey();
-  const currentSeasonLabel =
-    currentSeason === "spring"
-      ? "Tavasz"
-      : currentSeason === "summer"
-      ? "Nyár"
-      : currentSeason === "autumn"
-      ? "Ősz"
-      : "Tél";
-
-  const spotlightGroups: Array<{
-    key: "water" | "forest" | "mountain";
-    label: string;
-    placeTypes: PlaceType[];
-  }> = [
-    {
-      key: "water",
-      label: "Vízpart",
-      placeTypes: [
-        "lake",
-        "river",
-        "fishpond",
-        "reservoir",
-        "marsh",
-        "reedbed",
-        "salt_lake",
-        "urban_waterfront",
-      ],
-    },
-    { key: "forest", label: "Erdő", placeTypes: ["forest_edge", "protected_area"] },
-    { key: "mountain", label: "Hegység", placeTypes: ["mountain_area"] },
-  ];
-
-  const publishedPlacesByGroup = await Promise.all(
-    spotlightGroups.map(async (group) => ({
-      key: group.key,
-      label: group.label,
-      places: await listPublishedPlacesByPrimaryType(group.placeTypes),
-    }))
-  );
-
-  const spotlightBirdsByGroup = new Map<string, SpotlightBird[]>();
-  const habitatKeyByBirdId = new Map<string, string>();
-
-  for (const group of publishedPlacesByGroup) {
-    const placeById = new Map(group.places.map((place) => [place.id, place] as const));
-    const placeIds = Array.from(placeById.keys());
-    if (placeIds.length === 0) {
-      spotlightBirdsByGroup.set(group.key, []);
-      continue;
-    }
-
-    type Row = {
-      place_id: string;
-      rank: number;
-      visible_in_spring: boolean;
-      visible_in_summer: boolean;
-      visible_in_autumn: boolean;
-      visible_in_winter: boolean;
-      bird: { id: string; slug: string; name_hu: string; status?: string; habitat_stock_asset_keys?: string[] } | null;
-    };
-
-    const { data, error } = await supabaseServerClient
-      .from("place_birds")
-      .select(
-        "place_id,rank,visible_in_spring,visible_in_summer,visible_in_autumn,visible_in_winter,bird:birds(id,slug,name_hu,status,habitat_stock_asset_keys)"
-      )
-      .eq("review_status", "approved")
-      .not("bird_id", "is", null)
-      .in("place_id", placeIds)
-      .order("rank", { ascending: true })
-      .limit(600);
-
-    if (error) {
-      throw error;
-    }
-
-    const rows = (data ?? []) as unknown as Row[];
-    const seasonalRows = rows.filter((row) => {
-      if (!row.bird || row.bird.status !== "published") return false;
-      if (currentSeason === "spring") return row.visible_in_spring;
-      if (currentSeason === "summer") return row.visible_in_summer;
-      if (currentSeason === "autumn") return row.visible_in_autumn;
-      return row.visible_in_winter;
-    });
-
-    const byBirdId = new Map<string, SpotlightBird>();
-    for (const row of seasonalRows) {
-      const bird = row.bird;
-      if (!bird) continue;
-      const place = placeById.get(row.place_id);
-      if (!place) continue;
-
-      const existing = byBirdId.get(bird.id);
-      if (!existing) {
-        byBirdId.set(bird.id, {
-          id: bird.id,
-          slug: bird.slug,
-          name_hu: bird.name_hu,
-          habitatIconSrc: null,
-          places: [{ id: place.id, name: place.name, slug: place.slug }],
-          bestRank: row.rank,
-        });
-      } else {
-        existing.bestRank = Math.min(existing.bestRank, row.rank);
-        if (!existing.places.some((p) => p.id === place.id)) {
-          existing.places.push({ id: place.id, name: place.name, slug: place.slug });
-          if (existing.places.length > 3) {
-            existing.places = existing.places.slice(0, 3);
-          }
-        }
-      }
-
-      const habitatKey = bird.habitat_stock_asset_keys?.[0];
-      if (habitatKey) {
-        habitatKeyByBirdId.set(bird.id, habitatKey);
-      }
-    }
-
-    const list = Array.from(byBirdId.values())
-      .sort((a, b) => a.bestRank - b.bestRank || b.places.length - a.places.length || a.name_hu.localeCompare(b.name_hu))
-      .slice(0, 7);
-
-    spotlightBirdsByGroup.set(group.key, list);
-  }
-
-  const spotlightHabitatTiles = await getSignedApprovedHabitatTileUrlsByAssetKeys(
-    Array.from(new Set(Array.from(habitatKeyByBirdId.values())))
-  );
-
-  for (const group of spotlightGroups) {
-    const list = spotlightBirdsByGroup.get(group.key) ?? [];
-    list.forEach((bird) => {
-      const key = habitatKeyByBirdId.get(bird.id) ?? null;
-      bird.habitatIconSrc = key ? spotlightHabitatTiles.get(key) ?? null : null;
-    });
-    spotlightBirdsByGroup.set(group.key, list);
-  }
+  const landing = await getPublicLandingV1();
 
   return (
-    <PublicShell>
-      <section className="admin-stack">
-        <DashboardPlacesMap markers={publishedMarkers} layers={dashboardLayers} />
+    <main className="admin-shell-canvas page-backdrop" aria-label="Szárnyfeszítő landing">
+      <div className={`admin-shell ${styles.shell}`}>
+        <div className={styles.topbar}>
+          <Link className="btn btn--ghost" href="/public">
+            Publikus áttekintő
+          </Link>
+          <Link className="btn btn--accent" href="/admin/login">
+            Admin
+          </Link>
+        </div>
 
-        <Card className="stack">
-          <header className="admin-heading">
-            <p className="admin-heading__label">Helyszínek</p>
-            <h2 className="admin-heading__title admin-heading__title--large">Élőhely spotlights</h2>
-            <p className="admin-heading__description">
-              {currentSeasonLabel} időszakban megfigyelhető madarak publikált helyszínek alapján.
-            </p>
-          </header>
-
-          <div className="grid gap-4 md:grid-cols-3">
-            {spotlightGroups.map((group) => {
-              const birdsForGroup = spotlightBirdsByGroup.get(group.key) ?? [];
-              return (
-                <div key={group.key} className="admin-stat-card">
-                  <p className="admin-stat-label">{group.label}</p>
-                  {birdsForGroup.length ? (
-                    <div className="mt-3 space-y-3">
-                      {birdsForGroup.map((bird) => (
-                        <div key={bird.id} className="flex items-start gap-3">
-                          {bird.habitatIconSrc ? (
-                            <img
-                              src={bird.habitatIconSrc}
-                              alt=""
-                              className="h-10 w-10 shrink-0 rounded-xl p-2"
-                              style={{ border: "1px solid var(--line)", background: "var(--panel-2)" }}
-                            />
-                          ) : (
-                            <div
-                              className="h-10 w-10 shrink-0 rounded-xl"
-                              style={{ border: "1px solid var(--line)", background: "var(--panel-2)" }}
-                            />
-                          )}
-                          <div className="min-w-0 flex-1">
-                            <Link href={`/birds/${bird.slug}`} className="admin-nav-link">
-                              {bird.name_hu}
-                            </Link>
-                            <div className="mt-1 flex flex-wrap gap-2">
-                              {bird.places.map((place) => (
-                                <Link
-                                  key={place.id}
-                                  href={`/places?place=${place.slug}`}
-                                  className="admin-note-small hover:underline"
-                                >
-                                  {place.name}
-                                </Link>
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="admin-stat-note mt-3">Még nincs elérhető lista.</p>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </Card>
-
-        <Card className="stack">
-          <header className="admin-heading">
-            <p className="admin-heading__label">Felfedezés</p>
-            <h2 className="admin-heading__title admin-heading__title--large">Kezdd itt</h2>
-            <p className="admin-heading__description">
-              Válassz madarat vagy helyszínt, és indulhat a megfigyelés.
-            </p>
-          </header>
-
-          <div className="grid gap-4 md:grid-cols-2">
-            <Link className="admin-link-card stack" href="/birds">
-              <p className="admin-link-card__title">Madarak</p>
-              <p className="admin-link-card__description">Publikált fajok, szűrőkkel és élőhely háttérrel.</p>
-            </Link>
-
-            <Link className="admin-link-card stack" href="/places/list">
-              <p className="admin-link-card__title">Helyszínek</p>
-              <p className="admin-link-card__description">Publikált helyszínek grides nézetben.</p>
-            </Link>
-          </div>
-        </Card>
-
-        <Card className="stack">
-          <header className="admin-heading inline-flex items-start justify-between gap-3">
-            <div>
-              <p className="admin-heading__label">Madarak</p>
-              <h2 className="admin-heading__title admin-heading__title--large">Friss publikált fajok</h2>
+        <section className={`admin-shell__panel ${styles.heroPanel}`} aria-label="Hero">
+          <div className={styles.heroInner}>
+            <div className={styles.heroMedia}>
+              <Image
+                src="/logo.svg"
+                alt="Szárnyfeszítő"
+                width={900}
+                height={260}
+                priority
+                className={styles.logo}
+              />
             </div>
-            <div className="flex flex-wrap items-center justify-end gap-3">
-              <Link className="admin-nav-link" href="/birds">
-                Összes madár
-              </Link>
+
+            <div className={styles.heroText}>
+              <h1 className={styles.heroSubtitle}>Útikalauz szárnyaló kalandoroknak</h1>
+              <p className={styles.heroCopy}>{HERO_INTRO_COPY}</p>
+              <div className={styles.heroActions}>
+                <Link className="btn btn--accent" href="/public">
+                  Felfedezés
+                </Link>
+              </div>
             </div>
-          </header>
+          </div>
+        </section>
 
-          <div className="space-y-3">
-            {recentBirds.length === 0 && <p className="admin-stat-note">Még nincs publikált madár.</p>}
-
-            {recentBirds.map((bird) => (
-              <Link key={bird.id} href={`/birds/${bird.slug}`} className="admin-list-link">
-                <div className="admin-list-details">
-                  <div className="admin-bird-list-grid">
-                    <BirdIcon
-                      habitatSrc={recentSignedHabitatTilesByKey.get(bird.habitat_stock_asset_keys?.[0] ?? "") ?? null}
-                      iconicSrc={iconicPreviewByBirdId.get(bird.id) ?? null}
-                      showHabitatBackground
-                      size={76}
-                    />
-                    <div className="admin-bird-text-cell">
-                      <p className="admin-list-title">{bird.name_hu}</p>
-                      <p className="admin-list-meta">{bird.slug}</p>
-                      <p className="admin-list-date">
-                        Frissítve{" "}
-                        {new Intl.DateTimeFormat("hu-HU", {
-                          dateStyle: "medium",
-                          timeStyle: "short",
-                        }).format(new Date(bird.updated_at))}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                <div className="admin-inline-actions">
-                  <span className="admin-list-action">Megnyitás</span>
-                </div>
-              </Link>
+        <section className={`admin-card ${styles.landingCard} ${styles.centeredCard}`} aria-label="Mi a Szárnyfeszítő?">
+          <h2 className={`admin-heading__title ${styles.sectionTitle}`}>{WHAT_IS_TITLE}</h2>
+          <div className={styles.featureGrid} aria-label="Mi a Szárnyfeszítő blocks">
+            {WHAT_IS_BLOCKS.map((block) => (
+              <div key={block.title} className={styles.featureCard}>
+                <p className={styles.featureTitle}>{block.title}</p>
+                <p className={styles.featureCopy}>{block.short}</p>
+              </div>
             ))}
           </div>
-        </Card>
-      </section>
-    </PublicShell>
+        </section>
+
+        <section className={styles.migrationPanel} aria-label="Madárvonulás panel">
+          <p className={styles.migrationCopy}>{MIGRATION_COPY}</p>
+        </section>
+
+        <section className={`admin-card ${styles.landingCard} ${styles.centeredCard}`} aria-label="Térkép felvezető">
+          <h2 className={`admin-heading__title ${styles.sectionTitle}`}>{MAP_INTRO_TITLE}</h2>
+          <p className={styles.sectionCopy}>{MAP_INTRO_COPY}</p>
+        </section>
+
+        <section className={`admin-card ${styles.landingCard} ${styles.placesCard}`} aria-label="Térkép">
+          <LandingPlacesMap markers={landing.places_map.markers} layers={landing.places_map.layers} />
+        </section>
+
+        <section className={styles.splitGrid} aria-label="Spotlight panels">
+          <article className={`admin-card ${styles.landingCard} ${styles.centeredCard}`} aria-label="Madarak">
+            <h2 className={`admin-heading__title ${styles.sectionTitle}`}>Ismerd meg a madarakat!</h2>
+            <p className={styles.sectionCopy}>{BIRDS_PANEL_COPY}</p>
+
+            {landing.featured_birds.length ? (
+              <ul className={styles.list} aria-label="Featured birds">
+                {landing.featured_birds.map((bird) => (
+                  <li key={bird.id} className={styles.birdRow}>
+                    <BirdIcon iconicSrc={bird.iconic_src} showHabitatBackground={false} size={56} />
+                    <div>
+                      <p className={styles.birdName}>{bird.name_hu}</p>
+                      <p className={styles.birdMeta}>{bird.visibility_label_hu}</p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="admin-note-small">Még nincs publikált madár a listához.</p>
+            )}
+
+            <div className={styles.cardActions}>
+              <Link className="btn btn--ghost" href="/birds">
+                Többi madár
+              </Link>
+            </div>
+          </article>
+
+          <article className={`admin-card ${styles.landingCard} ${styles.centeredCard}`} aria-label="Helyszínek">
+            <h2 className={`admin-heading__title ${styles.sectionTitle}`}>{MAP_HINT_TITLE}</h2>
+            <p className={styles.sectionCopy}>{MAP_HINT_COPY}</p>
+
+            {landing.spotlight_places.length ? (
+              <div className={styles.placeGrid} aria-label="Spotlight places">
+                {landing.spotlight_places.map((place) => (
+                  <section key={place.id} className={styles.placeCard} aria-label={place.name}>
+                    {place.hero_image_src ? (
+                      <img src={place.hero_image_src} alt="" className={styles.placeHero} />
+                    ) : (
+                      <div className={styles.placeHero} aria-label="No hero image" />
+                    )}
+                    <div className={styles.placeBody}>
+                      <h3 className={styles.placeName}>{place.name}</h3>
+                      {place.short ? <p className={styles.placeShort}>{place.short}</p> : null}
+                      {place.birds.length ? (
+                        <div className={styles.placeBirdIcons} aria-label="Place birds">
+                          {place.birds.slice(0, 5).map((bird) => (
+                            <BirdIcon key={bird.id} iconicSrc={bird.iconic_src} showHabitatBackground={false} size={40} />
+                          ))}
+                        </div>
+                      ) : null}
+                    </div>
+                  </section>
+                ))}
+              </div>
+            ) : (
+              <p className="admin-note-small">Még nincs publikált helyszín a listához.</p>
+            )}
+
+            <div className={styles.cardActions}>
+              <Link className="btn btn--ghost" href="/places/list">
+                Többi helyszín
+              </Link>
+            </div>
+          </article>
+        </section>
+
+        <section className={`admin-card ${styles.landingCard} ${styles.centeredCard}`} aria-label="Kinek szól?">
+          <h2 className={`admin-heading__title ${styles.sectionTitle}`}>{WHO_FOR_TITLE}</h2>
+          <div className={styles.whoForGrid} aria-label="Kinek szól grid">
+            {WHO_FOR_ITEMS.map((item) => (
+              <div key={item.title} className={styles.whoForCard}>
+                <Image src={item.iconSrc} alt="" width={64} height={64} className={styles.whoForIcon} />
+                <p className={styles.whoForTitle}>{item.title}</p>
+                <p className={styles.whoForCopy}>{item.short}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className={`admin-card ${styles.landingCard} ${styles.centeredCard}`} aria-label="Hogyan kezdj bele?">
+          <h2 className={`admin-heading__title ${styles.sectionTitle}`}>{HOW_TO_START_TITLE}</h2>
+          <div className={styles.stepsGrid} aria-label="Hogyan kezdj bele steps">
+            {HOW_TO_START_STEPS.map((step, idx) => (
+              <div key={step.title} className={styles.stepCard}>
+                <p className={styles.stepIndex}>{idx + 1}.</p>
+                <p className={styles.stepTitle}>{step.title}</p>
+                <p className={styles.stepCopy}>{step.short}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className={`admin-card ${styles.landingCard} ${styles.closingCta}`} aria-label="Záró CTA">
+          <h2 className={`admin-heading__title ${styles.sectionTitle}`}>{CLOSING_CTA_TITLE}</h2>
+          <p className={styles.sectionCopy}>{CLOSING_CTA_COPY}</p>
+          <div className={styles.closingActions}>
+            <Link className="btn btn--accent" href="/public">
+              Felfedezés
+            </Link>
+          </div>
+        </section>
+      </div>
+    </main>
   );
 }

@@ -1240,20 +1240,21 @@ Birdwatch logging should reflect “I saw X at place Y”, and help selection by
 
 **Status:** Accepted  
 **Date:** 2026-03-12  
-**Scope:** Public `/` only. No runtime AI.
+**Scope:** Public `/public` only. No runtime AI.
 
 ### Context
 - A public landing existed as editorial content (D54/D56), but we want the public surface to match the Admin dashboard visual language.
 - Public users need a concise, action-oriented overview without admin operations.
 
 ### Decision
-- Replace the public landing layout with the admin dashboard visual structure:
+- Add a dedicated public dashboard at `/public`, using the admin dashboard visual structure:
   - Places map preview (Leaflet) using published markers.
   - Habitat spotlights grouped by place type, filtered by the current season.
   - Discovery panel linking to `/birds` and `/places/list`.
   - Recent published birds list.
-- Remove all admin-only actions and pipeline management blocks from the public homepage.
-- Public topbar uses the admin topbar style but only shows `Madarak` and `Helyszínek`.
+- Keep the editorial landing at `/` unchanged.
+- Remove all admin-only actions and pipeline management blocks from the public dashboard.
+- Public topbar uses the admin topbar style but only shows `Madarak` and `Helyszínek` (logo links to `/public`).
 
 ### Out of scope
 - Admin-only stats and edit actions.

@@ -12,7 +12,7 @@ const NAV_LINKS = [
 
 export function PublicTopBar() {
   const pathname = usePathname() ?? "";
-  const isDashboard = pathname === "/";
+  const isDashboard = pathname === "/public";
   const navId = useId();
   const [menuOpenForPath, setMenuOpenForPath] = useState<string | null>(null);
   const menuOpen = menuOpenForPath === pathname;
@@ -31,7 +31,7 @@ export function PublicTopBar() {
     <div className={`admin-topbar ${isDashboard ? "admin-topbar--dashboard-overlay" : ""}`}>
       <div className="admin-topbar__inner">
         <div className="admin-topbar__brand">
-          <Link href="/" className="admin-topbar__logo" aria-label="Vissza a főoldalra">
+          <Link href="/public" className="admin-topbar__logo" aria-label="Vissza a publikus áttekintőre">
             <Image src="/logo.svg" alt="Szárnyfeszítő" width={48} height={48} className="admin-topbar__logo-img" />
           </Link>
           <button
