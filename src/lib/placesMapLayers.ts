@@ -105,6 +105,7 @@ export async function buildPlacesMapLayersV1(args: {
             const name = typeof row.name === "string" ? row.name : "";
             const type = typeof row.type === "string" ? row.type : "country";
             const item: DistributionRegionCatalogItemMeta = {
+              catalog: "globalRegions",
               region_id,
               name,
               scope: "global",
