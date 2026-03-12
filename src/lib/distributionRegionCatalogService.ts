@@ -1,5 +1,7 @@
 import { z } from "zod";
 import { supabaseServerClient } from "@/lib/supabaseServerClient";
+import { DISTRIBUTION_REGION_CATALOG_SOURCE } from "@/lib/config";
+import { loadRegionCatalogFromRepo, type RegionCatalogItem } from "@/lib/distributionRegionCatalogFile";
 
 export type DistributionRegionCatalogName =
   | "globalRegions"
@@ -36,6 +38,20 @@ function parseBbox(raw: unknown) {
 export async function listDistributionRegionCatalogMeta(
   catalog: DistributionRegionCatalogName
 ): Promise<DistributionRegionCatalogItemMeta[]> {
+  const allowRepo = DISTRIBUTION_REGION_CATALOG_SOURCE !== "supabase";
+  const allowSupabase = DISTRIBUTION_REGION_CATALOG_SOURCE !== "repo";
+
+  if (allowRepo) {
+    const repoItems = await loadRegionCatalogFromRepo(catalog);
+    if (repoItems && repoItems.length > 0) {
+      return repoItems.map(repoItemToMeta);
+    }
+  }
+
+  if (!allowSupabase) {
+    return [];
+  }
+
   const { data, error } = await supabaseServerClient
     .from("distribution_region_catalog_items")
     .select(
@@ -74,6 +90,22 @@ export async function listDistributionRegionCatalogMeta(
       typeof row.is_within_hungary_buffer === "boolean" ? row.is_within_hungary_buffer : null,
     site_code: String(row.site_code ?? "").trim() || null,
   }));
+}
+
+function repoItemToMeta(item: RegionCatalogItem): DistributionRegionCatalogItemMeta {
+  return {
+    region_id: item.region_id,
+    name: item.name,
+    scope: item.scope,
+    type: item.type,
+    source: item.source,
+    bbox: item.bbox,
+    country_code: null,
+    distance_to_hungary_km: null,
+    is_within_hungary: null,
+    is_within_hungary_buffer: null,
+    site_code: null,
+  };
 }
 
 export async function getDistributionRegionCatalogMetaById(
