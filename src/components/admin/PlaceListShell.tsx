@@ -32,7 +32,11 @@ type PlaceListShellProps = {
 
 type SortKey = "updated_desc" | "name_asc";
 
-export default function PlaceListShell({ places, missingSpaRegions }: PlaceListShellProps) {
+export default function PlaceListShell({
+  places,
+  missingSpaRegions,
+  missingExtendedSpaRegions,
+}: PlaceListShellProps) {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<PlaceStatus | "all">("all");
   const [typeFilter, setTypeFilter] = useState<PlaceType | "all">("all");
