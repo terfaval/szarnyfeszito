@@ -146,31 +146,33 @@ export default function DashboardPlacesMap({
   const markerBySlug = useMemo(() => new Map(markers.map((m) => [m.slug, m])), [markers]);
   const activeMarker = activeSlug ? markerBySlug.get(activeSlug) ?? null : null;
   const selectedRegionId = activeMarker?.leaflet_region_id?.trim() || null;
-  const boundsOptions = useMemo(() => {
-    const inset = Math.max(0, dashboardTopInsetPx);
-    return {
-      padding: [12, 12] as [number, number],
-      paddingTopLeft: [12, Math.round(inset + 12)] as [number, number],
-      paddingBottomRight: [12, 12] as [number, number],
-    };
-  }, [dashboardTopInsetPx]);
+    const boundsOptions = useMemo(() => {
+      const inset = Math.max(0, dashboardTopInsetPx);
+      return {
+        padding: [18, 18] as [number, number],
+        paddingTopLeft: [18, Math.round(inset + 18)] as [number, number],
+        paddingBottomRight: [18, 18] as [number, number],
+      };
+    }, [dashboardTopInsetPx]);
 
   return (
     <section className={styles.section} aria-label="Published places map">
       <div className={styles.layout} style={{ position: "relative" }}>
-        <PlacesMap
-          markers={markers}
-          layers={layers}
-          selectedSlug={activeSlug}
-          selectedRegionId={selectedRegionId}
-          basemap="bird"
-          regionVisualization="places_regions_v1"
-          interactionMode="bounded_hu_v1"
-          toolBarVariant="bottom_right_v1"
-          defaultBounds={HUNGARY_FULL_BOUNDS_V1}
-          defaultBoundsOptions={boundsOptions}
-          markerColorMode="water_highlight_v1"
-          onSelect={(slug) => setPinnedSlug((prev) => (prev === slug ? null : slug))}
+          <PlacesMap
+            markers={markers}
+            layers={layers}
+            selectedSlug={activeSlug}
+            selectedRegionId={selectedRegionId}
+            layoutVariant="fill_parent_v1"
+            basemap="bird"
+            regionVisualization="places_regions_v1"
+            markerColorMode="place_type_category_v1"
+            interactionMode="bounded_hu_v1"
+            toolBarVariant="bottom_right_v1"
+            defaultBounds={HUNGARY_FULL_BOUNDS_V1}
+            defaultBoundsOptions={boundsOptions}
+            showResetViewButton
+            onSelect={(slug) => setPinnedSlug((prev) => (prev === slug ? null : slug))}
           markerEventHandlers={(marker) => ({
             mouseover: () => setHoveredSlug(marker.slug),
             mouseout: () => {
