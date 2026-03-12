@@ -7,7 +7,7 @@ export type DistributionRegionCatalogName =
   | "globalRegions"
   | "hungaryRegions"
   | "hungaryExtendedRegions";
-
+ 
 export type DistributionRegionCatalogItemMeta = {
   region_id: string;
   name: string;
