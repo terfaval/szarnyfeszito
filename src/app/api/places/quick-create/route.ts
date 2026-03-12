@@ -119,15 +119,34 @@ export async function POST(request: Request) {
   try {
     const draftResult = await generatePlaceDraftFromNameV1({ place_name: name });
     const placeMeta = draftResult.payload.place;
-    const placeTypes = Array.from(
-      new Set([placeMeta.place_type_primary, ...(placeMeta.place_types ?? [])])
-    );
+    const placeTypes = Array.from(new Set([placeMeta.place_type_primary, ...(placeMeta.place_types ?? [])]));
+
+    const safePrimaryType =
+      placeMeta.place_type_primary === "protected_area"
+        ? placeTypes.find((t) => t !== "protected_area") ?? null
+        : placeMeta.place_type_primary;
+
+    if (!safePrimaryType) {
+      return NextResponse.json(
+        {
+          error:
+            "AI suggested protected_area as the primary place_type, which is not allowed. Regenerate the draft or pick a habitat-like primary type.",
+          data: {
+            suggested_place_type_primary: placeMeta.place_type_primary,
+            suggested_place_types: placeTypes,
+          },
+        },
+        { status: 422 }
+      );
+    }
+
+    const safePlaceTypes = Array.from(new Set([safePrimaryType, ...placeTypes]));
 
     place = await createPlace({
       slug,
       name,
-      place_type: placeMeta.place_type_primary,
-      place_types: placeTypes,
+      place_type: safePrimaryType,
+      place_types: safePlaceTypes,
       region_landscape: placeMeta.region_landscape,
       county: placeMeta.county,
       district: placeMeta.district,

@@ -34,11 +34,19 @@ export default async function PlaceEditorPage({
   }
 
   const marker = await getPlaceMarkerById(place.id);
-  const regionMeta = await listDistributionRegionCatalogMeta("hungaryRegions").catch(() => []);
-  const leafletRegions = regionMeta
-    .filter((r) => r.scope === "hungary" && (r.type === "spa" || r.type === "microregion"))
-    .sort((a, b) => `${a.type}:${a.name}`.localeCompare(`${b.type}:${b.name}`))
-    .map((r) => ({ region_id: r.region_id, name: r.name, type: r.type }));
+  const [hungaryMeta, extendedMeta] = await Promise.all([
+    listDistributionRegionCatalogMeta("hungaryRegions").catch(() => []),
+    listDistributionRegionCatalogMeta("hungaryExtendedRegions").catch(() => []),
+  ]);
+
+  const leafletRegions = [...hungaryMeta, ...extendedMeta]
+    .filter((r) => {
+      const isHungaryLeaflet = r.scope === "hungary" && (r.type === "spa" || r.type === "microregion");
+      const isExtendedSpa = r.scope === "hungary_extended" && r.type === "spa";
+      return isHungaryLeaflet || isExtendedSpa;
+    })
+    .sort((a, b) => `${a.scope}:${a.type}:${a.name}`.localeCompare(`${b.scope}:${b.type}:${b.name}`))
+    .map((r) => ({ region_id: r.region_id, name: r.name, type: r.type, scope: r.scope, catalog: r.catalog }));
 
   return (
     <Card className="place-panel place-panel-general">

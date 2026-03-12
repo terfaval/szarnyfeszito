@@ -1,7 +1,8 @@
 import BirdPublishAction from "@/components/admin/BirdPublishAction";
 import BirdTextReview from "@/components/admin/BirdTextReview";
+import BirdCard from "@/components/public/BirdCard";
 import { getBirdById, getBirdBySlug, isUuid } from "@/lib/birdService";
-import { getLatestContentBlockForBird } from "@/lib/contentService";
+import { getLatestApprovedContentBlockForBird, getLatestContentBlockForBird } from "@/lib/contentService";
 import { getSignedImageUrl, listImagesForBird } from "@/lib/imageService";
 import { GateChecklist } from "@/ui/components/GateChecklist";
 import { Card } from "@/ui/components/Card";
@@ -44,6 +45,9 @@ export default async function BirdPublishPage({
   );
 
   const contentBlock = await getLatestContentBlockForBird(bird.id);
+  const approvedContent = await getLatestApprovedContentBlockForBird(bird.id);
+  const iconicPreviewUrl =
+    imagesWithPreview.find((img) => img.variant === "fixed_pose_icon_v1")?.previewUrl ?? null;
 
   const statusIndex = BIRD_STATUS_VALUES.indexOf(bird.status);
   const textApprovedIndex = BIRD_STATUS_VALUES.indexOf("text_approved");
@@ -89,6 +93,32 @@ export default async function BirdPublishPage({
           ? "Publish gate unlocked - the CTA above is now available."
           : "Publish gate locked until every checklist item turns green."}
       </p>
+
+      {approvedContent ? (
+        <div className="stack">
+          <p className="admin-subheading">Public bird card preview</p>
+          <BirdCard
+            bird={{
+              name_hu: bird.name_hu,
+              name_latin: bird.name_latin ?? null,
+              size_category: bird.size_category ?? null,
+              visibility_category: bird.visibility_category ?? null,
+              color_tags: bird.color_tags ?? null,
+            }}
+            content={{
+              short: approvedContent.short ?? "",
+              long: approvedContent.long ?? "",
+              feature_block: approvedContent.feature_block ?? [],
+              did_you_know: approvedContent.did_you_know ?? "",
+              ethics_tip: approvedContent.ethics_tip ?? "",
+            }}
+            iconicSrc={iconicPreviewUrl}
+            habitatSrc={null}
+          />
+        </div>
+      ) : (
+        <p className="admin-note-small">No approved public bird card content yet.</p>
+      )}
 
       <BirdTextReview
         birdId={bird.id}

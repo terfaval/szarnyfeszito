@@ -316,7 +316,7 @@ export default function PublicBirdsGrid() {
               </div>
               <div className={styles.grid}>
                 {group.birds.map((bird) => (
-                  <Link key={bird.id} href={`/birds/${bird.slug}`} className={`${styles.card} admin-stat-card`}>
+                  <Link key={bird.id} href={`/birds/${bird.id}`} className={`${styles.card} admin-stat-card`}>
                     <BirdIcon
                       iconicSrc={bird.iconic_src}
                       habitatSrc={bird.habitat_src}

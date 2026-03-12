@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import Image from "next/image";
 import type { PlacesMapLayersV1 } from "@/types/placesMap";
@@ -6,6 +8,7 @@ import type { PlaceUiVariantsV1 } from "@/lib/placeContentSchema";
 import type { SeasonKey } from "@/lib/season";
 import BirdIcon from "@/components/admin/BirdIcon";
 import PlacesMap from "@/components/maps/PlacesMap";
+import type { PlacesMapInteractionMode, PlacesMapProps } from "@/components/maps/PlacesMap";
 import { Card } from "@/ui/components/Card";
 import styles from "./PlacePublishPreview.module.css";
 
@@ -73,8 +76,32 @@ export default function PlacePublishPreview({
   currentSeason,
   birds,
   showSeasonal,
+  showHeading = true,
+  birdLinkBasePath = "/admin/birds",
+  birdLinkKey = "id",
+  mapBasemap = "bird",
+  mapInteractionMode = "bounded_hu_v1",
 }: {
-  place: Place;
+  place: Pick<
+    Place,
+    | "id"
+    | "slug"
+    | "name"
+    | "place_type"
+    | "status"
+    | "leaflet_region_id"
+    | "location_precision"
+    | "sensitivity_level"
+    | "is_beginner_friendly"
+    | "region_landscape"
+    | "county"
+    | "nearest_city"
+    | "access_note"
+    | "parking_note"
+    | "best_visit_note"
+    | "notable_units_json"
+    | "updated_at"
+  >;
   marker: { lat: number | null; lng: number | null } | null;
   layers: PlacesMapLayersV1 | null;
   content: PlaceUiVariantsV1 | null;
@@ -82,6 +109,11 @@ export default function PlacePublishPreview({
   currentSeason: SeasonKey;
   birds: PlacePublishBird[];
   showSeasonal: boolean;
+  showHeading?: boolean;
+  birdLinkBasePath?: string;
+  birdLinkKey?: "id" | "slug";
+  mapBasemap?: PlacesMapProps["basemap"];
+  mapInteractionMode?: PlacesMapInteractionMode;
 }) {
   const variants = content?.variants ?? null;
   const seasonalText = variants?.seasonal_snippet?.[currentSeason] ?? "";
@@ -123,13 +155,15 @@ export default function PlacePublishPreview({
 
   return (
     <section className={styles.previewRoot} aria-label="Place publish preview">
-      <header className="admin-heading">
-        <p className="admin-heading__label">Preview</p>
-        <h2 className="admin-heading__title admin-heading__title--large">Place card</h2>
-        <p className="admin-heading__description">
-          What the public panel will primarily render (UI variants contract), plus the currently linked birds.
-        </p>
-      </header>
+      {showHeading ? (
+        <header className="admin-heading">
+          <p className="admin-heading__label">Preview</p>
+          <h2 className="admin-heading__title admin-heading__title--large">Place card</h2>
+          <p className="admin-heading__description">
+            What the public panel will primarily render (UI variants contract), plus the currently linked birds.
+          </p>
+        </header>
+      ) : null}
 
       <Card className="stack">
         {heroImageUrl ? (
@@ -182,10 +216,10 @@ export default function PlacePublishPreview({
                     selectedSlug={hasMarker ? markerSlug : null}
                     selectedRegionId={place.leaflet_region_id}
                     layers={layers}
-                    basemap="bird"
+                    basemap={mapBasemap}
                     regionVisualization="places_regions_v1"
                     markerColorMode="water_highlight_v1"
-                    interactionMode="bounded_hu_v1"
+                    interactionMode={mapInteractionMode}
                     toolBarVariant="bottom_right_v1"
                     defaultCenter={
                       hasMarker ? ([placeMarker.lat as number, placeMarker.lng as number] as [number, number]) : undefined
@@ -234,7 +268,7 @@ export default function PlacePublishPreview({
                     {birds.map((bird) => (
                       <Link
                         key={bird.id}
-                        href={`/admin/birds/${bird.id}`}
+                        href={`${birdLinkBasePath}/${encodeURIComponent(birdLinkKey === "slug" ? bird.slug : bird.id)}`}
                         className={styles.birdCard}
                         aria-label={`Open bird: ${bird.name_hu}`}
                       >

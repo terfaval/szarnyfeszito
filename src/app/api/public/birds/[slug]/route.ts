@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getBirdBySlug } from "@/lib/birdService";
+import { getBirdById, getBirdBySlug, isUuid } from "@/lib/birdService";
 import { getLatestApprovedContentBlockForBird } from "@/lib/contentService";
 import {
   computeHabitatStockAssetKeysForPlaceTypes,
@@ -16,7 +16,7 @@ type PlaceLinkRow = {
 
 export async function GET(_request: Request, ctx: { params: Promise<{ slug: string }> }) {
   const { slug } = await ctx.params;
-  const bird = await getBirdBySlug(slug);
+  const bird = isUuid(slug) ? await getBirdById(slug) : await getBirdBySlug(slug);
 
   if (!bird || bird.status !== "published") {
     return NextResponse.json({ error: "A madár nem található." }, { status: 404 });

@@ -115,6 +115,13 @@ export async function PATCH(request: Request, ctx: { params: Promise<{ id: strin
     );
   }
 
+  if (requestedPlaceType === "protected_area") {
+    return NextResponse.json(
+      { error: "place_type cannot be protected_area. Use protected_area only as an additional place_type." },
+      { status: 400 }
+    );
+  }
+
   if (requestedPlaceTypes && requestedPlaceTypes.length === 0) {
     return NextResponse.json(
       { error: `place_types must contain valid values: ${PLACE_TYPE_VALUES.join(", ")}` },

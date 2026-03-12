@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
 import { supabaseServerClient } from "@/lib/supabaseServerClient";
-import { getPlaceBySlug } from "@/lib/placeService";
+import { getPlaceBySlug, getPlaceMarkerById } from "@/lib/placeService";
 import { getLatestApprovedContentBlockForPlace } from "@/lib/placeContentService";
 import { placeUiVariantsSchemaV1 } from "@/lib/placeContentSchema";
+import { getCurrentSeasonKey } from "@/lib/season";
+import { getSignedImageUrl, listApprovedCurrentIconicImagesForBirds } from "@/lib/imageService";
 
 export async function GET(_request: Request, ctx: { params: Promise<{ slug: string }> }) {
   const { slug } = await ctx.params;
@@ -54,6 +56,69 @@ export async function GET(_request: Request, ctx: { params: Promise<{ slug: stri
     })
     .filter(Boolean);
 
+  const currentSeason = getCurrentSeasonKey();
+  const isVisibleInSeason = (row: (typeof publishedBirdLinks)[number]) => {
+    const r = row as { visible_in_spring?: unknown; visible_in_summer?: unknown; visible_in_autumn?: unknown; visible_in_winter?: unknown };
+    if (currentSeason === "spring") return Boolean(r.visible_in_spring);
+    if (currentSeason === "summer") return Boolean(r.visible_in_summer);
+    if (currentSeason === "autumn") return Boolean(r.visible_in_autumn);
+    return Boolean(r.visible_in_winter);
+  };
+
+  const visibleBirdLinks = publishedBirdLinks.filter(isVisibleInSeason);
+  const visibleBirdIds = visibleBirdLinks
+    .map((row) => ((row as { bird?: { id?: unknown } | null }).bird?.id as string | undefined) ?? "")
+    .filter(Boolean);
+
+  const iconicRows = await listApprovedCurrentIconicImagesForBirds(visibleBirdIds);
+  const storagePathByBirdId = new Map(iconicRows.map((row) => [row.entity_id, row.storage_path]));
+  const signedIconicPairs = await Promise.all(
+    visibleBirdIds.map(async (birdId) => {
+      const storagePath = storagePathByBirdId.get(birdId) ?? null;
+      const signedUrl = storagePath ? await getSignedImageUrl(storagePath) : null;
+      return [birdId, signedUrl] as const;
+    })
+  );
+  const iconicUrlByBirdId = new Map(signedIconicPairs);
+
+  const birds = visibleBirdLinks
+    .map((row) => {
+      const r = row as { rank?: unknown; frequency_band?: unknown; bird?: { id?: unknown; slug?: unknown; name_hu?: unknown } | null };
+      const bird = r.bird ?? null;
+      if (!bird || typeof bird.id !== "string" || typeof bird.slug !== "string" || typeof bird.name_hu !== "string") return null;
+      return {
+        id: bird.id,
+        slug: bird.slug,
+        name_hu: bird.name_hu,
+        iconicSrc: iconicUrlByBirdId.get(bird.id) ?? null,
+        rank: typeof r.rank === "number" ? r.rank : 0,
+        frequency_band: typeof r.frequency_band === "string" ? r.frequency_band : "regular",
+      };
+    })
+    .filter(Boolean);
+
+  const marker = place.location_precision === "hidden" ? null : await getPlaceMarkerById(place.id);
+  const safeMarker = marker ? { lat: marker.lat, lng: marker.lng } : null;
+
+  const { data: heroRows, error: heroError } = await supabaseServerClient
+    .from("images")
+    .select("storage_path")
+    .eq("entity_type", "place")
+    .eq("variant", "place_hero_spring_v1")
+    .eq("is_current", true)
+    .eq("review_status", "approved")
+    .eq("entity_id", place.id)
+    .limit(1);
+
+  if (heroError) {
+    throw heroError;
+  }
+
+  const heroStoragePath = typeof (heroRows?.[0] as { storage_path?: unknown } | undefined)?.storage_path === "string"
+    ? String((heroRows?.[0] as { storage_path?: unknown }).storage_path)
+    : "";
+  const heroImageUrl = heroStoragePath ? await getSignedImageUrl(heroStoragePath) : null;
+
   return NextResponse.json({
     data: {
       place: {
@@ -61,6 +126,7 @@ export async function GET(_request: Request, ctx: { params: Promise<{ slug: stri
         slug: place.slug,
         name: place.name,
         place_type: place.place_type,
+        status: place.status,
         leaflet_region_id: place.leaflet_region_id,
         region_landscape: place.region_landscape,
         county: place.county,
@@ -75,9 +141,14 @@ export async function GET(_request: Request, ctx: { params: Promise<{ slug: stri
         parking_note: place.parking_note,
         best_visit_note: place.best_visit_note,
         notable_units_json: place.notable_units_json,
+        updated_at: place.updated_at,
       },
+      marker: safeMarker,
       content: parsedContent.data,
       place_birds: publishedBirdLinks,
+      current_season: currentSeason,
+      hero_image_src: heroImageUrl,
+      birds,
     },
   });
 }

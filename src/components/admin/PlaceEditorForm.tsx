@@ -19,7 +19,13 @@ import PlaceLocationPicker from "@/components/maps/PlaceLocationPicker";
 type PlaceEditorFormProps = {
   place: Place;
   marker: PlaceMarker | null;
-  leafletRegions: Array<{ region_id: string; name: string; type: string }>;
+  leafletRegions: Array<{
+    region_id: string;
+    name: string;
+    type: string;
+    scope: "global" | "hungary" | "hungary_extended";
+    catalog: string;
+  }>;
 };
 
 function toNumberOrNull(value: string) {
@@ -63,6 +69,14 @@ export default function PlaceEditorForm({ place, marker, leafletRegions }: Place
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
+  const selectedLeafletRegion = useMemo(() => {
+    const id = values.leaflet_region_id.trim();
+    if (!id) return null;
+    return leafletRegions.find((r) => r.region_id === id) ?? null;
+  }, [leafletRegions, values.leaflet_region_id]);
+
+  const isHungaryExtendedLeaflet = selectedLeafletRegion?.scope === "hungary_extended";
+
   const derivedLocationWkt = useMemo(() => {
     const lat = toNumberOrNull(values.lat);
     const lng = toNumberOrNull(values.lng);
@@ -80,6 +94,14 @@ export default function PlaceEditorForm({ place, marker, leafletRegions }: Place
     setSaving(true);
     setError(null);
     setMessage(null);
+
+    if (values.place_type === "protected_area") {
+      setError(
+        "protected_area cannot be the primary place type. Pick a habitat-like type and keep protected_area as an additional type if needed."
+      );
+      setSaving(false);
+      return;
+    }
 
     const response = await fetch(`/api/places/${place.id}`, {
       method: "PATCH",
@@ -152,7 +174,7 @@ export default function PlaceEditorForm({ place, marker, leafletRegions }: Place
                 onChange={(event) => setValues((p) => ({ ...p, place_type: event.target.value as PlaceType }))}
               >
                 {PLACE_TYPE_VALUES.map((value) => (
-                  <option key={value} value={value}>
+                  <option key={value} value={value} disabled={value === "protected_area"}>
                     {value}
                   </option>
                 ))}
@@ -218,10 +240,10 @@ export default function PlaceEditorForm({ place, marker, leafletRegions }: Place
             placeholder="Fertő–Hanság"
           />
           <Input
-            label="County"
+            label={isHungaryExtendedLeaflet ? "Country" : "County"}
             value={values.county}
             onChange={(event) => setValues((p) => ({ ...p, county: event.target.value }))}
-            placeholder="Győr-Moson-Sopron"
+            placeholder={isHungaryExtendedLeaflet ? "Austria" : "Győr-Moson-Sopron"}
           />
           <Input
             label="District"
@@ -307,9 +329,9 @@ export default function PlaceEditorForm({ place, marker, leafletRegions }: Place
         </p>
 
         <label className="form-field">
-          <span className="form-field__label">Leaflet region (HU Natura / microregion)</span>
+          <span className="form-field__label">Leaflet region (HU / Hungary-extended)</span>
           <p className="admin-note-small">
-            Used for Leaflet overlays and for dashboard pinning when the place location is hidden or approximate. Prefer Natura 2000 SPA when available; use microregion as fallback.
+            Used for Leaflet overlays and for dashboard pinning when the place location is hidden or approximate. Prefer Natura 2000 SPA when available; use microregion as fallback. Hungary-extended SPAs are allowed for cross-border regions.
           </p>
           <div className="form-field__row">
             <select
@@ -320,7 +342,7 @@ export default function PlaceEditorForm({ place, marker, leafletRegions }: Place
               <option value="">(none)</option>
               {leafletRegions.map((r) => (
                 <option key={r.region_id} value={r.region_id}>
-                  {r.name} · {r.type} · {r.region_id}
+                  {r.name} · {r.scope} · {r.type} · {r.region_id}
                 </option>
               ))}
             </select>

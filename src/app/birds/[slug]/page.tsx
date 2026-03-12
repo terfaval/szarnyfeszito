@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import BirdIcon from "@/components/admin/BirdIcon";
-import { getBirdBySlug } from "@/lib/birdService";
+import BirdCard from "@/components/public/BirdCard";
+import { getBirdById, getBirdBySlug, isUuid } from "@/lib/birdService";
 import { getLatestApprovedContentBlockForBird } from "@/lib/contentService";
 import {
   computeHabitatStockAssetKeysForPlaceTypes,
@@ -10,37 +10,9 @@ import {
 } from "@/lib/habitatStockAssetService";
 import { getSignedImageUrl, listApprovedCurrentIconicImagesForBirds } from "@/lib/imageService";
 import { supabaseServerClient } from "@/lib/supabaseServerClient";
-import type { BirdSizeCategory, BirdVisibilityCategory } from "@/types/bird";
 import type { PlaceType } from "@/types/place";
 import PublicShell from "@/ui/components/PublicShell";
 import styles from "./page.module.css";
-
-const SIZE_LABELS: Record<BirdSizeCategory, string> = {
-  very_small: "Nagyon kicsi",
-  small: "Kicsi",
-  medium: "Közepes",
-  large: "Nagy",
-};
-
-const VISIBILITY_LABELS: Record<BirdVisibilityCategory, string> = {
-  common_hu: "Gyakori (HU)",
-  localized_hu: "Helyi (HU)",
-  seasonal_hu: "Szezonális (HU)",
-  rare_hu: "Ritka (HU)",
-  not_in_hu: "Nem HU",
-};
-
-const COLOR_LABELS: Record<string, string> = {
-  white: "Fehér",
-  black: "Fekete",
-  grey: "Szürke",
-  brown: "Barna",
-  yellow: "Sárga",
-  orange: "Narancs",
-  red: "Vörös",
-  green: "Zöld",
-  blue: "Kék",
-};
 
 type PlaceLinkRow = {
   place?: { place_type?: unknown; status?: unknown } | null;
@@ -53,7 +25,8 @@ export const metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function BirdDetailPage({ params }: { params: { slug: string } }) {
-  const bird = await getBirdBySlug(params.slug);
+  const key = params.slug;
+  const bird = isUuid(key) ? await getBirdById(key) : await getBirdBySlug(key);
   if (!bird || bird.status !== "published") {
     notFound();
   }
@@ -110,78 +83,30 @@ export default async function BirdDetailPage({ params }: { params: { slug: strin
     : new Map<string, string | null>();
   const habitatSrc = habitatKey ? habitatUrlByKey.get(habitatKey) ?? null : null;
 
-  const sizeLabel = bird.size_category ? SIZE_LABELS[bird.size_category] : null;
-  const visibilityLabel = bird.visibility_category
-    ? VISIBILITY_LABELS[bird.visibility_category]
-    : "Ismeretlen";
-
   return (
     <PublicShell>
       <main className={styles.page}>
         <Link className={styles.backLink} href="/birds">
           ← Vissza a madarakhoz
         </Link>
-
-        <section className={styles.hero}>
-          <BirdIcon
-            iconicSrc={iconicSrc}
-            habitatSrc={habitatSrc}
-            showHabitatBackground
-            size={168}
-            className={styles.heroIcon}
-          />
-          <div className={styles.heroText}>
-            <p className={styles.kicker}>Publikus madárkártya</p>
-            <h1 className={styles.title}>{bird.name_hu}</h1>
-            <p className={styles.meta}>
-              {visibilityLabel}
-              {sizeLabel ? ` · ${sizeLabel}` : ""}
-              {bird.name_latin ? ` · ${bird.name_latin}` : ""}
-            </p>
-            <p className={styles.short}>{content.short}</p>
-            {bird.color_tags?.length ? (
-              <div className={styles.tags}>
-                {bird.color_tags.map((tag) => (
-                  <span key={tag} className={styles.tag}>
-                    {COLOR_LABELS[tag] ?? tag}
-                  </span>
-                ))}
-              </div>
-            ) : null}
-          </div>
-        </section>
-
-        <section className={styles.sections}>
-          <article className={`${styles.card} admin-card`}>
-            <h2 className={styles.cardTitle}>Hosszabb leírás</h2>
-            <p className={styles.cardBody}>{content.long}</p>
-          </article>
-
-          {content.feature_block?.length ? (
-            <article className={`${styles.card} admin-card`}>
-              <h2 className={styles.cardTitle}>Jellemzők</h2>
-              <div className={styles.featureGrid}>
-                {content.feature_block.map((block) => (
-                  <div key={block.heading} className={styles.featureItem}>
-                    <p className={styles.featureTitle}>{block.heading}</p>
-                    <p className={styles.featureBody}>{block.content}</p>
-                  </div>
-                ))}
-              </div>
-            </article>
-          ) : null}
-
-        <div className={styles.notes}>
-          <article className={`${styles.noteCard} admin-card`}>
-            <h3 className={styles.noteTitle}>Tudtad?</h3>
-            <p className={styles.noteBody}>{content.did_you_know}</p>
-          </article>
-          <article className={`${styles.noteCard} admin-card`}>
-            <h3 className={styles.noteTitle}>Etikai tipp</h3>
-            <p className={styles.noteBody}>{content.ethics_tip}</p>
-          </article>
-        </div>
-        </section>
+        <BirdCard
+          bird={{
+            name_hu: bird.name_hu,
+            name_latin: bird.name_latin ?? null,
+            size_category: bird.size_category ?? null,
+            visibility_category: bird.visibility_category ?? null,
+            color_tags: bird.color_tags ?? null,
+          }}
+          content={{
+            short: content.short ?? "",
+            long: content.long ?? "",
+            feature_block: content.feature_block ?? [],
+            did_you_know: content.did_you_know ?? "",
+            ethics_tip: content.ethics_tip ?? "",
+          }}
+          iconicSrc={iconicSrc}
+          habitatSrc={habitatSrc}
+        />
       </main>
     </PublicShell>
   );

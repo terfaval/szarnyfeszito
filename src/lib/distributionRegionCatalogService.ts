@@ -169,7 +169,7 @@ export async function listDistributionRegionCatalogMeta(
   const { data, error } = await supabaseServerClient
     .from("distribution_region_catalog_items")
     .select(
-      "region_id,name,scope,type,source,bbox"
+      "catalog,region_id,name,scope,type,source,bbox"
     )
     .eq("catalog", catalog);
 

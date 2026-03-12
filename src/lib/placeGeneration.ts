@@ -234,11 +234,11 @@ Etika:
 - Ne adj meg pontos koordinátákat, rejtett mikro-helyeket, fészkekre utaló tippeket.
 - Alapértelmezés: location_precision="approximate", sensitivity_level="normal".
 
-Válasz JSON sémája:
-- schema_version: "place_draft_from_name_v1"
-- language: "hu"
-- place: {
-  place_type_primary: one of ${PLACE_TYPE_VALUES.join(" | ")}
+ Válasz JSON sémája:
+ - schema_version: "place_draft_from_name_v1"
+ - language: "hu"
+ - place: {
+  place_type_primary: one of ${PLACE_TYPE_VALUES.join(" | ")} (MUST NOT be protected_area; use protected_area only as an additional tag in place_types)
   place_types: array of the same enum (must include primary; can include extra if justified)
   region_landscape: string|null
   county: string|null

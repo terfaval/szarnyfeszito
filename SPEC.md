@@ -202,9 +202,12 @@ Core mezők:
 - id
 - slug
 - name
-- leaflet_region_id (optional; HU region overlay reference for Leaflet; must be a `hungaryRegions` SPA or microregion id)
+- leaflet_region_id (optional; region overlay reference for Leaflet; must reference:
+  - `hungaryRegions` where (`scope="hungary"` and `type in ("spa","microregion")`), OR
+  - `hungaryExtendedRegions` where (`scope="hungary_extended"` and `type="spa"`)
+  )
 - region_landscape
-- place_type
+- place_type (primary; MUST NOT be `protected_area`)
 - place_types (optional; always includes place_type)
 - status
 
@@ -221,6 +224,11 @@ KiegĂ©szĂ­tĹ‘ mezĹ‘k (D31):
 - access_note / parking_note / best_visit_note
 - notable_units_json (informational sub-units; not separate Place entities in v1)
 - generation_input (admin-only prompt seed)
+
+Notes:
+- `protected_area` may appear in `place_types` as an additional tag, but cannot be the primary `place_type`.
+- For Hungary-extended Places (leaflet_region_id in `hungaryExtendedRegions`), the `county` field stores the **country**
+  label (since the column is shared in v0).
 
 Place UI content (Explorer panel contract, D34):
 - Stored in `content_blocks.blocks_json` as versioned JSON with `schema_version="place_ui_variants_v1"`, `language="hu"`.
