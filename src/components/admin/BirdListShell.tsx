@@ -276,6 +276,9 @@ export default function BirdListShell({ birds }: BirdListShellProps) {
           <Link className="admin-nav-link" href="/admin/birds/refill/color-tags">
             Refill: color tags
           </Link>
+          <Link className="admin-nav-link" href="/admin/birds/refill/habitat-assets">
+            Refill: habitat assets
+          </Link>
         </div>
       </header>
 

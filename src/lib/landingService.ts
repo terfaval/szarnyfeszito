@@ -1,5 +1,5 @@
 import { buildPlacesMapLayersV1 } from "@/lib/placesMapLayers";
-import { listPublishedPlaceMarkers } from "@/lib/placeService";
+import { listPublishedPlaceDashboardMarkers } from "@/lib/placeService";
 import { getLatestApprovedContentBlockForPlace } from "@/lib/placeContentService";
 import { placeUiVariantsSchemaV1 } from "@/lib/placeContentSchema";
 import { listApprovedPublishedBirdLinksForPlace } from "@/lib/placeBirdService";
@@ -38,7 +38,7 @@ type SpotlightPlaceV1 = {
 
 export type PublicLandingV1 = {
   places_map: {
-    markers: Awaited<ReturnType<typeof listPublishedPlaceMarkers>>;
+    markers: Awaited<ReturnType<typeof listPublishedPlaceDashboardMarkers>>;
     layers: Awaited<ReturnType<typeof buildPlacesMapLayersV1>>;
   };
   featured_birds: FeaturedBirdV1[];
@@ -113,7 +113,7 @@ function pickFeaturedBirdsV1(args: {
 
 export async function getPublicLandingV1(): Promise<PublicLandingV1> {
   const [markers, publishedBirds, publishedPlaces] = await Promise.all([
-    listPublishedPlaceMarkers(),
+    listPublishedPlaceDashboardMarkers(),
     listBirds({ status: "published" }),
     // Keep this small and deterministic: take the most recently updated published places.
     // (We still filter out any place missing approved UI variants in the next step.)

@@ -35,7 +35,7 @@ export async function listBirds(options: ListBirdsOptions = {}): Promise<Bird[]>
   let query = supabaseServerClient
     .from("birds")
     .select(
-      "id,slug,name_hu,name_latin,status,published_at,published_revision,science_dossier_status,visual_brief_status,size_category,visibility_category,classification_status,color_tags,created_at,updated_at"
+      "id,slug,name_hu,name_latin,status,published_at,published_revision,science_dossier_status,visual_brief_status,size_category,visibility_category,classification_status,color_tags,habitat_stock_asset_keys,created_at,updated_at"
     )
     .order("updated_at", { ascending: false })
     .limit(100);
@@ -70,6 +70,40 @@ export async function listBirds(options: ListBirdsOptions = {}): Promise<Bird[]>
   return data ?? [];
 }
 
+export async function listHabitatStockAssetKeysForBirds(birdIds: string[]) {
+  const ids = Array.from(new Set(birdIds.filter(Boolean))).slice(0, 200);
+  const out = new Map<string, string[]>();
+  ids.forEach((id) => out.set(id, []));
+  if (ids.length === 0) return out;
+
+  const { data, error } = await supabaseServerClient
+    .from("birds")
+    .select("id,habitat_stock_asset_keys")
+    .in("id", ids)
+    .limit(ids.length);
+
+  if (error) {
+    throw error;
+  }
+
+  type HabitatKeysRow = { id?: unknown; habitat_stock_asset_keys?: unknown };
+  (data ?? []).forEach((row) => {
+    const r = row as HabitatKeysRow;
+    const id = typeof r?.id === "string" ? r.id : "";
+    const keys = Array.isArray(r?.habitat_stock_asset_keys)
+      ? (r.habitat_stock_asset_keys as unknown[])
+          .filter((k): k is string => typeof k === "string")
+          .map((k) => k.trim())
+          .filter(Boolean)
+      : [];
+    if (id) {
+      out.set(id, keys);
+    }
+  });
+
+  return out;
+}
+
 export async function listPublishedBirdsForRefill(args: {
   limit?: number;
 } = {}): Promise<PublishedBirdRefillListItem[]> {
@@ -86,6 +120,28 @@ export async function listPublishedBirdsForRefill(args: {
   }
 
   return (data ?? []) as PublishedBirdRefillListItem[];
+}
+
+export type PublishedBirdHabitatAssetsRefillListItem = PublishedBirdRefillListItem & {
+  habitat_stock_asset_keys: string[];
+};
+
+export async function listPublishedBirdsForHabitatAssetsRefill(args: {
+  limit?: number;
+} = {}): Promise<PublishedBirdHabitatAssetsRefillListItem[]> {
+  const limit = typeof args.limit === "number" && args.limit > 0 ? args.limit : 300;
+  const { data, error } = await supabaseServerClient
+    .from("birds")
+    .select("id,slug,name_hu,updated_at,habitat_stock_asset_keys")
+    .eq("status", "published")
+    .order("updated_at", { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    throw error;
+  }
+
+  return (data ?? []) as PublishedBirdHabitatAssetsRefillListItem[];
 }
 
 export async function listPublishedBirdsForColorTagsRefill(args: {
@@ -110,7 +166,7 @@ export async function listBirdsMissingClassification(): Promise<Bird[]> {
   const { data, error } = await supabaseServerClient
     .from("birds")
     .select(
-      "id,slug,name_hu,name_latin,status,published_at,published_revision,science_dossier_status,visual_brief_status,size_category,visibility_category,classification_status,color_tags,created_at,updated_at"
+      "id,slug,name_hu,name_latin,status,published_at,published_revision,science_dossier_status,visual_brief_status,size_category,visibility_category,classification_status,color_tags,habitat_stock_asset_keys,created_at,updated_at"
     )
     .or("size_category.is.null,visibility_category.is.null")
     .order("updated_at", { ascending: false })
@@ -127,7 +183,7 @@ export async function getBirdById(id: string): Promise<Bird | null> {
   const { data, error } = await supabaseServerClient
     .from("birds")
     .select(
-      "id,slug,name_hu,name_latin,status,published_at,published_revision,science_dossier_status,visual_brief_status,size_category,visibility_category,classification_status,color_tags,created_at,updated_at"
+      "id,slug,name_hu,name_latin,status,published_at,published_revision,science_dossier_status,visual_brief_status,size_category,visibility_category,classification_status,color_tags,habitat_stock_asset_keys,created_at,updated_at"
     )
     .eq("id", id)
     .maybeSingle();
@@ -143,7 +199,7 @@ export async function getBirdBySlug(slug: string): Promise<Bird | null> {
   const { data, error } = await supabaseServerClient
     .from("birds")
     .select(
-      "id,slug,name_hu,name_latin,status,published_at,published_revision,science_dossier_status,visual_brief_status,size_category,visibility_category,classification_status,color_tags,created_at,updated_at"
+      "id,slug,name_hu,name_latin,status,published_at,published_revision,science_dossier_status,visual_brief_status,size_category,visibility_category,classification_status,color_tags,habitat_stock_asset_keys,created_at,updated_at"
     )
     .eq("slug", slug)
     .maybeSingle();

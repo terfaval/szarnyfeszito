@@ -237,6 +237,7 @@ export default function BirdSightingFab() {
 
     const params = new URLSearchParams();
     params.set("ids", ids.join(","));
+    params.set("place_id", selectedPlace.id);
 
     const load = async () => {
       try {

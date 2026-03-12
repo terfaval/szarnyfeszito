@@ -1,9 +1,15 @@
 import { NextResponse } from "next/server";
 import { getAdminUserFromCookies } from "@/lib/auth";
-import { isUuid } from "@/lib/birdService";
+import { isUuid, listHabitatStockAssetKeysForBirds } from "@/lib/birdService";
 import { listLatestDossierBlocksForBirds } from "@/lib/contentService";
 import { habitatIconForClass } from "@/lib/habitatIcons";
 import { getSignedImageUrl, listCurrentIconicImagesForBirds } from "@/lib/imageService";
+import { getPlaceById } from "@/lib/placeService";
+import {
+  getSignedApprovedHabitatTileUrlsByAssetKeys,
+  listHabitatStockAssets,
+  resolveHabitatStockAssetKeyForPlaceType,
+} from "@/lib/habitatStockAssetService";
 
 function parseIds(url: URL) {
   const raw = [
@@ -28,17 +34,62 @@ export async function GET(request: Request) {
 
   const url = new URL(request.url);
   const ids = parseIds(url);
+  const placeId = url.searchParams.get("place_id")?.trim() ?? "";
+  const explicitHabitatKey = url.searchParams.get("habitat_stock_asset_key")?.trim() ?? "";
 
   if (ids.length === 0) {
     return NextResponse.json({ data: {} });
   }
 
+  const [assets, habitatKeysByBirdId] = await Promise.all([
+    listHabitatStockAssets(),
+    listHabitatStockAssetKeysForBirds(ids),
+  ]);
+
+  const placeHabitatKey = placeId
+    ? (() => {
+        return getPlaceById(placeId)
+          .then((place) => {
+            if (!place) return null;
+            return resolveHabitatStockAssetKeyForPlaceType({
+              placeType: place.place_type,
+              assets,
+            });
+          })
+          .catch(() => null);
+      })()
+    : Promise.resolve(null);
+
+  const resolvedPlaceKey = await placeHabitatKey;
+
+  const desiredKeyByBirdId = new Map<string, string | null>();
+  ids.forEach((birdId) => {
+    const birdKeys = habitatKeysByBirdId.get(birdId) ?? [];
+    const fallbackKey = birdKeys[0] ?? null;
+    desiredKeyByBirdId.set(
+      birdId,
+      explicitHabitatKey || resolvedPlaceKey || fallbackKey || null
+    );
+  });
+
+  const keysToSign = Array.from(
+    new Set(Array.from(desiredKeyByBirdId.values()).filter((k): k is string => typeof k === "string" && k.length > 0))
+  );
+  const tileUrlByKey = await getSignedApprovedHabitatTileUrlsByAssetKeys(keysToSign);
+
   const dossierByBirdId = await listLatestDossierBlocksForBirds(ids);
   const habitatSrcByBirdId: Record<string, string | null> = {};
-  for (const birdId of ids) {
+  ids.forEach((birdId) => {
+    const key = desiredKeyByBirdId.get(birdId) ?? null;
+    const tile = key ? tileUrlByKey.get(key) ?? null : null;
+    if (tile) {
+      habitatSrcByBirdId[birdId] = tile;
+      return;
+    }
+
     const dossier = dossierByBirdId.get(birdId);
     habitatSrcByBirdId[birdId] = habitatIconForClass(dossier?.pill_meta?.habitat_class);
-  }
+  });
 
   const iconicImages = await listCurrentIconicImagesForBirds(ids);
   const iconicSrcByBirdId: Record<string, string | null> = {};

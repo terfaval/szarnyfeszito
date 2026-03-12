@@ -44,6 +44,7 @@ export type Bird = {
   visibility_category: BirdVisibilityCategory | null;
   classification_status: BirdSubStatus;
   color_tags: BirdColorTag[];
+  habitat_stock_asset_keys: string[];
   created_at: string;
   updated_at: string;
 };
@@ -68,6 +69,7 @@ export type BirdUpdateInput = {
   visibility_category?: BirdVisibilityCategory | null;
   classification_status?: BirdSubStatus;
   color_tags?: BirdColorTag[];
+  habitat_stock_asset_keys?: string[];
 };
 
 export const BIRD_STATUS_VALUES: BirdStatus[] = [

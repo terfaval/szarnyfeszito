@@ -12,6 +12,7 @@
 - size_category (enum, nullable) — very_small | small | medium | large
 - visibility_category (enum, nullable) — frequent | seasonal | rare
 - classification_status (enum) — none | generated | approved
+- habitat_stock_asset_keys (text[], default {})
 - created_at
 - updated_at
 

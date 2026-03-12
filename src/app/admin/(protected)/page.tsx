@@ -6,6 +6,7 @@ import { listLatestDossierBlocksForBirds } from "@/lib/contentService";
 import { supabaseServerClient } from "@/lib/supabaseServerClient";
 import { habitatIconForClass } from "@/lib/habitatIcons";
 import { getSignedImageUrl, listCurrentIconicImagesForBirds } from "@/lib/imageService";
+import { getSignedApprovedHabitatTileUrlsByAssetKeys } from "@/lib/habitatStockAssetService";
 import { BirdStatus, BIRD_STATUS_VALUES } from "@/types/bird";
 import type { PlaceType } from "@/types/place";
 import { getCurrentSeasonKey } from "@/lib/season";
@@ -55,13 +56,19 @@ export default async function AdminPage() {
   const recentBirds = birds.slice(0, 3);
   const recentBirdIds = recentBirds.map((bird) => bird.id);
 
+  const recentHabitatKeys = recentBirds
+    .map((bird) => (Array.isArray(bird.habitat_stock_asset_keys) ? bird.habitat_stock_asset_keys[0] : ""))
+    .filter((k): k is string => typeof k === "string" && k.trim().length > 0);
+  const recentSignedHabitatTilesByKey = await getSignedApprovedHabitatTileUrlsByAssetKeys(recentHabitatKeys);
+
   const dossierByBirdId = await listLatestDossierBlocksForBirds(recentBirdIds);
   const habitatIconByBirdId = new Map<string, string>();
   for (const [birdId, dossier] of dossierByBirdId.entries()) {
-    const iconSrc = habitatIconForClass(dossier?.pill_meta?.habitat_class);
-    if (iconSrc) {
-      habitatIconByBirdId.set(birdId, iconSrc);
-    }
+    const bird = recentBirds.find((b) => b.id === birdId) ?? null;
+    const key = bird?.habitat_stock_asset_keys?.[0] ?? null;
+    const tile = key ? recentSignedHabitatTilesByKey.get(key) ?? null : null;
+    const iconSrc = tile ?? habitatIconForClass(dossier?.pill_meta?.habitat_class);
+    if (iconSrc) habitatIconByBirdId.set(birdId, iconSrc);
   }
 
   const iconicImages = await listCurrentIconicImagesForBirds(recentBirdIds);

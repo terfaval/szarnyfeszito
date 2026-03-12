@@ -3,6 +3,7 @@ import { listBirds } from "@/lib/birdService";
 import { listLatestDossierBlocksForBirds } from "@/lib/contentService";
 import { habitatIconForClass } from "@/lib/habitatIcons";
 import { getSignedImageUrl, listCurrentIconicImagesForBirds } from "@/lib/imageService";
+import { getSignedApprovedHabitatTileUrlsByAssetKeys } from "@/lib/habitatStockAssetService";
 
 export const metadata = {
   title: "Birds — Szarnyfeszito Admin",
@@ -11,6 +12,11 @@ export const metadata = {
 export default async function BirdsPage() {
   const birds = await listBirds();
   const birdIds = birds.map((bird) => bird.id);
+
+  const fallbackHabitatKeys = birds
+    .map((bird) => (Array.isArray(bird.habitat_stock_asset_keys) ? bird.habitat_stock_asset_keys[0] : ""))
+    .filter((k): k is string => typeof k === "string" && k.trim().length > 0);
+  const signedHabitatTileByKey = await getSignedApprovedHabitatTileUrlsByAssetKeys(fallbackHabitatKeys);
 
   const dossierByBirdId = await listLatestDossierBlocksForBirds(birdIds);
   const habitatIconByBirdId = new Map<string, string>();
@@ -34,7 +40,12 @@ export default async function BirdsPage() {
 
   const birdsWithBadges = birds.map((bird) => ({
     ...bird,
-    habitatIconSrc: habitatIconByBirdId.get(bird.id) ?? null,
+    habitatIconSrc:
+      (() => {
+        const key = Array.isArray(bird.habitat_stock_asset_keys) ? bird.habitat_stock_asset_keys[0] : null;
+        const tile = key ? signedHabitatTileByKey.get(key) ?? null : null;
+        return tile ?? habitatIconByBirdId.get(bird.id) ?? null;
+      })(),
     iconicPreviewUrl: iconicPreviewByBirdId.get(bird.id) ?? null,
   }));
 

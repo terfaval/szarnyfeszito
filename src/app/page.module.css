@@ -1,5 +1,6 @@
 .shell {
   gap: 1.75rem;
+  --landing-max-content-width: 1120px;
 }
 
 .topbar {
@@ -8,69 +9,181 @@
 }
 
 .heroPanel {
-  position: relative;
-  overflow: hidden;
-}
-
-.heroPanel::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: var(--page-scrim);
-  pointer-events: none;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  padding: 0;
 }
 
 .heroInner {
-  position: relative;
-  z-index: 1;
   display: grid;
-  gap: 1.5rem;
+  gap: 1.25rem;
+  justify-items: center;
+  text-align: center;
 }
 
-.logoWrap {
+.heroMedia {
   display: flex;
   justify-content: center;
-  padding-top: 0.5rem;
+  width: 100%;
+  padding-top: 4rem;
+  padding-bottom: 4rem;
 }
 
 .logo {
-  width: min(560px, 86vw);
+  width: min(420px, 86vw);
   height: auto;
 }
 
-.heroTitle {
-  font-size: clamp(2rem, 4vw, 3rem);
-  margin: 0;
-  text-align: center;
-  color: var(--brand-warm);
+.heroText {
+  display: grid;
+  gap: 0.75rem;
+  justify-items: center;
+  width: 100%;
+}
+
+.heroActions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
 }
 
 .heroSubtitle {
   margin: 0;
-  text-align: center;
-  color: var(--brand-ink);
-  font-size: 1.05rem;
+  font-size: clamp(1.6rem, 3.2vw, 2.25rem);
+  font-weight: 700;
+  color: var(--brand-warm);
+  max-width: 34ch;
 }
 
 .heroCopy {
   margin: 0;
-  color: var(--foreground);
+  color: var(--brand-ink);
   white-space: pre-wrap;
-  font-size: 1rem;
-  max-width: 80ch;
-  margin-inline: auto;
+  font-size: 0.95rem;
+  max-width: 92ch;
 }
 
 .sectionTitle {
   margin: 0;
-  color: var(--brand-warm);
-  font-size: 1.6rem;
 }
 
 .sectionCopy {
   margin: 0.75rem 0 0 0;
   white-space: pre-wrap;
+  color: var(--brand-ink);
+  font-size: 0.95rem;
+}
+
+.featureGrid {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.featureCard {
+  border: 1px solid rgba(var(--brand-ink-rgb), 0.16);
+  border-radius: 16px;
+  background: rgba(var(--brand-ink-rgb), 0.04);
+  padding: 1rem;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.featureTitle {
+  margin: 0;
+  font-weight: 700;
   color: var(--foreground);
+}
+
+.featureCopy {
+  margin: 0;
+  color: var(--brand-ink);
+  font-size: 0.95rem;
+}
+
+.whoForGrid {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.whoForCard {
+  border: 1px solid rgba(var(--brand-ink-rgb), 0.16);
+  border-radius: 16px;
+  background: rgba(var(--brand-ink-rgb), 0.04);
+  padding: 1rem;
+  display: grid;
+  gap: 0.65rem;
+  justify-items: center;
+  text-align: center;
+}
+
+.whoForIcon {
+  flex: 0 0 auto;
+  width: 64px;
+  height: 64px;
+}
+
+.whoForTitle {
+  margin: 0;
+  font-weight: 700;
+  color: var(--brand-warm);
+  font-size: 1.15rem;
+}
+
+.whoForCopy {
+  margin: 0;
+  color: var(--brand-ink);
+  font-size: 0.95rem;
+}
+
+.stepsGrid {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.stepCard {
+  border: 1px solid rgba(var(--brand-ink-rgb), 0.16);
+  border-radius: 16px;
+  background: rgba(var(--brand-ink-rgb), 0.04);
+  padding: 1rem;
+  display: grid;
+  gap: 0.25rem;
+}
+
+.stepIndex {
+  margin: 0;
+  font-weight: 700;
+  color: var(--brand-warm);
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.stepTitle {
+  margin: 0;
+  font-weight: 700;
+  color: var(--brand-warm);
+  font-size: 1.15rem;
+}
+
+.stepCopy {
+  margin: 0.25rem 0 0 0;
+  color: var(--brand-ink);
+  font-size: 0.95rem;
+}
+
+.closingCta {
+  background: rgba(var(--brand-accent-rgb), 0.08);
+  align-items: center;
+  text-align: center;
+}
+
+.closingActions {
+  margin-top: 0.75rem;
+  display: flex;
+  justify-content: center;
 }
 
 .mapBlock {
@@ -81,19 +194,44 @@
   display: grid;
   grid-template-columns: 1fr;
   gap: 1.5rem;
+  width: min(100%, var(--landing-max-content-width));
+  margin-inline: auto;
 }
 
-@media (min-width: 880px) {
-  .splitGrid {
-    grid-template-columns: 1fr 1fr;
-    align-items: start;
-  }
+.landingCard {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+
+/* Prevent grid items from forcing page-level overflow on narrow viewports. */
+.splitGrid > :global(.admin-card) {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.centeredCard {
+  align-items: center;
+  text-align: center;
+}
+
+.centeredCard > :global(.admin-heading__title) {
+  width: 100%;
+  text-align: center;
+}
+
+.centeredCard .list,
+.centeredCard .placeGrid {
+  width: 100%;
 }
 
 .list {
   list-style: none;
   padding: 0;
-  margin: 1rem 0 0 0;
+  margin: 0;
   display: grid;
   gap: 0.75rem;
 }
@@ -121,7 +259,7 @@
 }
 
 .placeGrid {
-  margin-top: 1rem;
+  margin-top: 0;
   display: grid;
   gap: 1rem;
 }
@@ -152,15 +290,9 @@
   color: var(--foreground);
 }
 
-.placeTeaser {
-  margin: 0;
-  color: var(--brand-ink);
-  font-size: 0.92rem;
-}
-
 .placeShort {
   margin: 0;
-  color: var(--foreground);
+  color: var(--brand-ink);
   font-size: 0.95rem;
   white-space: pre-wrap;
   display: -webkit-box;
@@ -174,4 +306,85 @@
   flex-wrap: wrap;
   gap: 0.35rem;
   margin-top: 0.25rem;
+}
+
+.migrationPanel {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  padding-block: clamp(1.5rem, 4vw, 2.75rem);
+  display: grid;
+  justify-items: center;
+  width: min(100%, var(--landing-max-content-width));
+  margin-inline: auto;
+}
+
+.migrationCopy {
+  margin: 0;
+  white-space: pre-wrap;
+  color: var(--brand-ink);
+  font-size: 0.95rem;
+  max-width: 92ch;
+  text-align: center;
+}
+
+.placesCard {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  padding: 0;
+  width: min(100%, var(--landing-max-content-width));
+  margin-inline: auto;
+  min-width: 0;
+  max-width: 100%;
+}
+
+@media (min-width: 880px) {
+  .heroInner {
+    grid-template-columns: minmax(240px, 32%) 1fr;
+    justify-items: stretch;
+    align-items: center;
+    text-align: left;
+  }
+
+  .heroMedia {
+    justify-content: flex-start;
+  }
+
+  .logo {
+    width: min(360px, 100%);
+  }
+
+  .heroText {
+    justify-items: start;
+  }
+
+  .heroActions {
+    justify-content: flex-start;
+  }
+
+  .featureGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .whoForGrid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .stepsGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .list {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+
+  .birdRow {
+    padding: 0.65rem 0.75rem;
+    gap: 0.75rem;
+  }
+
+  .placeGrid {
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  }
 }

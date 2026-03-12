@@ -2,6 +2,41 @@
 
 ---
 
+## D55 — Bird: habitat asset keys + contextual habitat tile backgrounds v1 (Studio)
+
+**Status:** Accepted  
+**Date:** 2026-03-12  
+**Scope:** Studio only (admin surfaces + server APIs). No Explorer/runtime AI changes.
+
+### Context
+- Habitat stock assets (D51) exist as a canonical catalog + reviewable tiles, but Bird UIs still rely on a coarse 5-class `pill_meta.habitat_class` icon.
+- Different surfaces need different habitat backgrounds:
+  - Place contexts should reflect the Place’s `place_type` group.
+  - Generic Bird contexts should use a Bird-level fallback.
+  - Category filtering surfaces may require an explicit habitat asset key.
+
+### Decision
+1) **Persist Bird habitat asset candidates.**
+   - Add `birds.habitat_stock_asset_keys: text[]` (ordered preference list; may be empty).
+2) **Deterministic selection by context (no runtime AI).**
+   - Priority order:
+     1) Explicit `habitat_stock_asset_key` (caller-provided)
+     2) Place-based key derived from `places.place_type`
+     3) Bird fallback: first element of `birds.habitat_stock_asset_keys`
+     4) Legacy fallback: coarse `pill_meta.habitat_class` SVG background icon
+3) **Background rendering uses approved habitat tiles when available.**
+   - Tiles are read from `images` where:
+     - `entity_type="habitat_stock_asset"`, `variant="habitat_square_v1"`, `is_current=true`, `review_status="approved"`.
+4) **Add a Studio refill page to backfill published Birds.**
+   - New admin page: `/admin/birds/refill/habitat-assets`
+   - Server-side refill computes candidates from approved Place↔Bird links and upserts `birds.habitat_stock_asset_keys`.
+
+### Out of scope (v1)
+- Adding new habitat tile variants or new place_type values.
+- Using habitat tiles in public Explorer/Field Guide UI.
+
+---
+
 ## D50 - Bird: sex comparison block + duo image refill v1 (Studio)
 
 **Status:** Accepted  
@@ -1065,3 +1100,31 @@ Birdwatch logging should reflect “I saw X at place Y”, and help selection by
 - Public Bird pages / Field Guide routing.
 - Any client-side stitching or inference of content semantics.
 - Runtime AI generation on public pages.
+
+---
+
+## D56 - Public landing page (`/`): editorial panels v1.1 (static)
+
+**Status:** Accepted  
+**Date:** 2026-03-12  
+**Scope:** Public `/` only. Static content only. No runtime AI.
+
+### Context
+- D54 established a minimal landing surface to validate published-only contracts (Places + Birds) without building Explorer.
+- We want a stronger narrative flow to orient new users (who the app is for, how to start) while keeping the page fully static and deterministic.
+
+### Decision
+- Extend the public landing (`/`) with additional **static** editorial panels:
+  - "Mi a Szárnyfeszítő?" (3 short blocks)
+  - Map intro + map helper copy (around the existing Leaflet preview)
+  - "Kinek szól?" (2×2 grid)
+  - "Hogyan kezdj bele?" (3-step intro)
+  - Closing CTA (links to `/places`)
+- These panels:
+  - must not call any AI generation
+  - must not introduce new public content contracts
+  - may use static SVG icons from `public/icons/*`
+
+### Out of scope
+- Any new public routes beyond linking to existing `/places`.
+- Adding analytics, tracking, or personalization.

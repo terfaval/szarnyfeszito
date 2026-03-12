@@ -66,11 +66,17 @@ Rules:
   - Bird icons: only approved current `images.variant="fixed_pose_icon_v1"` are shown.
 
 Sections:
-- Hero: logo + narrative intro copy.
-- "Madárvonulások" editorial section (static copy).
+- Hero: logo + intro copy + CTA to `/places`.
+- "Mi a Szárnyfeszítő?" editorial panel (static): 3 short blocks (title + short copy).
+- Map intro panel (static): short title + short copy.
 - "Dashboard Places map" preview (Leaflet) to validate markers + region overlays.
+- Map helper panel (static): what to do with / why the map is useful.
+- "Madárvonulások" editorial section (static copy).
 - "Madarak" spotlight panel: 5 random published Birds, with diversity across `birds.visibility_category` when possible (preview-only; not a Field Guide).
 - "Helyszínek" spotlight panel: 3 published Places with hero image, teaser/short description, and up to 5 bird icons from approved Place→Bird links.
+- "Kinek szól?" editorial panel (static): 2×2 grid.
+- "Hogyan kezdj bele?" editorial panel (static): 3-step intro flow.
+- Closing CTA panel (static): short title + short copy + CTA to `/places`.
 
 ### 2.x Leaflet map defaults (D39)
 
@@ -121,11 +127,20 @@ Habitat stock assets (D51):
   - `variant="habitat_square_v1"` (full-frame square habitat tile; no birds)
 - Review flow: draft → reviewed → approved (approved tiles are locked in v1).
 
+Bird habitat assets (D55):
+- Birds may store an ordered preference list: `birds.habitat_stock_asset_keys` (text[]; may be empty).
+- Deterministic background selection (no runtime AI), priority:
+  1) Explicit `habitat_stock_asset_key` (caller-provided)
+  2) Place-based key derived from `places.place_type`
+  3) Bird fallback: first of `birds.habitat_stock_asset_keys`
+  4) Legacy fallback: `content_blocks.blocks_json.pill_meta.habitat_class` SVG icon
+- Studio refill page: `/admin/birds/refill/habitat-assets` (backfill published birds).
+
 Kiegészítő meta (D18):
 - A Studio `/admin/birds` oldalon a madarak szűrhetők/rendezhetők `size_category` (méret) és `visibility_category` (észlelhetőség) alapján.
 - A kategóriák nem publish-gate feltételek (nem blokkolják a publish-t), kizárólag admin taxonómia / registry célokra szolgálnak.
 - Ha bármelyik hiányzik, a madár bekerül a “Classification queue” listába, ahol AI-javaslat generálható és/vagy kézzel jóváhagyható.
-- A Studio `/admin/birds` listaelemei a (ha elérhető) dossier `blocks_json.pill_meta.habitat_class` alapján megjelenítik a habitat ikont, és a `blocks_json.pill_meta.color_bg` alapján egy soft háttérszínt kapnak; ha van current `fixed_pose_icon_v1` (iconic) asset, akkor overlay-ként azt is (placeholder nélkül).
+- A Studio `/admin/birds` listaelemei habitat háttérként preferáltan a jóváhagyott `habitat_square_v1` tile-t használják (D55), és fallbackként a dossier `blocks_json.pill_meta.habitat_class` SVG ikont; a `blocks_json.pill_meta.color_bg` alapján soft háttérszínt kapnak. Ha van current `fixed_pose_icon_v1` (iconic) asset, akkor overlay-ként azt is (placeholder nélkül).
 - A Studio `/admin` dashboard “Recent birds” listája ugyanazt a kétoszlopos (ikon + szöveg) megjelenítést használja.
 - `visibility_category` jelentése Magyarországra értendő (D20). Kategóriák:
   - `common_hu`: általában gyakori Magyarországon (releváns évszakban/élőhelyen)
