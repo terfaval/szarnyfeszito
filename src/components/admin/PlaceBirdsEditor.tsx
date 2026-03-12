@@ -80,6 +80,7 @@ export default function PlaceBirdsEditor({ placeId }: PlaceBirdsEditorProps) {
   const [loading, setLoading] = useState(true);
   const [suggesting, setSuggesting] = useState(false);
   const [linkingPublished, setLinkingPublished] = useState(false);
+  const [approvingBatch, setApprovingBatch] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [sortMode, setSortMode] = useState<"rank" | "status" | "name">("rank");
@@ -387,6 +388,32 @@ export default function PlaceBirdsEditor({ placeId }: PlaceBirdsEditorProps) {
     setSuggesting(false);
   };
 
+  const approveAllLinkedSuggestions = async () => {
+    if (approvingBatch) return;
+    setApprovingBatch(true);
+    setError(null);
+    setMessage(null);
+    try {
+      const response = await fetch(`/api/places/${placeId}/birds/approve-batch`, { method: "POST" });
+      const body = await response.json().catch(() => null);
+      if (!response.ok) {
+        setError(body?.error ?? "Unable to approve suggested links.");
+        return;
+      }
+
+      const updatedCount = body?.data?.updated_count;
+      const skippedCount = body?.data?.skipped_unpublished_count;
+      setMessage(
+        typeof updatedCount === "number"
+          ? `Approved ${updatedCount} link(s).${typeof skippedCount === "number" && skippedCount > 0 ? ` Skipped ${skippedCount} unpublished.` : ""}`
+          : "Approved suggested links."
+      );
+      await refresh();
+    } finally {
+      setApprovingBatch(false);
+    }
+  };
+
   const saveDraft = async (link: PlaceBirdLinkRow) => {
     const draft = draftById[link.id];
     if (!draft) return;
@@ -403,7 +430,13 @@ export default function PlaceBirdsEditor({ placeId }: PlaceBirdsEditorProps) {
     });
   };
 
-  const acceptSuggestion = async (link: PlaceBirdLinkRow) => updateLink(link.id, { review_status: "approved" });
+  const acceptSuggestion = async (link: PlaceBirdLinkRow) => {
+    if (!link.bird_id) {
+      setError("Cannot accept a pending suggestion. Link/create the Bird first.");
+      return;
+    }
+    await updateLink(link.id, { review_status: "approved" });
+  };
 
   const linkToExistingBird = async (link: PlaceBirdLinkRow) => {
     const birdId = (draftById[link.id]?.link_bird_id_input ?? "").trim();
@@ -628,7 +661,7 @@ export default function PlaceBirdsEditor({ placeId }: PlaceBirdsEditorProps) {
         </div>
 
         <div className="admin-inline-actions">
-          {link.review_status === "suggested" ? (
+          {link.review_status === "suggested" && !isPending ? (
             <Button type="button" variant="ghost" onClick={() => acceptSuggestion(link)}>
               Accept
             </Button>
@@ -691,6 +724,14 @@ export default function PlaceBirdsEditor({ placeId }: PlaceBirdsEditorProps) {
         <div className="flex flex-wrap items-center gap-3">
           <Button type="button" variant="accent" onClick={suggestBirds} disabled={suggesting}>
             {suggesting ? "Suggesting..." : "Suggest birds"}
+          </Button>
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={approveAllLinkedSuggestions}
+            disabled={approvingBatch || loading || suggesting}
+          >
+            {approvingBatch ? "Approving..." : "Approve linked suggestions"}
           </Button>
           <Button type="button" variant="ghost" onClick={refresh} disabled={loading}>
             Refresh

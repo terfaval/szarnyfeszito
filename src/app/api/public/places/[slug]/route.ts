@@ -30,15 +30,29 @@ export async function GET(_request: Request, ctx: { params: Promise<{ slug: stri
   const { data: birdLinks, error } = await supabaseServerClient
     .from("place_birds")
     .select(
-      "id,place_id,bird_id,pending_bird_name_hu,review_status,rank,frequency_band,is_iconic,visible_in_spring,visible_in_summer,visible_in_autumn,visible_in_winter,seasonality_note,bird:birds(id,slug,name_hu)"
+      "id,place_id,bird_id,pending_bird_name_hu,review_status,rank,frequency_band,is_iconic,visible_in_spring,visible_in_summer,visible_in_autumn,visible_in_winter,seasonality_note,bird:birds(id,slug,name_hu,status)"
     )
     .eq("place_id", place.id)
     .eq("review_status", "approved")
+    .not("bird_id", "is", null)
     .order("rank", { ascending: true });
 
   if (error) {
     throw error;
   }
+
+  const publishedBirdLinks = (birdLinks ?? [])
+    .map((row) => {
+      const bird = (row as { bird?: { id?: unknown; slug?: unknown; name_hu?: unknown; status?: unknown } | null }).bird;
+      if (!bird || bird.status !== "published") {
+        return null;
+      }
+      return {
+        ...row,
+        bird: { id: bird.id, slug: bird.slug, name_hu: bird.name_hu },
+      };
+    })
+    .filter(Boolean);
 
   return NextResponse.json({
     data: {
@@ -63,7 +77,7 @@ export async function GET(_request: Request, ctx: { params: Promise<{ slug: stri
         notable_units_json: place.notable_units_json,
       },
       content: parsedContent.data,
-      place_birds: birdLinks ?? [],
+      place_birds: publishedBirdLinks,
     },
   });
 }

@@ -6,6 +6,15 @@ function normalizePendingBirdName(name: string) {
   return name.trim().replace(/\s+/g, " ");
 }
 
+function chunkArray<T>(items: T[], chunkSize: number): T[][] {
+  const size = Number.isFinite(chunkSize) && chunkSize > 0 ? Math.floor(chunkSize) : 1;
+  const out: T[][] = [];
+  for (let i = 0; i < items.length; i += size) {
+    out.push(items.slice(i, i + size));
+  }
+  return out;
+}
+
 export async function listPlaceBirdLinks(placeId: string): Promise<PlaceBirdLink[]> {
   const { data, error } = await supabaseServerClient
     .from("place_birds")
@@ -184,6 +193,148 @@ export async function deletePlaceBirdLink(id: string): Promise<void> {
   if (error) {
     throw error;
   }
+}
+
+type PlaceBirdApproveCandidateRow = {
+  id?: unknown;
+  bird_id?: unknown;
+  bird?: { status?: unknown } | { status?: unknown }[] | null;
+};
+
+export async function approveSuggestedLinkedBirdsForPlace(placeId: string): Promise<{
+  updated_count: number;
+  skipped_unpublished_count: number;
+}> {
+  const { data, error } = await supabaseServerClient
+    .from("place_birds")
+    .select("id,bird_id,bird:birds!place_birds_bird_id_fkey(status)")
+    .eq("place_id", placeId)
+    .eq("review_status", "suggested")
+    .not("bird_id", "is", null)
+    .order("updated_at", { ascending: false })
+    .limit(2000);
+
+  if (error) throw error;
+
+  const rows = (data ?? []) as PlaceBirdApproveCandidateRow[];
+  const toApproveIds: string[] = [];
+  let skippedUnpublished = 0;
+
+  rows.forEach((row) => {
+    const id = typeof row?.id === "string" ? row.id : "";
+    if (!id) return;
+    const bird = Array.isArray(row.bird) ? (row.bird[0] ?? null) : row.bird;
+    const status = typeof bird?.status === "string" ? bird.status : "";
+    if (status === "published") {
+      toApproveIds.push(id);
+    } else {
+      skippedUnpublished += 1;
+    }
+  });
+
+  if (toApproveIds.length === 0) {
+    return { updated_count: 0, skipped_unpublished_count: skippedUnpublished };
+  }
+
+  let updatedCount = 0;
+  for (const chunk of chunkArray(toApproveIds, 200)) {
+    const { error: updateError } = await supabaseServerClient
+      .from("place_birds")
+      .update({ review_status: "approved", updated_at: new Date().toISOString() })
+      .in("id", chunk);
+    if (updateError) throw updateError;
+    updatedCount += chunk.length;
+  }
+
+  return { updated_count: updatedCount, skipped_unpublished_count: skippedUnpublished };
+}
+
+export type PlaceBirdLinkSummary = {
+  place_id: string;
+  suggested_linked_count: number;
+  suggested_pending_count: number;
+  suggested_pending_names_preview: string[];
+  approved_linked_count: number;
+};
+
+export async function getPlaceBirdLinkSummaries(placeIds: string[]): Promise<PlaceBirdLinkSummary[]> {
+  const uniqueIds = Array.from(new Set(placeIds.map((id) => id.trim()).filter(Boolean)));
+  if (uniqueIds.length === 0) return [];
+
+  type Row = {
+    place_id?: unknown;
+    bird_id?: unknown;
+    pending_bird_name_hu?: unknown;
+    review_status?: unknown;
+  };
+
+  const { data, error } = await supabaseServerClient
+    .from("place_birds")
+    .select("place_id,bird_id,pending_bird_name_hu,review_status")
+    .in("place_id", uniqueIds)
+    .order("updated_at", { ascending: false })
+    .limit(8000);
+
+  if (error) throw error;
+
+  const baseByPlace = new Map<
+    string,
+    {
+      suggested_linked_count: number;
+      suggested_pending_names: string[];
+      suggested_pending_name_set: Set<string>;
+      approved_linked_count: number;
+    }
+  >();
+
+  uniqueIds.forEach((placeId) => {
+    baseByPlace.set(placeId, {
+      suggested_linked_count: 0,
+      suggested_pending_names: [],
+      suggested_pending_name_set: new Set<string>(),
+      approved_linked_count: 0,
+    });
+  });
+
+  (data ?? []).forEach((raw) => {
+    const row = raw as Row;
+    const placeId = typeof row?.place_id === "string" ? row.place_id : "";
+    if (!placeId) return;
+    const bucket = baseByPlace.get(placeId);
+    if (!bucket) return;
+
+    const reviewStatus = typeof row?.review_status === "string" ? row.review_status : "";
+    const birdId = typeof row?.bird_id === "string" ? row.bird_id : null;
+    const pendingName =
+      typeof row?.pending_bird_name_hu === "string" ? normalizePendingBirdName(row.pending_bird_name_hu) : "";
+
+    if (reviewStatus === "suggested") {
+      if (birdId) {
+        bucket.suggested_linked_count += 1;
+      } else if (pendingName) {
+        const key = pendingName.toLowerCase();
+        if (!bucket.suggested_pending_name_set.has(key)) {
+          bucket.suggested_pending_name_set.add(key);
+          bucket.suggested_pending_names.push(pendingName);
+        }
+      }
+    }
+
+    if (reviewStatus === "approved" && birdId) {
+      bucket.approved_linked_count += 1;
+    }
+  });
+
+  return uniqueIds.map((placeId) => {
+    const bucket = baseByPlace.get(placeId)!;
+    return {
+      place_id: placeId,
+      suggested_linked_count: bucket.suggested_linked_count,
+      suggested_pending_count: bucket.suggested_pending_names.length,
+      suggested_pending_names_preview: bucket.suggested_pending_names.slice(0, 8),
+      approved_linked_count: bucket.approved_linked_count,
+    };
+  });
 }
 
 type SuggestedQueueRow = {
