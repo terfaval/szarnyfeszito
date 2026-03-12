@@ -273,6 +273,9 @@ export default function BirdListShell({ birds }: BirdListShellProps) {
           <Link className="admin-nav-link" href="/admin/birds/refill/sex-comparison">
             Refill: male vs female
           </Link>
+          <Link className="admin-nav-link" href="/admin/birds/refill/color-tags">
+            Refill: color tags
+          </Link>
         </div>
       </header>
 

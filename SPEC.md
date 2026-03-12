@@ -403,6 +403,7 @@ Megjegyzés: a pontos contract és a nyitott döntések a `TICKETS/yoga/yoga_gur
   - Then: selecting one or more Birds via a searchable, filterable list.
     - Filters include: `color_tags` (multi), `size_category`, `visibility_category`, plus free-text search on bird name.
     - Recommendation ordering: Birds linked to the selected Place (approved links) are prioritized, but not exclusive.
+- Studio tool: `/admin/birds/refill/color-tags` backfills missing `birds.color_tags` for already published birds (deterministic from latest dossier `pill_meta.color_bg`, no AI).
 - Saving a sighting stores:
   - `seen_at` timestamp (defaults to now),
   - `created_by` (admin user id),

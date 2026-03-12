@@ -70,8 +70,36 @@ end $$;
 do $$
 begin
   begin
-    alter table storage.objects enable row level security;
-    alter table storage.buckets enable row level security;
+    -- Only the table owner can ALTER these tables; on some Supabase setups the SQL editor
+    -- runs as a role that is not the owner of storage.objects/storage.buckets.
+    -- In that case we skip storage.* changes instead of failing the whole migration.
+    if exists (
+      select 1
+      from pg_class c
+      join pg_namespace n on n.oid = c.relnamespace
+      where n.nspname = 'storage'
+        and c.relname = 'objects'
+        and pg_get_userbyid(c.relowner) = current_user
+    ) then
+      alter table storage.objects enable row level security;
+    else
+      raise notice 'Skipping storage.objects RLS changes (current_user is not table owner).';
+      return;
+    end if;
+
+    if exists (
+      select 1
+      from pg_class c
+      join pg_namespace n on n.oid = c.relnamespace
+      where n.nspname = 'storage'
+        and c.relname = 'buckets'
+        and pg_get_userbyid(c.relowner) = current_user
+    ) then
+      alter table storage.buckets enable row level security;
+    else
+      raise notice 'Skipping storage.buckets RLS changes (current_user is not table owner).';
+      return;
+    end if;
 
     if not exists (
       select 1

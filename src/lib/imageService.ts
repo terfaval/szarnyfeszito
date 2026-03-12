@@ -702,6 +702,7 @@ export async function generateImagesForBird(
       };
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unknown error.";
+      const errorCode = /row-level security/i.test(message) ? "RLS" : "UNKNOWN";
       console.info("[image-gen] failed", {
         bird_id: bird.id,
         variant: spec.variant,
@@ -714,7 +715,7 @@ export async function generateImagesForBird(
         style_family: spec.styleFamily,
         required: spec.isRequired,
         status: "failed",
-        error_code: "UNKNOWN",
+        error_code: errorCode,
         error_message: message,
       };
     }

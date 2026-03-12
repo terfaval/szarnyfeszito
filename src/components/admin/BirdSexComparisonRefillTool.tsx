@@ -308,9 +308,18 @@ export default function BirdSexComparisonRefillTool({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ bird_id: selectedId, variant: DUO_VARIANT }),
       });
-      const payload = (await res.json().catch(() => ({}))) as { error?: string };
+      const payload = (await res.json().catch(() => ({}))) as {
+        error?: string;
+        results?: Array<{ variant?: string; status?: string; error_message?: string }>;
+      };
       if (!res.ok) {
         throw new Error(payload?.error ?? `HTTP ${res.status}`);
+      }
+      const failure = payload?.results?.find((row) => row?.status === "failed");
+      if (failure) {
+        throw new Error(
+          `${failure.variant ?? DUO_VARIANT} failed: ${failure.error_message ?? "unknown error"}`
+        );
       }
       setDetailMessage("Generated duo image draft.");
       await refreshSelected();

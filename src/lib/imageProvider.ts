@@ -192,6 +192,7 @@ function buildOpenAIPrompt(input: GenerateImageInput) {
           "- Full body, centered, side view, simple geometric shapes.",
           "- 3-5 flat colors maximum. No gradients, no texture, no shadows.",
           "- Background: none / transparent.",
+          "- IMPORTANT: the bird must be SOLID-FILLED (opaque). Do NOT draw an outline-only / hollow silhouette. No see-through body.",
           "- Species should remain recognizable (bill/leg/neck proportions).",
         ].join("\n"),
     "",

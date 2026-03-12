@@ -136,6 +136,26 @@ export default function BirdImageReview({
         throw new Error(payload?.error ?? "Unable to generate images.");
       }
 
+      const failures: Array<{ variant?: string; error_message?: string }> = Array.isArray(
+        payload?.results
+      )
+        ? payload.results.filter((row: unknown) => {
+            const status = (row as { status?: unknown } | null)?.status;
+            return status === "failed";
+          })
+        : [];
+
+      if (failures.length > 0) {
+        const summary = failures
+          .slice(0, 3)
+          .map((row) => `${row.variant ?? "unknown"}: ${row.error_message ?? "failed"}`)
+          .join(" | ");
+        setError(`Some variants failed: ${summary}`);
+        setRequestStatusMessage("Image generation finished with failures. Refreshing...");
+        router.refresh();
+        return;
+      }
+
       setRequestStatusMessage(
         options?.variant
           ? `Image regenerated (${options.label ?? options.variant}). Refreshing...`
