@@ -36,6 +36,8 @@ and persists `bird_distribution_maps.ranges[]`.
 - Bird distribution map batch frissítés (D46): admin-oldali eszköz az összes madár térképének újragenerálására (Studio)
   - Minden státusz-réteghez rövid megjegyzés (note) készül, ami hoverre megjelenik a Studio felületen.
 
+- Public landing page (`/`) (D54): hero + Places map preview + published-only spotlight panels (no runtime AI)
+
 ### OUT (MVP-ben NINCS)
 
 - Publikus Bird UI (Field Guide)
@@ -49,6 +51,26 @@ and persists `bird_distribution_maps.ranges[]`.
 
 Explorer skeleton is a future phase, but a minimal, read-only Place map + panel is now in scope (D31) so Place entities can be previewed and published without waiting for the full Explorer buildout.
 Current active scope: Studio generative engine for Bird content + Place system foundation (CRUD, AI text generation, review, publish gating) + minimal public Place map surface + Phenomenon data contracts + Studio-only generation workflow planning. Explorer rendering for Phenomena remains a future phase.
+
+### 2.y Public landing page (`/`) v1 (D54)
+
+Goal:
+- A brand-aware landing surface that introduces Szárnyfeszítő, while showcasing *already published* content (Places + Birds) without building the full Explorer or Field Guide.
+
+Rules:
+- No runtime AI on the landing page.
+- Published-only gating:
+  - Places: `places.status="published"` AND at least one `content_blocks` row with `entity_type="place"` and `review_status="approved"` (UI variants contract, D34).
+  - Place hero image: only the approved current `images.variant="place_hero_spring_v1"` is shown (required for publish gate).
+  - Place→Bird icons: only `place_birds.review_status="approved"` links are used, and only if the linked Bird is `status="published"`.
+  - Bird icons: only approved current `images.variant="fixed_pose_icon_v1"` are shown.
+
+Sections:
+- Hero: logo + narrative intro copy.
+- "Madárvonulások" editorial section (static copy).
+- "Dashboard Places map" preview (Leaflet) to validate markers + region overlays.
+- "Madarak" spotlight panel: 5 random published Birds, with diversity across `birds.visibility_category` when possible (preview-only; not a Field Guide).
+- "Helyszínek" spotlight panel: 3 published Places with hero image, teaser/short description, and up to 5 bird icons from approved Place→Bird links.
 
 ### 2.x Leaflet map defaults (D39)
 
@@ -403,7 +425,7 @@ Megjegyzés: a pontos contract és a nyitott döntések a `TICKETS/yoga/yoga_gur
   - Then: selecting one or more Birds via a searchable, filterable list.
     - Filters include: `color_tags` (multi), `size_category`, `visibility_category`, plus free-text search on bird name.
     - Recommendation ordering: Birds linked to the selected Place (approved links) are prioritized, but not exclusive.
-- Studio tool: `/admin/birds/refill/color-tags` backfills missing `birds.color_tags` for already published birds (deterministic from latest dossier `pill_meta.color_bg`, no AI).
+- Studio tool: `/admin/birds/refill/color-tags` backfills missing `birds.color_tags` for already published birds (deterministic from latest dossier `pill_meta.color_bg`, no AI). The same tool also supports an “init refill” (overwrite) action that upserts `color_tags` even when already set.
 - Saving a sighting stores:
   - `seen_at` timestamp (defaults to now),
   - `created_by` (admin user id),

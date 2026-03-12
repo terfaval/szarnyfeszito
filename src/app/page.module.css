@@ -1,0 +1,177 @@
+.shell {
+  gap: 1.75rem;
+}
+
+.topbar {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.heroPanel {
+  position: relative;
+  overflow: hidden;
+}
+
+.heroPanel::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--page-scrim);
+  pointer-events: none;
+}
+
+.heroInner {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 1.5rem;
+}
+
+.logoWrap {
+  display: flex;
+  justify-content: center;
+  padding-top: 0.5rem;
+}
+
+.logo {
+  width: min(560px, 86vw);
+  height: auto;
+}
+
+.heroTitle {
+  font-size: clamp(2rem, 4vw, 3rem);
+  margin: 0;
+  text-align: center;
+  color: var(--brand-warm);
+}
+
+.heroSubtitle {
+  margin: 0;
+  text-align: center;
+  color: var(--brand-ink);
+  font-size: 1.05rem;
+}
+
+.heroCopy {
+  margin: 0;
+  color: var(--foreground);
+  white-space: pre-wrap;
+  font-size: 1rem;
+  max-width: 80ch;
+  margin-inline: auto;
+}
+
+.sectionTitle {
+  margin: 0;
+  color: var(--brand-warm);
+  font-size: 1.6rem;
+}
+
+.sectionCopy {
+  margin: 0.75rem 0 0 0;
+  white-space: pre-wrap;
+  color: var(--foreground);
+}
+
+.mapBlock {
+  margin-top: 1rem;
+}
+
+.splitGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+
+@media (min-width: 880px) {
+  .splitGrid {
+    grid-template-columns: 1fr 1fr;
+    align-items: start;
+  }
+}
+
+.list {
+  list-style: none;
+  padding: 0;
+  margin: 1rem 0 0 0;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.birdRow {
+  display: flex;
+  gap: 0.9rem;
+  align-items: center;
+  border: 1px solid rgba(var(--brand-ink-rgb), 0.2);
+  border-radius: 16px;
+  background: rgba(var(--brand-ink-rgb), 0.06);
+  padding: 0.75rem 0.9rem;
+}
+
+.birdName {
+  margin: 0;
+  font-weight: 700;
+  color: var(--foreground);
+}
+
+.birdMeta {
+  margin: 0.2rem 0 0 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.placeGrid {
+  margin-top: 1rem;
+  display: grid;
+  gap: 1rem;
+}
+
+.placeCard {
+  border-radius: 18px;
+  overflow: hidden;
+  border: 1px solid rgba(var(--brand-ink-rgb), 0.2);
+  background: rgba(var(--brand-ink-rgb), 0.06);
+}
+
+.placeHero {
+  height: 160px;
+  width: 100%;
+  object-fit: cover;
+  background: var(--panel-2);
+}
+
+.placeBody {
+  padding: 0.9rem 1rem 1rem;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.placeName {
+  margin: 0;
+  font-size: 1.15rem;
+  color: var(--foreground);
+}
+
+.placeTeaser {
+  margin: 0;
+  color: var(--brand-ink);
+  font-size: 0.92rem;
+}
+
+.placeShort {
+  margin: 0;
+  color: var(--foreground);
+  font-size: 0.95rem;
+  white-space: pre-wrap;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.placeBirdIcons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.25rem;
+}

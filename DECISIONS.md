@@ -1036,3 +1036,32 @@ Birdwatch logging should reflect “I saw X at place Y”, and help selection by
 ### Out of scope
 - Adding new image variants or publish gates.
 - Client-side inference or re-interpretation in Explorer.
+
+---
+
+## D54 - Public landing page (`/`): published-only spotlights v1
+
+**Status:** Accepted  
+**Date:** 2026-03-12  
+**Scope:** Public `/` only. No runtime AI. Explorer/Field Guide remain out of scope.
+
+### Context
+- The repo currently ships Studio/Admin as the canonical content engine.
+- We still need a brand landing surface that introduces the project and showcases *already published* content contracts (Places + Birds) without turning this into a full Explorer or Bird Field Guide.
+
+### Decision
+- Add a public landing page at `/` with:
+  - Hero logo + editorial copy
+  - A "Madárvonulások" editorial section (static)
+  - A Places map preview (Leaflet) using the existing published markers + region overlays
+  - A "Madarak" spotlight panel that shows 5 random **published** Birds, aiming for diversity across `birds.visibility_category` when possible
+  - A "Helyszínek" spotlight panel that shows 3 **published** Places with:
+    - approved UI variants (`content_blocks` with `entity_type="place"` + `review_status="approved"`)
+    - approved current Place hero image (`images.variant="place_hero_spring_v1"`)
+    - up to 5 bird icons from approved Place→Bird links (`place_birds.review_status="approved"`, Bird must be `status="published"`)
+- All image URLs shown on the public landing are server-generated signed URLs and must be derived from approved, current image records only.
+
+### Out of scope (v1)
+- Public Bird pages / Field Guide routing.
+- Any client-side stitching or inference of content semantics.
+- Runtime AI generation on public pages.

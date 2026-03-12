@@ -1,0 +1,30 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.mapFrame {
+  border-radius: 18px;
+  border: 1px solid var(--line);
+  background: var(--panel-2);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  height: clamp(280px, 36vw, 420px);
+}
+
+.footerRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.footerHint {
+  color: var(--muted);
+  font-size: 0.85rem;
+  margin: 0;
+  max-width: 52ch;
+}
+

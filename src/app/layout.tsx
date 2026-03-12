@@ -20,8 +20,8 @@ const sfFontDisplay = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "Szárnyfeszítő Admin",
-  description: "Admin surface for Szárnyfeszítő AI story pipeline",
+  title: "Szárnyfeszítő",
+  description: "Útikalaúz szárnyaló kalandoroknak",
   icons: {
     icon: "/favicon.svg",
   },
@@ -33,7 +33,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${sfFontBody.variable} ${sfFontDisplay.variable}`}>
+    <html lang="hu" className={`${sfFontBody.variable} ${sfFontDisplay.variable}`}>
       <body className="antialiased">
         <TimeThemeEffect />
         {children}
@@ -41,3 +41,4 @@ export default function RootLayout({
     </html>
   );
 }
+
