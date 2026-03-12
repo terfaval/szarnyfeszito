@@ -15,9 +15,19 @@ import {
   PLACE_TYPE_VALUES,
 } from "@/types/place";
 
+type ExtendedSpaRegion = {
+  region_id: string;
+  name: string;
+  country_code?: string | null;
+  distance_to_hungary_km?: number | null;
+  is_within_hungary?: boolean | null;
+  is_within_hungary_buffer?: boolean | null;
+};
+
 type PlaceListShellProps = {
   places: Place[];
   missingSpaRegions: Array<{ region_id: string; name: string }>;
+  missingExtendedSpaRegions: ExtendedSpaRegion[];
 };
 
 type SortKey = "updated_desc" | "name_asc";
@@ -163,7 +173,10 @@ export default function PlaceListShell({ places, missingSpaRegions }: PlaceListS
         </Card>
 
         <div className="space-y-4">
-          <PlaceCreateForm missingSpaRegions={missingSpaRegions} />
+          <PlaceCreateForm
+            missingSpaRegions={missingSpaRegions}
+            missingExtendedSpaRegions={missingExtendedSpaRegions}
+          />
           <Card className="space-y-2 text-sm">
             <p className="admin-subheading">Public surface</p>
             <p className="admin-note-small">

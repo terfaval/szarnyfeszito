@@ -4,6 +4,14 @@ export type PhenomenonStatus = (typeof PHENOMENON_STATUS_VALUES)[number];
 export const PHENOMENON_SEASON_VALUES = ["spring", "autumn"] as const;
 export type PhenomenonSeason = (typeof PHENOMENON_SEASON_VALUES)[number];
 
+export type SpaRegionOption = {
+  region_id: string;
+  name: string;
+  scope: "hungary" | "hungary_extended";
+  country_code?: string | null;
+  distance_to_hungary_km?: number | null;
+};
+
 export const PHENOMENON_TYPE_VALUES = ["migration_peak"] as const;
 export type PhenomenonType = (typeof PHENOMENON_TYPE_VALUES)[number];
 
@@ -36,4 +44,3 @@ export type PhenomenonBirdLink = {
   created_at: string;
   updated_at: string;
 };
-

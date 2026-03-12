@@ -5,10 +5,8 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/ui/components/Button";
 import { Card } from "@/ui/components/Card";
 import { Input } from "@/ui/components/Input";
-import type { Phenomenon, PhenomenonSeason } from "@/types/phenomenon";
+import type { Phenomenon, PhenomenonSeason, SpaRegionOption } from "@/types/phenomenon";
 import { PHENOMENON_SEASON_VALUES } from "@/types/phenomenon";
-
-type SpaRegionOption = { region_id: string; name: string };
 
 type PhenomenonEditorFormProps = {
   phenomenon: Phenomenon;
@@ -33,11 +31,37 @@ export default function PhenomenonEditorForm({ phenomenon, spaRegions }: Phenome
   const [startMmdd, setStartMmdd] = useState(phenomenon.typical_start_mmdd ?? "");
   const [endMmdd, setEndMmdd] = useState(phenomenon.typical_end_mmdd ?? "");
   const [generationInput, setGenerationInput] = useState(phenomenon.generation_input ?? "");
+  const countryNames = useMemo(() => {
+    if (typeof Intl === "undefined" || typeof Intl.DisplayNames === "undefined") {
+      return null;
+    }
+    try {
+      return new Intl.DisplayNames(["hu-HU"], { type: "region" });
+    } catch {
+      return null;
+    }
+  }, []);
+  const formatCountryName = (code?: string | null) => {
+    if (!code) return null;
+    const normalized = code.trim().toUpperCase();
+    if (!normalized) return null;
+    return countryNames?.of(normalized) ?? normalized;
+  };
+  const displayRegions = useMemo(() => {
+    return spaRegions.map((region) => {
+      if (region.scope === "hungary_extended") {
+        const countryLabel = formatCountryName(region.country_code);
+        const countryPart = countryLabel ?? region.country_code ?? "ismeretlen";
+        return { ...region, displayName: `${region.name} · ${countryPart}` };
+      }
+      return { ...region, displayName: region.name };
+    });
+  }, [spaRegions, countryNames]);
 
   const selectedRegionName = useMemo(() => {
-    const found = spaRegions.find((r) => r.region_id === regionId);
-    return found?.name ?? "";
-  }, [regionId, spaRegions]);
+    const found = displayRegions.find((r) => r.region_id === regionId);
+    return found?.displayName ?? regionId;
+  }, [regionId, displayRegions]);
 
   const canSave = useMemo(() => Boolean(asString(title) && asString(slug) && asString(regionId)), [title, slug, regionId]);
 
@@ -149,9 +173,9 @@ export default function PhenomenonEditorForm({ phenomenon, spaRegions }: Phenome
               <span className="form-field__label">region_id (SPA)</span>
               <div className="form-field__row">
                 <select className="input" value={regionId} onChange={(event) => setRegionId(event.target.value)}>
-                  {spaRegions.map((r) => (
+                  {displayRegions.map((r) => (
                     <option key={r.region_id} value={r.region_id}>
-                      {r.name}
+                      {r.displayName}
                     </option>
                   ))}
                 </select>
@@ -193,4 +217,3 @@ export default function PhenomenonEditorForm({ phenomenon, spaRegions }: Phenome
     </section>
   );
 }
-

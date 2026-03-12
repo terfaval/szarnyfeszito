@@ -7,9 +7,7 @@ import { Button } from "@/ui/components/Button";
 import { Card } from "@/ui/components/Card";
 import { Input } from "@/ui/components/Input";
 import { StatusPill } from "@/ui/components/StatusPill";
-import type { Phenomenon, PhenomenonSeason } from "@/types/phenomenon";
-
-type SpaRegionOption = { region_id: string; name: string };
+import type { Phenomenon, PhenomenonSeason, SpaRegionOption } from "@/types/phenomenon";
 
 type PhenomenonListShellProps = {
   phenomena: Phenomenon[];
@@ -27,6 +25,32 @@ export default function PhenomenonListShell({ phenomena, spaRegions }: Phenomeno
   const [createSeason, setCreateSeason] = useState<PhenomenonSeason>("autumn");
   const [createRegionId, setCreateRegionId] = useState<string>(spaRegions[0]?.region_id ?? "");
   const [createGenerationInput, setCreateGenerationInput] = useState<string>("");
+  const countryNames = useMemo(() => {
+    if (typeof Intl === "undefined" || typeof Intl.DisplayNames === "undefined") {
+      return null;
+    }
+    try {
+      return new Intl.DisplayNames(["hu-HU"], { type: "region" });
+    } catch {
+      return null;
+    }
+  }, []);
+  const formatCountryName = (code?: string | null) => {
+    if (!code) return null;
+    const normalized = code.trim().toUpperCase();
+    if (!normalized) return null;
+    return countryNames?.of(normalized) ?? normalized;
+  };
+  const displayRegions = useMemo(() => {
+    return spaRegions.map((region) => {
+      if (region.scope === "hungary_extended") {
+        const countryLabel = formatCountryName(region.country_code);
+        const countryPart = countryLabel ?? region.country_code ?? "ismeretlen";
+        return { ...region, displayName: `${region.name} · ${countryPart}` };
+      }
+      return { ...region, displayName: region.name };
+    });
+  }, [spaRegions, countryNames]);
 
   const normalizedSearch = search.trim().toLowerCase();
 
@@ -132,9 +156,9 @@ export default function PhenomenonListShell({ phenomena, spaRegions }: Phenomeno
                 value={createRegionId}
                 onChange={(event) => setCreateRegionId(event.target.value)}
               >
-                {spaRegions.map((r) => (
+                {displayRegions.map((r) => (
                   <option key={r.region_id} value={r.region_id}>
-                    {r.name}
+                    {r.displayName}
                   </option>
                 ))}
               </select>
@@ -219,4 +243,3 @@ export default function PhenomenonListShell({ phenomena, spaRegions }: Phenomeno
     </section>
   );
 }
-

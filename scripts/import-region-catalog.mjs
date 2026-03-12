@@ -30,7 +30,11 @@ function sleep(ms) {
 }
 
 function validateCatalog(catalog) {
-  if (catalog !== "globalRegions" && catalog !== "hungaryRegions") {
+  if (
+    catalog !== "globalRegions" &&
+    catalog !== "hungaryRegions" &&
+    catalog !== "hungaryExtendedRegions"
+  ) {
     throw new Error(`Unexpected catalog: ${String(catalog)}`);
   }
 }
@@ -120,7 +124,7 @@ async function upsertBatch(batch, batchIndex, totalImported, catalog, supabase) 
 
       const { error } = await supabase
         .from("distribution_region_catalog_items")
-        .upsert(batch, { onConflict: "region_id" });
+        .upsert(batch, { onConflict: "catalog,region_id" });
 
       if (error) {
         throw new Error(error.message);
@@ -391,13 +395,13 @@ async function main() {
   if (parsed.files.length === 0) {
     throw new Error(
       [
-        "Usage: node scripts/import-region-catalog.mjs [options] <globalRegions.json(.gz)> [hungaryRegions.json(.gz) ...]",
+        "Usage: node scripts/import-region-catalog.mjs [options] <globalRegions.json(.gz)> [hungaryRegions.json(.gz)> [hungaryExtendedRegions.json(.gz) ...]",
         "",
         "Options:",
         "  --dry-run              Scan only (no uploads).",
-        "  --batch-rows <n>        Default: 20",
-        "  --batch-mb <mb>         Default: 5",
-        "  --sleep-ms <ms>         Optional delay after each batch (rate-limit friendly).",
+        "  --batch-rows <n>       Default: 20",
+        "  --batch-mb <mb>        Default: 5",
+        "  --sleep-ms <ms>        Optional delay after each batch.",
       ].join("\n")
     );
   }

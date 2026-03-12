@@ -10,7 +10,7 @@ import { DISTRIBUTION_REGION_CATALOG_REPO_DIR } from "@/lib/config";
 export type RegionCatalogItem = {
   region_id: string;
   name: string;
-  scope: "global" | "hungary";
+  scope: "global" | "hungary" | "hungary_extended";
   type: string;
   source: string;
   bbox: { south: number; west: number; north: number; east: number };
@@ -40,7 +40,7 @@ const itemSchema = z
   .object({
     region_id: z.string().trim().min(1),
     name: z.string().trim().min(1),
-    scope: z.enum(["global", "hungary"]),
+  scope: z.enum(["global", "hungary", "hungary_extended"]),
     type: z.string().trim().min(1),
     source: z.string().trim().min(1),
     bbox: bboxSchema,

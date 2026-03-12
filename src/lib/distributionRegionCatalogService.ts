@@ -1,15 +1,23 @@
 import { z } from "zod";
 import { supabaseServerClient } from "@/lib/supabaseServerClient";
 
-export type DistributionRegionCatalogName = "globalRegions" | "hungaryRegions";
+export type DistributionRegionCatalogName =
+  | "globalRegions"
+  | "hungaryRegions"
+  | "hungaryExtendedRegions";
 
 export type DistributionRegionCatalogItemMeta = {
   region_id: string;
   name: string;
-  scope: "global" | "hungary";
+  scope: "global" | "hungary" | "hungary_extended";
   type: string;
   source: string;
   bbox: { south: number; west: number; north: number; east: number };
+  country_code?: string | null;
+  distance_to_hungary_km?: number | null;
+  is_within_hungary?: boolean | null;
+  is_within_hungary_buffer?: boolean | null;
+  site_code?: string | null;
 };
 
 const bboxSchema = z
@@ -30,7 +38,9 @@ export async function listDistributionRegionCatalogMeta(
 ): Promise<DistributionRegionCatalogItemMeta[]> {
   const { data, error } = await supabaseServerClient
     .from("distribution_region_catalog_items")
-    .select("region_id,name,scope,type,source,bbox")
+    .select(
+      "region_id,name,scope,type,source,bbox,country_code,distance_to_hungary_km,is_within_hungary,is_within_hungary_buffer,site_code"
+    )
     .eq("catalog", catalog);
 
   if (error) {
@@ -41,10 +51,28 @@ export async function listDistributionRegionCatalogMeta(
   return rows.map((row) => ({
     region_id: String(row.region_id ?? ""),
     name: String(row.name ?? ""),
-    scope: (row.scope as "global" | "hungary") ?? "global",
+    scope:
+      row.scope === "hungary_extended"
+        ? "hungary_extended"
+        : row.scope === "hungary"
+        ? "hungary"
+        : "global",
     type: String(row.type ?? ""),
     source: String(row.source ?? ""),
     bbox: parseBbox(row.bbox),
+    country_code: String(row.country_code ?? "").trim() || null,
+    distance_to_hungary_km:
+      typeof row.distance_to_hungary_km === "number"
+        ? row.distance_to_hungary_km
+        : typeof row.distance_to_hungary_km === "string" &&
+          row.distance_to_hungary_km.trim()
+        ? Number(row.distance_to_hungary_km)
+        : null,
+    is_within_hungary:
+      typeof row.is_within_hungary === "boolean" ? row.is_within_hungary : null,
+    is_within_hungary_buffer:
+      typeof row.is_within_hungary_buffer === "boolean" ? row.is_within_hungary_buffer : null,
+    site_code: String(row.site_code ?? "").trim() || null,
   }));
 }
 

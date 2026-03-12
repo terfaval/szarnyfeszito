@@ -37,9 +37,18 @@ async function validateSpaRegionId(regionId: string): Promise<{ ok: boolean; err
   const catalog = String(row.catalog ?? "");
   const scope = String(row.scope ?? "");
   const type = String(row.type ?? "");
-  const ok = catalog === "hungaryRegions" && scope === "hungary" && type === "spa";
+  const isHungarySpa = catalog === "hungaryRegions" && scope === "hungary" && type === "spa";
+  const isExtendedSpa =
+    catalog === "hungaryExtendedRegions" && scope === "hungary_extended" && type === "spa";
 
-  return ok ? { ok: true } : { ok: false, error: "region_id must reference a HU Natura 2000 SPA catalog item." };
+  if (!isHungarySpa && !isExtendedSpa) {
+    return {
+      ok: false,
+      error: "region_id must reference a HU Natura 2000 SPA or a Hungary-extended SPA catalog item.",
+    };
+  }
+
+  return { ok: true };
 }
 
 export async function GET(_request: Request, ctx: { params: Promise<{ id: string }> }) {

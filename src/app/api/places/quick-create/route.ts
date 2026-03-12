@@ -39,11 +39,15 @@ export async function POST(request: Request) {
     const catalog = String(data?.catalog ?? "");
     const scope = String(data?.scope ?? "");
     const type = String(data?.type ?? "");
-    const ok = catalog === "hungaryRegions" && scope === "hungary" && type === "spa";
-
-    if (!ok) {
+    const isHungarySpa = catalog === "hungaryRegions" && scope === "hungary" && type === "spa";
+    const isExtendedSpa =
+      catalog === "hungaryExtendedRegions" && scope === "hungary_extended" && type === "spa";
+    if (!isHungarySpa && !isExtendedSpa) {
       return NextResponse.json(
-        { error: "leaflet_region_id must reference a HU Natura 2000 SPA catalog item." },
+        {
+          error:
+            "leaflet_region_id must reference a HU Natura 2000 SPA or a Hungary-extended SPA catalog item.",
+        },
         { status: 400 }
       );
     }

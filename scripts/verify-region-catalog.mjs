@@ -109,6 +109,8 @@ async function main() {
   const results = [];
   results.push(await verifyCatalog(supabase, "globalRegions", parsed.sampleGeometries));
   results.push(await verifyCatalog(supabase, "hungaryRegions", parsed.sampleGeometries));
+  results.push(await verifyCatalog(supabase, "hungaryExtendedRegions", parsed.sampleGeometries));
+
   console.log(JSON.stringify({ ok: true, results }, null, 2));
 }
 
@@ -116,4 +118,3 @@ main().catch((err) => {
   console.error(err);
   process.exit(1);
 });
-

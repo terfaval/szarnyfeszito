@@ -70,10 +70,15 @@ export async function POST(request: Request) {
   const scope = String(row.scope ?? "");
   const type = String(row.type ?? "");
   const name = String(row.name ?? "");
-  const ok = catalog === "hungaryRegions" && scope === "hungary" && type === "spa";
+  const isHungarySpa = catalog === "hungaryRegions" && scope === "hungary" && type === "spa";
+  const isExtendedSpa =
+    catalog === "hungaryExtendedRegions" && scope === "hungary_extended" && type === "spa";
 
-  if (!ok) {
-    return NextResponse.json({ error: "region_id must reference a HU Natura 2000 SPA catalog item." }, { status: 400 });
+  if (!isHungarySpa && !isExtendedSpa) {
+    return NextResponse.json(
+      { error: "region_id must reference a HU Natura 2000 SPA or a Hungary-extended SPA catalog item." },
+      { status: 400 }
+    );
   }
 
   const seasonLabel = season === "spring" ? "Tavaszi" : "Őszi";

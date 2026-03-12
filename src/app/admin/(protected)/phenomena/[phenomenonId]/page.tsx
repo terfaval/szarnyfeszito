@@ -33,11 +33,29 @@ export default async function PhenomenonEditorPage({
     );
   }
 
-  const regionMeta = await listDistributionRegionCatalogMeta("hungaryRegions").catch(() => []);
-  const spaRegions = regionMeta
-    .filter((r) => r.scope === "hungary" && r.type === "spa")
-    .sort((a, b) => a.name.localeCompare(b.name, "hu"))
-    .map((r) => ({ region_id: r.region_id, name: r.name }));
+  const [hungaryMeta, extendedMeta] = await Promise.all([
+    listDistributionRegionCatalogMeta("hungaryRegions").catch(() => []),
+    listDistributionRegionCatalogMeta("hungaryExtendedRegions").catch(() => []),
+  ]);
+  const spaRegions = [
+    ...hungaryMeta
+      .filter((r) => r.scope === "hungary" && r.type === "spa")
+      .map((r) => ({
+        region_id: r.region_id,
+        name: r.name,
+        scope: "hungary" as const,
+      })),
+    ...extendedMeta
+      .filter((r) => r.scope === "hungary_extended" && r.type === "spa")
+      .map((r) => ({
+        region_id: r.region_id,
+        name: r.name,
+        scope: "hungary_extended" as const,
+        country_code: r.country_code ?? null,
+        distance_to_hungary_km:
+          typeof r.distance_to_hungary_km === "number" ? r.distance_to_hungary_km : null,
+      })),
+  ].sort((a, b) => a.name.localeCompare(b.name, "hu"));
 
   return (
     <Card className="place-panel place-panel-general">
@@ -45,4 +63,3 @@ export default async function PhenomenonEditorPage({
     </Card>
   );
 }
-

@@ -135,9 +135,11 @@ export async function buildPlacesMapLayersV1(args: {
   if (placeRegionIds.length) {
     const byId = new Map<string, { region_id: string; name: string | null; type: string | null; geometry: unknown }>();
 
-    const hungaryRepo = allowRepo ? await loadRegionCatalogFromRepo("hungaryRegions") : null;
-    if (hungaryRepo && hungaryRepo.length) {
-      hungaryRepo.forEach((r) => {
+    const catalogNames = ["hungaryRegions", "hungaryExtendedRegions"] as const;
+    for (const catalogName of catalogNames) {
+      const repoCatalog = allowRepo ? await loadRegionCatalogFromRepo(catalogName) : null;
+      if (!repoCatalog) continue;
+      repoCatalog.forEach((r) => {
         if (!r.region_id || !r.geometry) return;
         byId.set(r.region_id, { region_id: r.region_id, name: r.name, type: r.type, geometry: r.geometry });
       });
@@ -148,7 +150,7 @@ export async function buildPlacesMapLayersV1(args: {
       const { data, error } = await supabaseServerClient
         .from("distribution_region_catalog_items")
         .select("region_id,name,type,geometry")
-        .eq("catalog", "hungaryRegions")
+        .in("catalog", ["hungaryRegions", "hungaryExtendedRegions"])
         .in("region_id", missing);
 
       if (!error) {

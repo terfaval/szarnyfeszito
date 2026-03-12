@@ -16,8 +16,8 @@ export async function POST(request: Request) {
   const { data: spaRows, error: spaError } = await supabaseServerClient
     .from("distribution_region_catalog_items")
     .select("region_id,name")
-    .eq("catalog", "hungaryRegions")
-    .eq("scope", "hungary")
+    .in("catalog", ["hungaryRegions", "hungaryExtendedRegions"])
+    .in("scope", ["hungary", "hungary_extended"])
     .eq("type", "spa")
     .order("name", { ascending: true })
     .limit(limit);
