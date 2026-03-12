@@ -169,7 +169,7 @@ export async function listDistributionRegionCatalogMeta(
   const { data, error } = await supabaseServerClient
     .from("distribution_region_catalog_items")
     .select(
-      "region_id,name,scope,type,source,bbox,country_code,distance_to_hungary_km,is_within_hungary,is_within_hungary_buffer,site_code"
+      "region_id,name,scope,type,source,bbox"
     )
     .eq("catalog", catalog);
 
@@ -204,7 +204,7 @@ export async function getDistributionRegionCatalogMetaById(
 
   const { data, error } = await supabaseServerClient
     .from("distribution_region_catalog_items")
-    .select("catalog,region_id,name,scope,type,source,bbox,country_code,distance_to_hungary_km,is_within_hungary,is_within_hungary_buffer,site_code")
+    .select("catalog,region_id,name,scope,type,source,bbox")
     .eq("region_id", id)
     .maybeSingle();
 
