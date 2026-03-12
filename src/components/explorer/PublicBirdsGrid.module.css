@@ -1,0 +1,159 @@
+.page {
+  display: grid;
+  gap: 2rem;
+}
+
+.filters {
+  display: grid;
+  gap: 1rem;
+}
+
+.filterRow {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+}
+
+.filterLabel {
+  display: grid;
+  gap: 0.45rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.input,
+.select {
+  border-radius: 12px;
+  border: 1px solid rgba(var(--brand-ink-rgb), 0.2);
+  padding: 0.55rem 0.7rem;
+  background: white;
+  color: var(--foreground);
+  font-size: 0.9rem;
+}
+
+.colorFilter {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.colorLabel {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.colorTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.colorTag {
+  border-radius: 999px;
+  border: 1px solid rgba(var(--brand-ink-rgb), 0.25);
+  padding: 0.35rem 0.75rem;
+  background: white;
+  font-size: 0.85rem;
+  color: var(--foreground);
+}
+
+.colorTagActive {
+  background: rgba(var(--brand-ink-rgb), 0.12);
+  border-color: rgba(var(--brand-ink-rgb), 0.5);
+}
+
+.notice {
+  padding: 1rem 1.25rem;
+}
+
+.groups {
+  display: grid;
+  gap: 2rem;
+}
+
+.groupHeader {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 0.8rem;
+}
+
+.groupTitle {
+  margin: 0;
+  font-size: 1.4rem;
+  color: var(--foreground);
+}
+
+.groupCount {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.card {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 1rem;
+  align-items: center;
+  padding: 1rem 1.1rem;
+  text-decoration: none;
+  color: inherit;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+}
+
+.cardBody {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.cardTitle {
+  margin: 0;
+  font-size: 1.1rem;
+  color: var(--foreground);
+}
+
+.cardMeta {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.cardShort {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--brand-ink);
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+@media (min-width: 720px) {
+  .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1040px) {
+  .grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .card {
+    grid-template-columns: 1fr;
+    align-items: start;
+    text-align: left;
+  }
+  .cardIcon {
+    margin: 0 auto 0.3rem;
+  }
+}

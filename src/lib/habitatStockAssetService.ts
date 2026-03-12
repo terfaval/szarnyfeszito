@@ -60,6 +60,14 @@ const HABITAT_STOCK_ASSET_SEED_V1 = [
   },
 ] as const;
 
+const HABITAT_CLASS_FALLBACK_KEYS: Record<string, string> = {
+  "erdő": "forest_edge_v1",
+  "vízpart": "wetlands_v1",
+  "puszta": "grassland_v1",
+  "hegy": "mountains_v1",
+  "város": "urban_park_v1",
+};
+
 export type HabitatStockAsset = {
   id: string;
   key: string;
@@ -228,6 +236,47 @@ export async function listApprovedPublishedPlaceTypesForBird(birdId: string): Pr
   });
 
   return Array.from(new Set(types));
+}
+
+export async function listPublishedPlaceTypesByNames(names: string[]): Promise<PlaceType[]> {
+  const cleaned = Array.from(
+    new Set(
+      names
+        .filter((name) => typeof name === "string")
+        .map((name) => name.trim())
+        .filter(Boolean)
+    )
+  ).slice(0, 50);
+
+  if (cleaned.length === 0) return [];
+
+  const clauses = cleaned.map((name) => `name.ilike.${name.replace(/,/g, " ")}`);
+  const { data, error } = await supabaseServerClient
+    .from("places")
+    .select("name,place_type,status")
+    .eq("status", "published")
+    .or(clauses.join(","))
+    .limit(500);
+
+  if (error) throw error;
+
+  const rows = (data ?? []) as Array<{ place_type?: unknown }>;
+  const types: PlaceType[] = rows
+    .map((row) => (typeof row?.place_type === "string" ? row.place_type : ""))
+    .filter(Boolean) as PlaceType[];
+
+  return Array.from(new Set(types));
+}
+
+export function resolveHabitatStockAssetKeyForHabitatClass(args: {
+  habitatClass: string | null | undefined;
+  assets: HabitatStockAsset[];
+}): string | null {
+  if (!args.habitatClass) return null;
+  const normalized = args.habitatClass.trim().toLowerCase();
+  const fallbackKey = HABITAT_CLASS_FALLBACK_KEYS[normalized] ?? null;
+  if (!fallbackKey) return null;
+  return args.assets.some((asset) => asset.key === fallbackKey) ? fallbackKey : null;
 }
 
 export async function getSignedApprovedHabitatTileUrlsByAssetKeys(keys: string[]) {

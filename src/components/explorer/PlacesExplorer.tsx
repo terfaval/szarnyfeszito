@@ -71,7 +71,7 @@ export default function PlacesExplorer() {
       const response = await fetch("/api/public/places");
       const payload = await response.json().catch(() => null);
       if (!response.ok) {
-        setMarkersError(payload?.error ?? "Unable to load places.");
+        setMarkersError(payload?.error ?? "Nem sikerült betölteni a helyszíneket.");
         setLoadingMarkers(false);
         return;
       }
@@ -80,6 +80,14 @@ export default function PlacesExplorer() {
       setLoadingMarkers(false);
     };
     run();
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const slug = new URLSearchParams(window.location.search).get("place");
+    if (slug) {
+      setSelectedSlug(slug);
+    }
   }, []);
 
   const selectSlug = (slug: string | null) => {
@@ -99,7 +107,7 @@ export default function PlacesExplorer() {
       const response = await fetch(`/api/public/places/${encodeURIComponent(selectedSlug)}`);
       const payload = await response.json().catch(() => null);
       if (!response.ok) {
-        setDetailError(payload?.error ?? "Unable to load place.");
+        setDetailError(payload?.error ?? "Nem sikerült betölteni a helyszínt.");
         setSelectedDetail(null);
         setLoadingDetail(false);
         return;
@@ -131,12 +139,12 @@ export default function PlacesExplorer() {
   }, [markers, selectedDetail, selectedSlug]);
 
   return (
-    <main className="places-explorer mx-auto w-full max-w-6xl px-6 py-10">
-      <header className="mb-6">
-        <p className="text-xs uppercase tracking-[0.6em] text-zinc-500">Szárnyfeszítő</p>
-        <h1 className="mt-3 text-3xl font-semibold text-zinc-900">Places</h1>
-        <p className="mt-2 text-sm text-zinc-600">
-          Destination-level birding sites in Hungary. Markers are approximate and intentionally avoid sensitive micro-locations.
+    <main className="space-y-6">
+      <header className="admin-heading">
+        <p className="admin-heading__label">Szárnyfeszítő</p>
+        <h1 className="admin-heading__title admin-heading__title--large">Helyszínek</h1>
+        <p className="admin-heading__description">
+          Publikált madármegfigyelő helyszínek Magyarországon. A jelölők szándékosan közelítő helyet mutatnak.
         </p>
       </header>
 
@@ -147,7 +155,7 @@ export default function PlacesExplorer() {
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_420px]">
         <section className="place-map">
           {loadingMarkers ? (
-            <div className="place-panel admin-stat-card admin-stat-card--note">Loading map…</div>
+            <div className="place-panel admin-stat-card admin-stat-card--note">Térkép betöltése…</div>
           ) : (
             <PlacesMap
               markers={markers}
@@ -165,13 +173,13 @@ export default function PlacesExplorer() {
         <aside className="place-panel place-panel-content rounded-2xl border border-white/40 bg-white/90 p-6 shadow-2xl shadow-black/5 backdrop-blur">
           {!selectedSlug ? (
             <div className="space-y-2">
-              <p className="text-sm font-semibold text-zinc-900">Pick a marker</p>
+              <p className="text-sm font-semibold text-zinc-900">Válassz egy jelölőt</p>
               <p className="text-sm text-zinc-600">
-                Select a place on the map to open its panel. Only published places appear here.
+                Kattints egy helyszínre a részletek megnyitásához. Itt csak publikált helyszínek láthatók.
               </p>
             </div>
           ) : loadingDetail ? (
-            <p className="text-sm text-zinc-600">Loading {selectedName}…</p>
+            <p className="text-sm text-zinc-600">Betöltés: {selectedName}…</p>
           ) : detailError ? (
             <p className="text-sm text-red-600">{detailError}</p>
           ) : selectedDetail ? (
@@ -188,11 +196,11 @@ export default function PlacesExplorer() {
               <section className="place-content mt-5 space-y-3">
                 <p className="text-sm text-zinc-800 whitespace-pre-wrap">{selectedDetail.content.variants.short}</p>
                 <details className="rounded-xl border border-zinc-200 bg-white p-4">
-                  <summary className="cursor-pointer text-sm font-semibold text-zinc-900">Read more</summary>
+                  <summary className="cursor-pointer text-sm font-semibold text-zinc-900">Részletek</summary>
                   <div className="mt-3 space-y-3">
                     <p className="text-sm text-zinc-700 whitespace-pre-wrap">{selectedDetail.content.variants.long}</p>
                     <div className="rounded-lg bg-zinc-50 p-3">
-                      <p className="text-xs uppercase tracking-[0.3em] text-zinc-500">Ethics</p>
+                      <p className="text-xs uppercase tracking-[0.3em] text-zinc-500">Etika</p>
                       <p className="mt-2 text-sm text-zinc-700 whitespace-pre-wrap">{selectedDetail.content.variants.ethics_tip}</p>
                     </div>
                   </div>
@@ -200,24 +208,26 @@ export default function PlacesExplorer() {
 
                 <div className="place-meta grid gap-3">
                   <div className="rounded-lg bg-zinc-50 p-3">
-                    <p className="text-xs uppercase tracking-[0.3em] text-zinc-500">When to go</p>
+                    <p className="text-xs uppercase tracking-[0.3em] text-zinc-500">Mikor érdemes menni</p>
                     <p className="mt-2 text-sm text-zinc-700 whitespace-pre-wrap">{selectedDetail.content.variants.when_to_go}</p>
                   </div>
                   <div className="rounded-lg bg-zinc-50 p-3">
-                    <p className="text-xs uppercase tracking-[0.3em] text-zinc-500">Practical tip</p>
+                    <p className="text-xs uppercase tracking-[0.3em] text-zinc-500">Praktikus tipp</p>
                     <p className="mt-2 text-sm text-zinc-700 whitespace-pre-wrap">{selectedDetail.content.variants.practical_tip}</p>
                   </div>
                 </div>
 
                 {selectedDetail.place_birds.length ? (
                   <div className="place-birds">
-                    <p className="text-xs uppercase tracking-[0.3em] text-zinc-500">Birds</p>
+                    <p className="text-xs uppercase tracking-[0.3em] text-zinc-500">Madarak</p>
                     <ul className="mt-2 space-y-2">
                       {selectedDetail.place_birds.slice(0, 12).map((row) => (
                         <li key={row.id} className="text-sm text-zinc-700">
-                          <span className="font-semibold">{row.bird?.name_hu ?? row.pending_bird_name_hu ?? "Unknown"}</span>
+                          <span className="font-semibold">
+                            {row.bird?.name_hu ?? row.pending_bird_name_hu ?? "Ismeretlen"}
+                          </span>
                           <span className="text-zinc-500"> · {row.frequency_band}</span>
-                          {row.is_iconic ? <span className="text-zinc-500"> · iconic</span> : null}
+                          {row.is_iconic ? <span className="text-zinc-500"> · ikonikus</span> : null}
                         </li>
                       ))}
                     </ul>
@@ -259,7 +269,7 @@ export default function PlacesExplorer() {
               </section>
             </div>
           ) : (
-            <p className="text-sm text-zinc-600">No details available.</p>
+            <p className="text-sm text-zinc-600">Nincs elérhető részlet.</p>
           )}
         </aside>
       </div>

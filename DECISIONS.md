@@ -37,6 +37,70 @@
 
 ---
 
+## D58 — Bird habitat assets refill: upsert + dossier fallback v1 (Studio)
+
+**Status:** Accepted  
+**Date:** 2026-03-12  
+**Scope:** Studio-only refill flow + server APIs. No Explorer/runtime AI changes.
+
+### Context
+- The habitat assets refill currently skips birds that already have `habitat_stock_asset_keys`.
+- Birds without approved published Place links cannot derive habitat keys, even though dossier data includes `typical_places` and `pill_meta.habitat_class`.
+- Editors need a deterministic, auditable fallback to reduce manual fixes.
+
+### Decision
+1) **Add an upsert option to the habitat assets refill UI.**
+   - The batch tool can re-run on already-filled birds.
+   - Upsert runs on the **currently filtered** list in the UI.
+2) **Extend refill derivation with dossier fallback (no runtime AI).**
+   - If no approved/published Place links exist:
+     - Try `content_blocks.blocks_json.typical_places` by matching published Place names and deriving their `place_type`.
+     - If still empty, map `pill_meta.habitat_class` to a default habitat stock asset key:
+       - `erdő` → `forest_edge_v1`
+       - `vízpart` → `wetlands_v1`
+       - `puszta` → `grassland_v1`
+       - `hegy` → `mountains_v1`
+       - `város` → `urban_park_v1`
+
+### Out of scope (v1)
+- Automatic creation of Place records from dossier text.
+- Changing public Explorer behavior or fallback ordering outside the refill flow.
+
+---
+
+## D59 â€” Birds: batch refill Placeâ†’Bird links from Birds list (AI confidence) v1 (Studio)
+
+**Status:** Accepted  
+**Date:** 2026-03-12  
+**Scope:** Studio `/admin/birds` only. Explorer out of scope. No runtime AI.
+
+### Context
+- We already have Place-side suggestion triggers (D35/D49), but editors also want a Birds-side batch refill.
+- The refill should compare **every published Bird** against **every published Place** and create suggested links when the AI is confident.
+
+### Decision
+1) **Add a Birds-side refill tool.**
+   - New admin page: `/admin/birds/refill/place-links`.
+   - Batch runs in the browser session (no server-side queue v1), similar to D46/D49.
+2) **AI-driven linking with confidence threshold.**
+   - Server-side AI returns `confidence` per (bird, place) pair.
+   - Only pairs with `confidence >= 0.60` are inserted.
+3) **Insert as `suggested` by default.**
+   - Links are stored in `place_birds` with `review_status="suggested"`.
+   - Only **published** Birds and **published** Places are considered.
+   - No `pending_bird_name_hu` rows are created in this flow.
+   - Duplicate links are ignored (idempotent upsert).
+4) **Approve-all option.**
+   - The UI provides an "Approve all" action to bulk-update suggested rows to `review_status="approved"` after review.
+   - Approval is explicit and editor-triggered.
+
+### Out of scope (v1)
+- Trace/audit metadata on the suggested links.
+- Server-side queue/worker for long-running batches.
+- Any Explorer/public behavior changes.
+
+---
+
 ## D50 - Bird: sex comparison block + duo image refill v1 (Studio)
 
 **Status:** Accepted  
@@ -84,7 +148,7 @@
      - `style_family="iconic"`
      - `variant="habitat_square_v1"`
    - Review flow: `draft → reviewed → approved`.
-   - Approved tiles are locked in v1 (regenerate requires a request-fix workflow).
+   - Approved tiles can be unapproved back to draft; regeneration is allowed after unapprove.
 3) **Add Studio access under Birds.**
    - New admin page: `/admin/birds/habitat-assets` (list + generate/regenerate + review/approve).
 
@@ -1128,3 +1192,69 @@ Birdwatch logging should reflect “I saw X at place Y”, and help selection by
 ### Out of scope
 - Any new public routes beyond linking to existing `/places`.
 - Adding analytics, tracking, or personalization.
+
+---
+
+## D57 - Public birds + places lists (Explorer) v1
+
+**Status:** Accepted  
+**Date:** 2026-03-12  
+**Scope:** Public Explorer routes only. No runtime AI.
+
+### Context
+- The landing page now previews published Birds + Places (D54/D56), but there is no public list view.
+- Users need a lightweight public browsing surface with filters and basic metadata.
+- Explorer must consume canonical UI variants where defined; no client-side semantic stitching.
+
+### Decision
+- Add public routes:
+  - `/birds` (list + filters, grouped by visibility)
+  - `/birds/[slug]` (public bird card)
+  - `/places/list` (list + filters, grid view)
+- Keep existing public `/places` map page, but ensure all labels are Hungarian.
+- Public Bird list/detail source:
+  - `birds.status="published"`
+  - `content_blocks.entity_type="bird"` with `review_status="approved"` for text snippets
+  - approved current `images.variant="fixed_pose_icon_v1"` for bird icons
+  - approved current `images.variant="habitat_square_v1"` for habitat tiles (habitat stock assets)
+- Public Place list source:
+  - `places.status="published"`
+  - approved UI variants (`content_blocks.entity_type="place"` + `review_status="approved"`)
+  - approved current `images.variant="place_hero_spring_v1"` as hero image
+  - habitat icon derived from `habitat_stock_assets` by `places.place_type` (approved `habitat_square_v1` tile)
+- Filters (v1):
+  - Birds: search, color tag, size, visibility, place type, region, linked place
+  - Places: search, place type, region
+- Layout (v1):
+  - Birds grid: 4 columns
+  - Places grid: 3 columns
+
+### Out of scope (v1)
+- Full Field Guide dossier rendering on public pages.
+- Runtime AI on public surfaces.
+- Client-side inference beyond declared contracts.
+
+---
+
+## D59 - Public homepage as admin-style dashboard (Explorer) v1
+
+**Status:** Accepted  
+**Date:** 2026-03-12  
+**Scope:** Public `/` only. No runtime AI.
+
+### Context
+- A public landing existed as editorial content (D54/D56), but we want the public surface to match the Admin dashboard visual language.
+- Public users need a concise, action-oriented overview without admin operations.
+
+### Decision
+- Replace the public landing layout with the admin dashboard visual structure:
+  - Places map preview (Leaflet) using published markers.
+  - Habitat spotlights grouped by place type, filtered by the current season.
+  - Discovery panel linking to `/birds` and `/places/list`.
+  - Recent published birds list.
+- Remove all admin-only actions and pipeline management blocks from the public homepage.
+- Public topbar uses the admin topbar style but only shows `Madarak` and `Helyszínek`.
+
+### Out of scope
+- Admin-only stats and edit actions.
+- Runtime AI content generation.

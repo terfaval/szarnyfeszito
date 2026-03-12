@@ -1,16 +1,16 @@
-import PlacesExplorer from "@/components/explorer/PlacesExplorer";
+import PublicBirdsGrid from "@/components/explorer/PublicBirdsGrid";
 import PublicShell from "@/ui/components/PublicShell";
 
 export const metadata = {
-  title: "Helyszínek — Szárnyfeszítő",
+  title: "Madarak — Szárnyfeszítő",
 };
 
 export const dynamic = "force-dynamic";
 
-export default function PlacesPage() {
+export default function BirdsPage() {
   return (
     <PublicShell>
-      <PlacesExplorer />
+      <PublicBirdsGrid />
     </PublicShell>
   );
 }

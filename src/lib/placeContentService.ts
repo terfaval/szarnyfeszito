@@ -61,6 +61,36 @@ export async function getLatestApprovedContentBlockForPlace(
   return (data ?? null) as PlaceContentBlockRecord | null;
 }
 
+export async function listLatestApprovedContentBlocksForPlaces(placeIds: string[]) {
+  const ids = Array.from(new Set(placeIds.filter(Boolean))).slice(0, 500);
+  const out = new Map<string, PlaceContentBlockRecord>();
+  if (ids.length === 0) return out;
+
+  const { data, error } = await supabaseServerClient
+    .from("content_blocks")
+    .select(
+      "id,entity_type,entity_id,review_status,created_at,updated_at,blocks_json,generation_meta,short,long,did_you_know,ethics_tip"
+    )
+    .eq("entity_type", "place")
+    .eq("review_status", "approved")
+    .in("entity_id", ids)
+    .order("updated_at", { ascending: false });
+
+  if (error) {
+    throw error;
+  }
+
+  (data ?? []).forEach((row) => {
+    const block = row as PlaceContentBlockRecord;
+    if (!block?.entity_id) return;
+    if (!out.has(block.entity_id)) {
+      out.set(block.entity_id, block);
+    }
+  });
+
+  return out;
+}
+
 export async function createPlaceUiVariantsBlock(args: {
   place_id: string;
   payload: PlaceUiVariantsV1;

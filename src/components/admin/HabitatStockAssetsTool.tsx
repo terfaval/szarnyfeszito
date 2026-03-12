@@ -173,6 +173,16 @@ export default function HabitatStockAssetsTool() {
 
                     {image ? (
                       <div className="flex flex-wrap gap-2">
+                        {locked ? (
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            disabled={isBusy}
+                            onClick={() => setImageStatus(image.id, "draft")}
+                          >
+                            Unapprove
+                          </Button>
+                        ) : null}
                         <Button
                           type="button"
                           variant="secondary"
@@ -194,7 +204,7 @@ export default function HabitatStockAssetsTool() {
 
                     {locked ? (
                       <p className="admin-note-small">
-                        Approved images are locked in v1. Use request-fix workflow if changes are needed.
+                        Approved images must be unapproved before regenerating.
                       </p>
                     ) : null}
                   </div>

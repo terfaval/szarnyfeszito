@@ -78,9 +78,10 @@ export default function BirdHabitatAssetsRefillTool({
     return out;
   }, [rows]);
 
-  const runBatch = async (targetIds: string[]) => {
+  const runBatch = async (targetIds: string[], options?: { force?: boolean }) => {
     cancelRef.current = false;
     setRunning(true);
+    const force = options?.force === true;
 
     for (const birdId of targetIds) {
       if (cancelRef.current) break;
@@ -93,7 +94,7 @@ export default function BirdHabitatAssetsRefillTool({
       abortRef.current = controller;
 
       try {
-        const res = await fetch(`/api/birds/${birdId}/habitat-assets/refill`, {
+        const res = await fetch(`/api/birds/${birdId}/habitat-assets/refill${force ? "?force=true" : ""}`, {
           method: "POST",
           signal: controller.signal,
         });
@@ -146,6 +147,18 @@ export default function BirdHabitatAssetsRefillTool({
     await runBatch(missingIds);
   };
 
+  const handleUpsertFiltered = async () => {
+    if (running) return;
+    const targetIds = filteredRows.map((row) => row.id);
+    if (targetIds.length === 0) return;
+    setRows((current) =>
+      current.map((row) =>
+        targetIds.includes(row.id) ? { ...row, status: "pending", message: null } : row
+      )
+    );
+    await runBatch(targetIds, { force: true });
+  };
+
   const handleStop = () => {
     cancelRef.current = true;
     abortRef.current?.abort();
@@ -170,12 +183,20 @@ export default function BirdHabitatAssetsRefillTool({
           placeholder="Name or slug"
           value={search}
           className="flex-1"
-          helperText="Filter the list below (does not change which items run)"
+          helperText="Filter the list below (Upsert uses the filtered list)"
           onChange={(event) => setSearch(event.target.value)}
         />
         <div className="flex flex-wrap items-end gap-2">
           <Button type="button" onClick={handleStartMissingOnly} disabled={running || counts.missing === 0}>
             Refill missing ({counts.missing})
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={handleUpsertFiltered}
+            disabled={running || filteredRows.length === 0}
+          >
+            Upsert filtered ({filteredRows.length})
           </Button>
           <Button type="button" variant="ghost" onClick={handleStop} disabled={!running}>
             Leállítás

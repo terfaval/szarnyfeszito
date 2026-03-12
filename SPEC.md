@@ -50,7 +50,7 @@ and persists `bird_distribution_maps.ranges[]`.
 - Promptolható képgenerálás
 
 Explorer skeleton is a future phase, but a minimal, read-only Place map + panel is now in scope (D31) so Place entities can be previewed and published without waiting for the full Explorer buildout.
-Current active scope: Studio generative engine for Bird content + Place system foundation (CRUD, AI text generation, review, publish gating) + minimal public Place map surface + Phenomenon data contracts + Studio-only generation workflow planning. Explorer rendering for Phenomena remains a future phase.
+Current active scope: Studio generative engine for Bird content + Place system foundation (CRUD, AI text generation, review, publish gating) + public Places map + public Birds list + public Places list (Explorer) + Phenomenon data contracts + Studio-only generation workflow planning. Explorer rendering for Phenomena remains a future phase.
 
 ### 2.y Public landing page (`/`) v1 (D54)
 
@@ -66,17 +66,10 @@ Rules:
   - Bird icons: only approved current `images.variant="fixed_pose_icon_v1"` are shown.
 
 Sections:
-- Hero: logo + intro copy + CTA to `/places`.
-- "Mi a Szárnyfeszítő?" editorial panel (static): 3 short blocks (title + short copy).
-- Map intro panel (static): short title + short copy.
 - "Dashboard Places map" preview (Leaflet) to validate markers + region overlays.
-- Map helper panel (static): what to do with / why the map is useful.
-- "Madárvonulások" editorial section (static copy).
-- "Madarak" spotlight panel: 5 random published Birds, with diversity across `birds.visibility_category` when possible (preview-only; not a Field Guide).
-- "Helyszínek" spotlight panel: 3 published Places with hero image, teaser/short description, and up to 5 bird icons from approved Place→Bird links.
-- "Kinek szól?" editorial panel (static): 2×2 grid.
-- "Hogyan kezdj bele?" editorial panel (static): 3-step intro flow.
-- Closing CTA panel (static): short title + short copy + CTA to `/places`.
+- "Élőhely spotlights": published Places alapján szezonális publikált Birds listák.
+- "Felfedezés" panel: linkek a publikus `/birds` és `/places/list` oldalakra.
+- "Friss publikált fajok": listázza a legutóbbi published Birds elemeket.
 
 ### 2.x Leaflet map defaults (D39)
 
@@ -90,6 +83,31 @@ Applies to **display-only** maps (public `/places`, Admin Dashboard Places map, 
 - Exception: editor pickers (e.g. Place location picker) remain interactive.
 - Exception (Studio `/admin` dashboard, D43): Places map allows bounded HU pan/zoom (maxBounds + limited zoom range); scroll-wheel zoom stays off.
 - Exception (public `/places`, D40): `basemap="brand"` is tile-less and shows Hungary silhouette on page-bg, with a theme-aware water fill; attribution hidden. The public Places map may additionally render lightweight region overlays (global country borders + HU region polygons) from the server-side region catalog (D26/D41) to validate the `leaflet_region_id` contract.
+
+### 2.y Public Birds list (Explorer)
+
+Applies to public `/birds` and `/birds/[slug]` (D57).
+
+Rules:
+- Published-only gating: `birds.status="published"`.
+- Content blocks: `content_blocks.entity_type="bird"` and `review_status="approved"` are required for public text.
+- Bird icon: only approved current `images.variant="fixed_pose_icon_v1"`.
+- Habitat background: approved current `images.variant="habitat_square_v1"` from habitat stock assets.
+- Grouping: list UI groups by `birds.visibility_category` (HU labels), with fallback "Ismeretlen".
+- Grid layout: 4 birds per row.
+- Filters (v1): search, color tags, size category, visibility category, place type, region, linked place.
+
+### 2.z Public Places list (Explorer)
+
+Applies to public `/places/list` (D57).
+
+Rules:
+- Published-only gating: `places.status="published"` and approved UI variants.
+- UI variants required: `content_blocks.entity_type="place"` + `review_status="approved"` + `schema_version="place_ui_variants_v1"`.
+- Hero image: only approved current `images.variant="place_hero_spring_v1"`.
+- Habitat icon: derived from `habitat_stock_assets` by `places.place_type` (approved `habitat_square_v1` tile).
+- Grid layout: 3 places per row.
+- Filters (v1): search, place type, region.
 
 ---
 
@@ -125,7 +143,7 @@ Habitat stock assets (D51):
   - `entity_type="habitat_stock_asset"`
   - `style_family="iconic"`
   - `variant="habitat_square_v1"` (full-frame square habitat tile; no birds)
-- Review flow: draft → reviewed → approved (approved tiles are locked in v1).
+- Review flow: draft → reviewed → approved. Approved tiles can be unapproved back to draft; regeneration is allowed after unapprove.
 
 Bird habitat assets (D55):
 - Birds may store an ordered preference list: `birds.habitat_stock_asset_keys` (text[]; may be empty).
@@ -135,6 +153,20 @@ Bird habitat assets (D55):
   3) Bird fallback: first of `birds.habitat_stock_asset_keys`
   4) Legacy fallback: `content_blocks.blocks_json.pill_meta.habitat_class` SVG icon
 - Studio refill page: `/admin/birds/refill/habitat-assets` (backfill published birds).
+  - Refill supports **upsert** on the filtered list (recompute even if keys already exist).
+  - Refill fallback order (when no approved/published Place links are available):
+    1) `content_blocks.blocks_json.typical_places` → match published Place names → derive `place_type` → compute keys
+    2) `pill_meta.habitat_class` → default habitat asset key mapping:
+       - `erdő` → `forest_edge_v1`
+       - `vízpart` → `wetlands_v1`
+       - `puszta` → `grassland_v1`
+       - `hegy` → `mountains_v1`
+       - `város` → `urban_park_v1`
+
+Place link refill (D59):
+- Studio refill page: `/admin/birds/refill/place-links` (batch AI linking between published Birds and published Places).
+- Default inserts `place_birds.review_status="suggested"` for AI confidence >= 0.60.
+- Includes an explicit "Approve all" action to bulk-approve suggested links.
 
 Kiegészítő meta (D18):
 - A Studio `/admin/birds` oldalon a madarak szűrhetők/rendezhetők `size_category` (méret) és `visibility_category` (észlelhetőség) alapján.
@@ -205,6 +237,7 @@ Place → Birds relations (D35):
   - on Place content regeneration
   - on editor manual trigger ("Suggest birds")
   - on Places list batch refill (published Places; existing published Birds only; optional auto-approve)
+  - on Birds list batch refill (published Birds + Places; AI confidence >= 0.60; suggested by default; approve-all available)
 - Explorer/public endpoints only show `place_birds.review_status="approved"` rows (no AI suggestions leaking to public).
 
 Place quick-create SPA helper (D52):

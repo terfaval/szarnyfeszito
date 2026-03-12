@@ -1,4 +1,4 @@
-import PlacesExplorer from "@/components/explorer/PlacesExplorer";
+import PublicPlacesGrid from "@/components/explorer/PublicPlacesGrid";
 import PublicShell from "@/ui/components/PublicShell";
 
 export const metadata = {
@@ -7,10 +7,10 @@ export const metadata = {
 
 export const dynamic = "force-dynamic";
 
-export default function PlacesPage() {
+export default function PlacesListPage() {
   return (
     <PublicShell>
-      <PlacesExplorer />
+      <PublicPlacesGrid />
     </PublicShell>
   );
 }

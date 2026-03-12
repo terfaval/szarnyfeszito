@@ -50,6 +50,54 @@ export async function getLatestContentBlockForBird(
   return data ?? null;
 }
 
+export async function getLatestApprovedContentBlockForBird(
+  birdId: string
+): Promise<ContentBlock | null> {
+  const { data, error } = await supabaseServerClient
+    .from("content_blocks")
+    .select("*")
+    .eq("entity_type", "bird")
+    .eq("entity_id", birdId)
+    .eq("review_status", "approved")
+    .order("updated_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  return data ?? null;
+}
+
+export async function listLatestApprovedContentBlocksForBirds(birdIds: string[]) {
+  const ids = Array.from(new Set(birdIds.filter(Boolean))).slice(0, 500);
+  const out = new Map<string, ContentBlock>();
+  if (ids.length === 0) return out;
+
+  const { data, error } = await supabaseServerClient
+    .from("content_blocks")
+    .select("*")
+    .eq("entity_type", "bird")
+    .eq("review_status", "approved")
+    .in("entity_id", ids)
+    .order("updated_at", { ascending: false });
+
+  if (error) {
+    throw error;
+  }
+
+  (data ?? []).forEach((row) => {
+    const block = row as ContentBlock;
+    if (!block?.entity_id) return;
+    if (!out.has(block.entity_id)) {
+      out.set(block.entity_id, block);
+    }
+  });
+
+  return out;
+}
+
 export async function listLatestDossierBlocksForBirds(birdIds: string[]) {
   if (birdIds.length === 0) {
     return new Map<string, BirdDossier>();

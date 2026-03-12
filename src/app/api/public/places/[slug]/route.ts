@@ -9,12 +9,12 @@ export async function GET(_request: Request, ctx: { params: Promise<{ slug: stri
   const place = await getPlaceBySlug(slug);
 
   if (!place || place.status !== "published") {
-    return NextResponse.json({ error: "Place not found." }, { status: 404 });
+    return NextResponse.json({ error: "A helyszín nem található." }, { status: 404 });
   }
 
   const contentBlock = await getLatestApprovedContentBlockForPlace(place.id);
   if (!contentBlock || contentBlock.review_status !== "approved" || !contentBlock.blocks_json) {
-    return NextResponse.json({ error: "Place content is not available." }, { status: 404 });
+    return NextResponse.json({ error: "A helyszín tartalma nem elérhető." }, { status: 404 });
   }
 
   const parsedContent = placeUiVariantsSchemaV1.safeParse(contentBlock.blocks_json);
@@ -24,7 +24,7 @@ export async function GET(_request: Request, ctx: { params: Promise<{ slug: stri
       block_id: contentBlock.id,
       issues: parsedContent.error.issues,
     });
-    return NextResponse.json({ error: "Place content is not available." }, { status: 404 });
+    return NextResponse.json({ error: "A helyszín tartalma nem elérhető." }, { status: 404 });
   }
 
   const { data: birdLinks, error } = await supabaseServerClient
