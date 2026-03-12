@@ -1,5 +1,6 @@
 import { Bird } from "@/types/bird";
 import type { Place } from "@/types/place";
+import type { VisualBriefRecord } from "@/types/imageAccuracy";
 import {
   ImageRecord,
   ImageReviewStatus,
@@ -23,6 +24,7 @@ import { getLatestContentBlockForBird } from "@/lib/contentService";
 import { generateScienceDossierV1, generateVisualBriefV1 } from "@/lib/imageAccuracyGeneration";
 import { scienceDossierSchemaV1 } from "@/lib/imageAccuracySchemas";
 import { getScienceDossierForBird, upsertScienceDossierDraft } from "@/lib/scienceDossierService";
+import { AIJsonParseError, AISchemaMismatchError } from "@/lib/aiUtils";
 import { getVisualBriefForBird, upsertVisualBriefDraft } from "@/lib/visualBriefService";
 import { getHabitatStockAssetByKey } from "@/lib/habitatStockAssetService";
 export { getSignedImageUrl } from "@/lib/imageSigning";
@@ -482,10 +484,24 @@ export async function generateImagesForBird(
       ? await ensureScienceDossierForImageGen(bird)
       : await getScienceDossierForBird(bird.id);
 
-  const visualBrief =
-    accuracyMode === "auto" && scienceDossier
-      ? await ensureVisualBriefForImageGen(bird, scienceDossier)
-      : await getVisualBriefForBird(bird.id);
+  let visualBrief: VisualBriefRecord | null = null;
+  if (accuracyMode === "auto" && scienceDossier) {
+    try {
+      visualBrief = await ensureVisualBriefForImageGen(bird, scienceDossier);
+    } catch (error) {
+      if (error instanceof AIJsonParseError || error instanceof AISchemaMismatchError) {
+        console.warn("[image-gen] visual brief generation skipped", {
+          bird_id: bird.id,
+          reason: (error as Error).message,
+        });
+        visualBrief = null;
+      } else {
+        throw error;
+      }
+    }
+  } else {
+    visualBrief = await getVisualBriefForBird(bird.id);
+  }
 
   const useScienceDossier =
     accuracyMode === "auto" ||

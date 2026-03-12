@@ -9,6 +9,7 @@ export type DistributionRegionCatalogName =
   | "hungaryExtendedRegions";
  
 export type DistributionRegionCatalogItemMeta = {
+  catalog: DistributionRegionCatalogName;
   region_id: string;
   name: string;
   scope: "global" | "hungary" | "hungary_extended";
@@ -35,20 +36,133 @@ function parseBbox(raw: unknown) {
   return bboxSchema.parse(raw) as DistributionRegionCatalogItemMeta["bbox"];
 }
 
+const repoCatalogOrder: DistributionRegionCatalogName[] = [
+  "hungaryExtendedRegions",
+  "hungaryRegions",
+  "globalRegions",
+];
+
+type RepoCatalogEntry = { catalog: DistributionRegionCatalogName; item: RegionCatalogItem };
+
+const repoCatalogLoaders = new Map<DistributionRegionCatalogName, Promise<void>>();
+const repoRegionIndex = new Map<string, RepoCatalogEntry>();
+
+async function ensureRepoCatalogIndexed(catalog: DistributionRegionCatalogName) {
+  const existing = repoCatalogLoaders.get(catalog);
+  if (existing) {
+    await existing;
+    return;
+  }
+
+  const loader = (async () => {
+    const items = await loadRegionCatalogFromRepo(catalog);
+    if (items) {
+      items.forEach((item) => {
+        if (item.region_id) {
+          repoRegionIndex.set(item.region_id, { catalog, item });
+        }
+      });
+    }
+  })();
+
+  repoCatalogLoaders.set(catalog, loader);
+  await loader;
+}
+
+async function findRegionCatalogEntryInRepo(regionId: string): Promise<RepoCatalogEntry | null> {
+  const normalized = regionId.trim();
+  if (!normalized) return null;
+
+  const cached = repoRegionIndex.get(normalized);
+  if (cached) return cached;
+
+  for (const catalog of repoCatalogOrder) {
+    await ensureRepoCatalogIndexed(catalog);
+    const found = repoRegionIndex.get(normalized);
+    if (found) return found;
+  }
+
+  return null;
+}
+
+function repoEntryToMeta(entry: RepoCatalogEntry): DistributionRegionCatalogItemMeta {
+  return {
+    catalog: entry.catalog,
+    region_id: entry.item.region_id,
+    name: entry.item.name,
+    scope: entry.item.scope,
+    type: entry.item.type,
+    source: entry.item.source,
+    bbox: entry.item.bbox,
+    country_code: null,
+    distance_to_hungary_km: null,
+    is_within_hungary: null,
+    is_within_hungary_buffer: null,
+    site_code: null,
+  };
+}
+
+function repoItemToMeta(item: RegionCatalogItem, catalog: DistributionRegionCatalogName) {
+  return repoEntryToMeta({ catalog, item });
+}
+
+function parseCatalogName(raw: unknown): DistributionRegionCatalogName {
+  const value = String(raw ?? "").trim();
+  if (value === "hungaryExtendedRegions") return "hungaryExtendedRegions";
+  if (value === "hungaryRegions") return "hungaryRegions";
+  if (value === "globalRegions") return "globalRegions";
+  return "globalRegions";
+}
+
+function supabaseRowToMeta(row: Record<string, unknown>): DistributionRegionCatalogItemMeta {
+  const catalog = parseCatalogName(row.catalog);
+  const scopeRaw = String(row.scope ?? "");
+  const scope =
+    scopeRaw === "hungary_extended"
+      ? "hungary_extended"
+      : scopeRaw === "hungary"
+      ? "hungary"
+      : "global";
+  const countryCode = String(row.country_code ?? "").trim();
+  const distanceValue = row.distance_to_hungary_km;
+
+  return {
+    catalog,
+    region_id: String(row.region_id ?? ""),
+    name: String(row.name ?? ""),
+    scope,
+    type: String(row.type ?? ""),
+    source: String(row.source ?? ""),
+    bbox: parseBbox(row.bbox),
+    country_code: countryCode || null,
+    distance_to_hungary_km:
+      typeof distanceValue === "number"
+        ? distanceValue
+        : typeof distanceValue === "string" && distanceValue.trim()
+        ? Number(distanceValue)
+        : null,
+    is_within_hungary:
+      typeof row.is_within_hungary === "boolean" ? row.is_within_hungary : null,
+    is_within_hungary_buffer:
+      typeof row.is_within_hungary_buffer === "boolean" ? row.is_within_hungary_buffer : null,
+    site_code: String(row.site_code ?? "").trim() || null,
+  };
+}
+
 export async function listDistributionRegionCatalogMeta(
   catalog: DistributionRegionCatalogName
 ): Promise<DistributionRegionCatalogItemMeta[]> {
   const allowRepo = DISTRIBUTION_REGION_CATALOG_SOURCE !== "supabase";
   const allowSupabase = DISTRIBUTION_REGION_CATALOG_SOURCE !== "repo";
 
-  if (allowRepo) {
-    const repoItems = await loadRegionCatalogFromRepo(catalog);
-    if (repoItems && repoItems.length > 0) {
-      return repoItems.map(repoItemToMeta);
-    }
+  const repoItems = allowRepo ? await loadRegionCatalogFromRepo(catalog) : null;
+  if (repoItems && repoItems.length > 0) {
+    return repoItems.map((item) => repoItemToMeta(item, catalog));
   }
 
-  if (!allowSupabase) {
+  const repoMissing = allowRepo && repoItems === null;
+  const shouldFallBackToSupabase = allowSupabase || repoMissing;
+  if (!shouldFallBackToSupabase) {
     return [];
   }
 
@@ -64,49 +178,9 @@ export async function listDistributionRegionCatalogMeta(
   }
 
   const rows = (data ?? []) as Array<Record<string, unknown>>;
-  return rows.map((row) => ({
-    region_id: String(row.region_id ?? ""),
-    name: String(row.name ?? ""),
-    scope:
-      row.scope === "hungary_extended"
-        ? "hungary_extended"
-        : row.scope === "hungary"
-        ? "hungary"
-        : "global",
-    type: String(row.type ?? ""),
-    source: String(row.source ?? ""),
-    bbox: parseBbox(row.bbox),
-    country_code: String(row.country_code ?? "").trim() || null,
-    distance_to_hungary_km:
-      typeof row.distance_to_hungary_km === "number"
-        ? row.distance_to_hungary_km
-        : typeof row.distance_to_hungary_km === "string" &&
-          row.distance_to_hungary_km.trim()
-        ? Number(row.distance_to_hungary_km)
-        : null,
-    is_within_hungary:
-      typeof row.is_within_hungary === "boolean" ? row.is_within_hungary : null,
-    is_within_hungary_buffer:
-      typeof row.is_within_hungary_buffer === "boolean" ? row.is_within_hungary_buffer : null,
-    site_code: String(row.site_code ?? "").trim() || null,
-  }));
+  return rows.map((row) => supabaseRowToMeta(row));
 }
 
-function repoItemToMeta(item: RegionCatalogItem): DistributionRegionCatalogItemMeta {
-  return {
-    region_id: item.region_id,
-    name: item.name,
-    scope: item.scope,
-    type: item.type,
-    source: item.source,
-    bbox: item.bbox,
-    country_code: null,
-    distance_to_hungary_km: null,
-    is_within_hungary: null,
-    is_within_hungary_buffer: null,
-    site_code: null,
-  };
-}
 
 export async function getDistributionRegionCatalogMetaById(
   regionId: string
@@ -114,9 +188,23 @@ export async function getDistributionRegionCatalogMetaById(
   const id = regionId.trim();
   if (!id) return null;
 
+  const allowRepo = DISTRIBUTION_REGION_CATALOG_SOURCE !== "supabase";
+  const allowSupabase = DISTRIBUTION_REGION_CATALOG_SOURCE !== "repo";
+
+  if (allowRepo) {
+    const repoEntry = await findRegionCatalogEntryInRepo(id);
+    if (repoEntry) {
+      return repoEntryToMeta(repoEntry);
+    }
+  }
+
+  if (!allowSupabase) {
+    return null;
+  }
+
   const { data, error } = await supabaseServerClient
     .from("distribution_region_catalog_items")
-    .select("region_id,name,scope,type,source,bbox")
+    .select("catalog,region_id,name,scope,type,source,bbox,country_code,distance_to_hungary_km,is_within_hungary,is_within_hungary_buffer,site_code")
     .eq("region_id", id)
     .maybeSingle();
 
@@ -127,17 +215,7 @@ export async function getDistributionRegionCatalogMetaById(
   if (!data) return null;
 
   const row = data as Record<string, unknown>;
-  const scopeRaw = String(row.scope ?? "");
-  const scope: "global" | "hungary" = scopeRaw === "hungary" ? "hungary" : "global";
-
-  return {
-    region_id: String(row.region_id ?? ""),
-    name: String(row.name ?? ""),
-    scope,
-    type: String(row.type ?? ""),
-    source: String(row.source ?? ""),
-    bbox: parseBbox(row.bbox),
-  };
+  return supabaseRowToMeta(row);
 }
 
 export async function getDistributionRegionGeometriesById(regionIds: string[]): Promise<

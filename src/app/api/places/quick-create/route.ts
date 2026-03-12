@@ -8,6 +8,7 @@ import { createPlaceUiVariantsBlock } from "@/lib/placeContentService";
 import { suggestPlaceBirdLinksV1 } from "@/lib/placeBirdSuggestion";
 import { AIJsonParseError, AISchemaMismatchError } from "@/lib/aiUtils";
 import { AI_MODEL_TEXT } from "@/lib/aiConfig";
+import { getDistributionRegionCatalogMetaById } from "@/lib/distributionRegionCatalogService";
 import { supabaseServerClient } from "@/lib/supabaseServerClient";
 
 export async function POST(request: Request) {
@@ -26,22 +27,28 @@ export async function POST(request: Request) {
   let regionNameFromCatalog: string | null = null;
 
   if (leafletRegionId) {
-    const { data, error } = await supabaseServerClient
-      .from("distribution_region_catalog_items")
-      .select("catalog,scope,type,name")
-      .eq("region_id", leafletRegionId)
-      .maybeSingle();
-
-    if (error) {
+    let region: Awaited<ReturnType<typeof getDistributionRegionCatalogMetaById>> | null = null;
+    try {
+      region = await getDistributionRegionCatalogMetaById(leafletRegionId);
+    } catch (error) {
       return NextResponse.json({ error: "Unable to validate leaflet_region_id." }, { status: 500 });
     }
 
-    const catalog = String(data?.catalog ?? "");
-    const scope = String(data?.scope ?? "");
-    const type = String(data?.type ?? "");
-    const isHungarySpa = catalog === "hungaryRegions" && scope === "hungary" && type === "spa";
+    if (!region) {
+      return NextResponse.json(
+        {
+          error:
+            "leaflet_region_id must reference a HU Natura 2000 SPA or a Hungary-extended SPA catalog item.",
+        },
+        { status: 400 }
+      );
+    }
+
+    const isHungarySpa = region.catalog === "hungaryRegions" && region.scope === "hungary" && region.type === "spa";
     const isExtendedSpa =
-      catalog === "hungaryExtendedRegions" && scope === "hungary_extended" && type === "spa";
+      region.catalog === "hungaryExtendedRegions" &&
+      region.scope === "hungary_extended" &&
+      region.type === "spa";
     if (!isHungarySpa && !isExtendedSpa) {
       return NextResponse.json(
         {
@@ -52,7 +59,7 @@ export async function POST(request: Request) {
       );
     }
 
-    regionNameFromCatalog = String(data?.name ?? "").trim() || null;
+    regionNameFromCatalog = String(region.name ?? "").trim() || null;
 
     const { data: existingRows, error: existingError } = await supabaseServerClient
       .from("places")
