@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import type { PlacesMapLayersV1 } from "@/types/placesMap";
@@ -62,6 +63,14 @@ const FREQUENCY_LABEL_HU: Record<PlaceFrequencyBand, string> = {
   occasional: "alkalmi",
   special: "különleges",
 };
+
+const FREQUENCY_ORDER: PlaceFrequencyBand[] = [
+  "very_common",
+  "common",
+  "regular",
+  "occasional",
+  "special",
+];
 
 function frequencyLabelHu(value: PlaceFrequencyBand) {
   return FREQUENCY_LABEL_HU[value] ?? value.replaceAll("_", " ");
@@ -152,6 +161,39 @@ export default function PlacePublishPreview({
     lng: hasMarker ? (marker!.lng as number) : null,
     updated_at: place.updated_at,
   };
+
+  const [birdSortKey, setBirdSortKey] = useState<"rank" | "name_asc" | "name_desc" | "frequency">("rank");
+  const [birdFilterMode, setBirdFilterMode] = useState<"all" | "commonish">("all");
+
+  const filteredAndSortedBirds = useMemo(() => {
+    let list = [...birds];
+    if (birdFilterMode === "commonish") {
+      const allowed = new Set<PlaceFrequencyBand>(["very_common", "common", "regular"]);
+      list = list.filter((bird) => allowed.has(bird.frequency_band));
+    }
+    if (birdSortKey === "name_asc") {
+      list.sort((a, b) => a.name_hu.localeCompare(b.name_hu, "hu"));
+    } else if (birdSortKey === "name_desc") {
+      list.sort((a, b) => b.name_hu.localeCompare(a.name_hu, "hu"));
+    } else if (birdSortKey === "frequency") {
+      list.sort(
+        (a, b) =>
+          FREQUENCY_ORDER.indexOf(a.frequency_band) - FREQUENCY_ORDER.indexOf(b.frequency_band) ||
+          a.name_hu.localeCompare(b.name_hu, "hu")
+      );
+    } else {
+      list.sort((a, b) => a.rank - b.rank);
+    }
+    return list;
+  }, [birds, birdFilterMode, birdSortKey]);
+
+  const visibleBirds = filteredAndSortedBirds.slice(0, 15);
+  const showBirdToolbar = birds.length > 15;
+  const toolbarLabel =
+    filteredAndSortedBirds.length > 15
+      ? `Mutatott: ${visibleBirds.length} / ${filteredAndSortedBirds.length}`
+      : `${visibleBirds.length} madár`;
+  const noBirdsMessage = `No published birds linked to this place for ${seasonLabel}.`;
 
   return (
     <section className={styles.previewRoot} aria-label="Place publish preview">
@@ -263,9 +305,48 @@ export default function PlacePublishPreview({
                   <p className="admin-note-small">No approved seasonal snippet for {seasonLabel} yet.</p>
                 )}
 
-                {birds.length ? (
+            {birds.length ? (
+              <>
+                {showBirdToolbar ? (
+                  <div className={styles.birdToolbar} aria-label="Madárlista vezérlők">
+                    <p className={styles.birdToolbarStatus}>{toolbarLabel}</p>
+                    <div className={styles.birdToolbarActions}>
+                      <button
+                        type="button"
+                        className={`${styles.birdToolbarButton} ${birdSortKey === "rank" ? styles.birdToolbarButtonActive : ""}`}
+                        onClick={() => setBirdSortKey("rank")}
+                      >
+                        Alapsorrend
+                      </button>
+                      <button
+                        type="button"
+                        className={`${styles.birdToolbarButton} ${birdSortKey === "name_asc" ? styles.birdToolbarButtonActive : ""}`}
+                        onClick={() => setBirdSortKey("name_asc")}
+                      >
+                        Név A→Z
+                      </button>
+                      <button
+                        type="button"
+                        className={`${styles.birdToolbarButton} ${birdSortKey === "frequency" ? styles.birdToolbarButtonActive : ""}`}
+                        onClick={() => setBirdSortKey("frequency")}
+                      >
+                        Gyakoriság
+                      </button>
+                      <button
+                        type="button"
+                        className={`${styles.birdToolbarButton} ${
+                          birdFilterMode === "commonish" ? styles.birdToolbarButtonActive : ""
+                        }`}
+                        onClick={() => setBirdFilterMode((prev) => (prev === "commonish" ? "all" : "commonish"))}
+                      >
+                        Gyakori madarak
+                      </button>
+                    </div>
+                  </div>
+                ) : null}
+                {visibleBirds.length ? (
                   <div className={styles.birdGrid} aria-label="Linked birds">
-                    {birds.map((bird) => (
+                    {visibleBirds.map((bird) => (
                       <Link
                         key={bird.id}
                         href={`${birdLinkBasePath}/${encodeURIComponent(birdLinkKey === "slug" ? bird.slug : bird.id)}`}
@@ -281,8 +362,12 @@ export default function PlacePublishPreview({
                     ))}
                   </div>
                 ) : (
-                  <p className="admin-note-small">No published birds linked to this place for {seasonLabel}.</p>
+                  <p className="admin-note-small">{noBirdsMessage}</p>
                 )}
+              </>
+            ) : (
+              <p className="admin-note-small">{noBirdsMessage}</p>
+            )}
               </div>
             ) : null}
 
@@ -309,10 +394,16 @@ export default function PlacePublishPreview({
               </div>
             ) : null}
 
-            <div className={styles.practicalAfterGrid} aria-label="Practical notes and notable units">
+            <div
+              className={`${styles.practicalAfterGrid} ${hasNotableUnits ? "" : styles.practicalAfterGridSingle}`.trim()}
+              aria-label="Practical notes and notable units"
+            >
               <div className={`admin-panel ${styles.generalPracticalPanel}`} aria-label="General practical notes">
-                <p className="admin-subheading">General practical info</p>
-                <div className={styles.generalPracticalRows}>
+                <div
+                  className={`${styles.generalPracticalRows} ${
+                    hasNotableUnits ? "" : styles.generalPracticalRowsGrid
+                  }`.trim()}
+                >
                   <div className={styles.generalPracticalRow}>
                     <p className={styles.generalPracticalLabel}>Megközelítés</p>
                     {nonEmpty(place.access_note) ? (
@@ -348,9 +439,9 @@ export default function PlacePublishPreview({
                 </div>
               </div>
 
-              <div className={`admin-panel ${styles.notableUnitsPanel}`} aria-label="Notable units">
-                <p className="admin-subheading">Notable units</p>
-                {hasNotableUnits ? (
+              {hasNotableUnits ? (
+                <div className={`admin-panel ${styles.notableUnitsPanel}`} aria-label="Notable units">
+                  <p className="admin-subheading">Notable units</p>
                   <div className={styles.notableUnitsScroll}>
                     {notableUnits.map((unit) => {
                       const unitType = unitTypeLabelHu(unit.unit_type);
@@ -366,10 +457,8 @@ export default function PlacePublishPreview({
                       );
                     })}
                   </div>
-                ) : (
-                  <p className="admin-note-small">No notable units yet.</p>
-                )}
-              </div>
+                </div>
+              ) : null}
             </div>
 
             {hasDidYouKnow && !shouldOverlayDidYouKnow ? (
