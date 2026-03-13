@@ -12,12 +12,13 @@ import type { ImageVariant } from "@/types/image";
 import type { BirdDistributionMapRecord, DistributionStatus, DistributionRange } from "@/types/distributionMap";
 import ReviewRequestOverlay from "@/components/admin/ReviewRequestOverlay";
 import BirdIcon from "@/components/admin/BirdIcon";
+import BirdDossierCard from "@/components/shared/BirdDossierCard";
 import BirdDistributionMap, {
   type DistributionMapHoverInfo,
 } from "@/components/maps/BirdDistributionMap";
 import DistributionLegend from "@/components/maps/DistributionLegend";
 import { distributionRangeSchema } from "@/lib/distributionMapSchema";
-import styles from "./BirdTextReview.module.css";
+import styles from "@/components/shared/BirdDossierCard.module.css";
 
 const DISTRIBUTION_STATUS_LABELS: Record<DistributionStatus, string> = {
   resident: "Állandó",
@@ -72,6 +73,7 @@ type BirdTextReviewProps = {
   contentBlock: ContentBlock | null;
   mode?: "review" | "publish";
   images?: { variant: ImageVariant; previewUrl: string | null }[];
+  habitats?: Array<{ key: string; label_hu: string; src: string | null }>;
 };
 
 type EditableContent = Pick<
@@ -230,6 +232,7 @@ export default function BirdTextReview({
   contentBlock: initialBlock,
   mode = "review",
   images,
+  habitats,
 }: BirdTextReviewProps) {
   const isPublishMode = mode === "publish";
   const router = useRouter();
@@ -800,6 +803,23 @@ export default function BirdTextReview({
         },
       ]
     : [];
+
+  if (isPublishMode && dossier) {
+    return (
+      <section className={styles.page}>
+        <BirdDossierCard
+          dossier={dossier}
+          mainHabitatSrc={mainHabitatPreviewUrl}
+          flightSrc={flightPreviewUrl}
+          nestingSrc={nestingPreviewUrl}
+          sexPairSrc={sexPairPreviewUrl}
+          habitats={habitats}
+          reviewComment={reviewComment ?? null}
+          reviewRequestedAt={reviewRequestedAt ?? null}
+        />
+      </section>
+    );
+  }
 
   return (
     <section className={styles.page}>

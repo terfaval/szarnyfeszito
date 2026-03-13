@@ -46,13 +46,35 @@ function seasonLabelHu(season: HoverPlaceDetail["content"]["season"]) {
   return "Tél";
 }
 
+export type DashboardPlacesMapProps = {
+  markers: PlaceMarker[];
+  layers: PlacesMapLayersV1 | null;
+  detailApiBasePath?: string;
+  birdLinkBasePath?: string;
+  birdLinkJoiner?: string;
+  birdLinkKey?: "id" | "slug";
+  birdsIndexHref?: string;
+  placeLinkBasePath?: string;
+  placeLinkJoiner?: string;
+  placeLinkKey?: "id" | "slug";
+};
+
+function joinHref(basePath: string, joiner: string, value: string) {
+  return `${basePath}${joiner}${encodeURIComponent(value)}`;
+}
+
 export default function DashboardPlacesMap({
   markers,
   layers,
-}: {
-  markers: PlaceMarker[];
-  layers: PlacesMapLayersV1 | null;
-}) {
+  detailApiBasePath = "/api/admin/dashboard/places",
+  birdLinkBasePath = "/admin/birds",
+  birdLinkJoiner = "/",
+  birdLinkKey = "id",
+  birdsIndexHref = "/admin/birds",
+  placeLinkBasePath = "/admin/places",
+  placeLinkJoiner = "/",
+  placeLinkKey = "id",
+}: DashboardPlacesMapProps) {
   const [hoveredSlug, setHoveredSlug] = useState<string | null>(null);
   const [pinnedSlug, setPinnedSlug] = useState<string | null>(null);
   const [detail, setDetail] = useState<HoverPlaceDetail | null>(null);
@@ -99,7 +121,7 @@ export default function DashboardPlacesMap({
 
       setLoading(true);
       setError(null);
-      const response = await fetch(`/api/admin/dashboard/places/${encodeURIComponent(activeSlug)}`, {
+      const response = await fetch(`${detailApiBasePath}/${encodeURIComponent(activeSlug)}`, {
         signal: ctrl.signal,
       });
       const payload = await response.json().catch(() => null);
@@ -221,7 +243,15 @@ export default function DashboardPlacesMap({
                       {detail.birds.length ? (
                         <div className={styles.tooltipBirdList}>
                           {detail.birds.slice(0, 5).map((bird) => (
-                            <Link key={bird.id} href={`/admin/birds/${bird.id}`} className={styles.tooltipBirdLink}>
+                            <Link
+                              key={bird.id}
+                              href={joinHref(
+                                birdLinkBasePath,
+                                birdLinkJoiner,
+                                birdLinkKey === "slug" ? bird.slug : bird.id
+                              )}
+                              className={styles.tooltipBirdLink}
+                            >
                               <span className={styles.tooltipBirdName}>{bird.name_hu}</span>
                               <span className={styles.tooltipBirdMeta}>
                                 #{bird.rank} · {bird.frequency_band}
@@ -234,7 +264,14 @@ export default function DashboardPlacesMap({
                       )}
 
                       <div className={styles.tooltipFooter}>
-                        <Link href={`/admin/places/${detail.place.id}`} className={styles.tooltipFooterLink}>
+                        <Link
+                          href={joinHref(
+                            placeLinkBasePath,
+                            placeLinkJoiner,
+                            placeLinkKey === "slug" ? detail.place.slug : detail.place.id
+                          )}
+                          className={styles.tooltipFooterLink}
+                        >
                           Helyszín
                         </Link>
                       </div>
@@ -274,11 +311,18 @@ export default function DashboardPlacesMap({
               </div>
               <div className={styles.detailActions}>
                 {detail?.place?.id ? (
-                  <Link href={`/admin/places/${detail.place.id}`} className="btn btn--secondary">
+                  <Link
+                    href={joinHref(
+                      placeLinkBasePath,
+                      placeLinkJoiner,
+                      placeLinkKey === "slug" ? detail.place.slug : detail.place.id
+                    )}
+                    className="btn btn--secondary"
+                  >
                     Helyszín
                   </Link>
                 ) : null}
-                <Link href="/admin/birds" className="btn btn--ghost">
+                <Link href={birdsIndexHref} className="btn btn--ghost">
                   Madarak
                 </Link>
                 <button type="button" className="btn btn--ghost" onClick={() => setPinnedSlug(null)}>
@@ -309,7 +353,15 @@ export default function DashboardPlacesMap({
                     {detail.birds.length ? (
                       <div className={styles.tooltipBirdList}>
                         {detail.birds.slice(0, 5).map((bird) => (
-                          <Link key={bird.id} href={`/admin/birds/${bird.id}`} className={styles.tooltipBirdLink}>
+                          <Link
+                            key={bird.id}
+                            href={joinHref(
+                              birdLinkBasePath,
+                              birdLinkJoiner,
+                              birdLinkKey === "slug" ? bird.slug : bird.id
+                            )}
+                            className={styles.tooltipBirdLink}
+                          >
                             <span className={styles.tooltipBirdName}>{bird.name_hu}</span>
                             <span className={styles.tooltipBirdMeta}>
                               #{bird.rank} · {bird.frequency_band}

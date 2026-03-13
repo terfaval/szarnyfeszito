@@ -1,13 +1,6 @@
 import { NextResponse } from "next/server";
-import { listPublishedPlaceMarkers } from "@/lib/placeService";
-import { buildPlacesMapLayersV1 } from "@/lib/placesMapLayers";
-
-function parseCsv(value: string | null) {
-  return (value ?? "")
-    .split(",")
-    .map((v) => v.trim())
-    .filter(Boolean);
-}
+import { getPublicPlacesMapV1 } from "@/lib/publicRead";
+import { publicApiCacheControlValue } from "@/lib/publicRead/cache";
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
@@ -15,21 +8,25 @@ export async function GET(request: Request) {
   const includeMarkers = url.searchParams.get("include_markers") !== "0";
   const regionIdsParam = url.searchParams.get("region_ids");
 
-  const regionIdsFromParam = parseCsv(regionIdsParam);
-
-  const markers = includeMarkers ? await listPublishedPlaceMarkers() : [];
-  const placeRegionIds =
-    regionIdsFromParam.length > 0
-      ? regionIdsFromParam
-      : markers.map((m) => m.leaflet_region_id ?? "").filter(Boolean);
-
-  const layers = includeLayers ? await buildPlacesMapLayersV1({ placeRegionIds }) : null;
-
-  return NextResponse.json({
-    data: {
-      markers,
-      layers,
-      place_region_ids: placeRegionIds,
-    },
+  const out = await getPublicPlacesMapV1({
+    includeLayers,
+    includeMarkers,
+    regionIdsCsv: regionIdsParam,
   });
+
+  return NextResponse.json(
+    {
+      data: {
+        markers: out.markers,
+        layers: out.layers,
+        place_region_ids: out.place_region_ids,
+      },
+    },
+    {
+      headers: {
+        "cache-control": publicApiCacheControlValue(),
+        "x-public-generated-at": out.generatedAtIso,
+      },
+    }
+  );
 }

@@ -1,8 +1,8 @@
 import Link from "next/link";
 import PublicShell from "@/ui/components/PublicShell";
 import { Card } from "@/ui/components/Card";
-import DashboardPlacesMap from "@/components/admin/DashboardPlacesMap";
-import BirdIcon from "@/components/admin/BirdIcon";
+import DashboardPlacesMap from "@/components/shared/DashboardPlacesMap";
+import BirdIcon from "@/components/shared/BirdIcon";
 import { getPublicDashboardV1, PUBLIC_DASHBOARD_SPOTLIGHT_GROUPS_V1 } from "@/lib/publicDashboardService";
 
 export const metadata = {
@@ -21,7 +21,17 @@ export default async function PublicHomePage() {
   return (
     <PublicShell>
       <section className="admin-stack">
-        <DashboardPlacesMap markers={dashboard.placesMap.markers} layers={dashboard.placesMap.layers} />
+        <DashboardPlacesMap
+          markers={dashboard.placesMap.markers}
+          layers={dashboard.placesMap.layers}
+          detailApiBasePath="/api/public/dashboard/places"
+          birdLinkBasePath="/birds"
+          birdLinkKey="id"
+          birdsIndexHref="/birds"
+          placeLinkBasePath="/places?place="
+          placeLinkJoiner=""
+          placeLinkKey="slug"
+        />
 
         <Card className="stack">
           <header className="admin-heading">

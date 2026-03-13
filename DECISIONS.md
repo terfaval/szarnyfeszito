@@ -1259,3 +1259,55 @@ Birdwatch logging should reflect “I saw X at place Y”, and help selection by
 ### Out of scope
 - Admin-only stats and edit actions.
 - Runtime AI content generation.
+
+---
+
+## D60 — Public read layer: cached view-model services for Explorer pages v1
+
+**Status:** Accepted  
+**Date:** 2026-03-13  
+**Scope:** Explorer/public pages + public API routes. No runtime AI. No URL/UX changes.
+
+### Context
+- Public pages frequently assembled view data at render time (Supabase queries, publication gating, derived grouping, and storage URL signing).
+- This increases TTFB risk, encourages query fan-out, and mixes data access patterns into public rendering modules.
+- We already introduced an ISR + cached aggregator for `/public`; we need a repeatable pattern for other public pages.
+
+### Decision
+1) **Introduce a dedicated “public read” layer.**
+   - New module namespace: `src/lib/publicRead/*`.
+   - Exposes page/API-oriented, stable view-model contracts (e.g. `PublicBirdDetailV1`) that already enforce publish + approved gating.
+2) **Cache-first execution model.**
+   - Public read services must be ISR-compatible and may use `unstable_cache()` with short revalidate windows.
+   - Avoid per-request heavy assembly in page modules.
+3) **Render-path rules (public pages).**
+   - Public pages should not perform storage signing, heavy data assembly, geojson/layer generation, or publication filtering in the page module.
+   - These operations belong in the public read layer (and are amortized by ISR/cache).
+
+### Out of scope (v1)
+- Materialized views / denormalized “public_*” tables in Supabase.
+- Migrating all Explorer pages in one batch.
+
+---
+
+## D61 — Public UI ownership: no direct Admin UI dependencies
+
+**Status:** Accepted  
+**Date:** 2026-03-13  
+**Scope:** Explorer/public pages + public shell routes. No URL/UX changes.
+
+### Context
+- Some public pages/components imported `src/components/admin/*` UI modules directly.
+- This creates coupling risk: admin UI refactors can unintentionally break public UX, and public routes can accidentally depend on admin-only APIs.
+
+### Decision
+1) **Public pages/components must not import from `src/components/admin/*` directly.**
+   - Use `src/components/shared/*` (admin-neutral) or `src/components/public/*` instead.
+2) **Admin UI may re-export shared components.**
+   - Transitional pattern: `src/components/admin/*` may re-export `src/components/shared/*` to keep existing admin imports stable.
+3) **Public routes must not call `api/admin/*` endpoints.**
+   - Any shared UI used on public routes must be configurable to use public API endpoints/links, or have a dedicated public implementation.
+
+### Out of scope
+- Renaming all legacy `*PublishPreview*` components in one batch.
+- Full projection/materialized-view redesign for public read models.

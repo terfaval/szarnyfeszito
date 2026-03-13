@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import BirdIcon from "@/components/admin/BirdIcon";
+import BirdIcon from "@/components/shared/BirdIcon";
 import type { BirdColorTag, BirdSizeCategory, BirdVisibilityCategory } from "@/types/bird";
 import type { PlaceType } from "@/types/place";
 import styles from "./PublicBirdsGrid.module.css";

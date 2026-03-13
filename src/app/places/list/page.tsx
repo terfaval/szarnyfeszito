@@ -5,7 +5,7 @@ export const metadata = {
   title: "Helyszínek — Szárnyfeszítő",
 };
 
-export const dynamic = "force-dynamic";
+export const revalidate = 3600;
 
 export default function PlacesListPage() {
   return (

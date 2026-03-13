@@ -5,7 +5,7 @@ export const metadata = {
   title: "Madarak — Szárnyfeszítő",
 };
 
-export const dynamic = "force-dynamic";
+export const revalidate = 3600;
 
 export default function BirdsPage() {
   return (

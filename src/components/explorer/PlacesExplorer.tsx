@@ -77,16 +77,16 @@ export default function PlacesExplorer() {
   const [loadingLayers, setLoadingLayers] = useState(false);
   const [markersError, setMarkersError] = useState<string | null>(null);
 
-  const [selectedSlug, setSelectedSlug] = useState<string | null>(() => getSelectedSlugFromLocation());
+  const [selectedSlug, setSelectedSlug] = useState<string | null>(null);
   const [selectedDetail, setSelectedDetail] = useState<PublicPlaceDetail | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [detailError, setDetailError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (selectedSlug) {
-      setLoadingMarkers(false);
-      return;
-    }
+    setSelectedSlug(getSelectedSlugFromLocation());
+  }, []);
+
+  useEffect(() => {
     if (markers.length > 0) {
       setLoadingMarkers(false);
       return;
@@ -121,7 +121,7 @@ export default function PlacesExplorer() {
       setLoadingLayers(false);
     };
     run();
-  }, [markers.length, selectedSlug]);
+  }, [markers.length]);
 
   const selectSlug = (slug: string | null) => {
     setSelectedSlug(slug);
@@ -167,6 +167,26 @@ export default function PlacesExplorer() {
     const fromMarker = marker?.leaflet_region_id?.trim() ?? "";
     return fromMarker || null;
   }, [markers, selectedDetail, selectedSlug]);
+
+  useEffect(() => {
+    if (!selectedSlug) return;
+    if (layers) return;
+    if (!selectedRegionId) return;
+
+    const run = async () => {
+      setLoadingLayers(true);
+      const response = await fetch(
+        `/api/public/places?include_layers=1&include_markers=0&region_ids=${encodeURIComponent(selectedRegionId)}`
+      );
+      const payload = await response.json().catch(() => null);
+      if (response.ok) {
+        setLayers((payload?.data?.layers ?? null) as PlacesMapLayersV1 | null);
+      }
+      setLoadingLayers(false);
+    };
+
+    run();
+  }, [layers, selectedRegionId, selectedSlug]);
 
   if (selectedSlug) {
     return (

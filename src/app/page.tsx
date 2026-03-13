@@ -1,8 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
-import BirdIcon from "@/components/admin/BirdIcon";
+import BirdIcon from "@/components/shared/BirdIcon";
 import LandingPlacesMap from "@/components/landing/LandingPlacesMap";
-import { getPublicLandingV1 } from "@/lib/landingService";
+import { getPublicLandingReadV1 } from "@/lib/publicRead";
 import styles from "./page.module.css";
 
 export const metadata = {
@@ -10,7 +10,7 @@ export const metadata = {
   description: "Útikalauz szárnyaló kalandoroknak",
 };
 
-export const dynamic = "force-dynamic";
+export const revalidate = 120;
 
 const HERO_INTRO_COPY = `A Szárnyfeszítő azoknak szól, akik szeretnének közelebb kerülni a madarak világához, de nem tudják, hol érdemes elindulni. Helyszínek, fajok és szezonális támpontok segítenek abban, hogy a madármegfigyelés ne távoli hobbinak, hanem átélhető élménynek tűnjön.`;
 
@@ -87,7 +87,7 @@ const CLOSING_CTA_COPY =
   "Fedezd fel a helyszíneket, ismerd meg a fajokat, és találd meg, hol induljon az első megfigyelésed.";
 
 export default async function Home() {
-  const landing = await getPublicLandingV1();
+  const landing = await getPublicLandingReadV1();
 
   return (
     <main className="admin-shell-canvas page-backdrop" aria-label="Szárnyfeszítő landing">
@@ -159,12 +159,18 @@ export default async function Home() {
             {landing.featured_birds.length ? (
               <ul className={styles.list} aria-label="Featured birds">
                 {landing.featured_birds.map((bird) => (
-                  <li key={bird.id} className={styles.birdRow}>
-                    <BirdIcon iconicSrc={bird.iconic_src} showHabitatBackground={false} size={56} />
-                    <div>
-                      <p className={styles.birdName}>{bird.name_hu}</p>
-                      <p className={styles.birdMeta}>{bird.visibility_label_hu}</p>
-                    </div>
+                  <li key={bird.id}>
+                    <Link
+                      href={`/birds/${bird.slug}`}
+                      className={styles.birdRow}
+                      aria-label={`Madár: ${bird.name_hu}`}
+                    >
+                      <BirdIcon iconicSrc={bird.iconic_src} showHabitatBackground={false} size={56} />
+                      <div>
+                        <p className={styles.birdName}>{bird.name_hu}</p>
+                        <p className={styles.birdMeta}>{bird.visibility_label_hu}</p>
+                      </div>
+                    </Link>
                   </li>
                 ))}
               </ul>
@@ -186,7 +192,12 @@ export default async function Home() {
             {landing.spotlight_places.length ? (
               <div className={styles.placeGrid} aria-label="Spotlight places">
                 {landing.spotlight_places.map((place) => (
-                  <section key={place.id} className={styles.placeCard} aria-label={place.name}>
+                  <Link
+                    key={place.id}
+                    href={`/places?place=${encodeURIComponent(place.slug)}`}
+                    className={styles.placeCard}
+                    aria-label={`Helyszín: ${place.name}`}
+                  >
                     {place.hero_image_src ? (
                       <img src={place.hero_image_src} alt="" className={styles.placeHero} />
                     ) : (
@@ -203,7 +214,7 @@ export default async function Home() {
                         </div>
                       ) : null}
                     </div>
-                  </section>
+                  </Link>
                 ))}
               </div>
             ) : (
