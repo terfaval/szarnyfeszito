@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
 import PlacesMap from "@/components/maps/PlacesMap";
 import type {
   PlaceFrequencyBand,
@@ -75,6 +74,7 @@ export default function PlacesExplorer() {
   const [markers, setMarkers] = useState<PlaceMarker[]>([]);
   const [layers, setLayers] = useState<PlacesMapLayersV1 | null>(null);
   const [loadingMarkers, setLoadingMarkers] = useState(true);
+  const [loadingLayers, setLoadingLayers] = useState(false);
   const [markersError, setMarkersError] = useState<string | null>(null);
 
   const [selectedSlug, setSelectedSlug] = useState<string | null>(() => getSelectedSlugFromLocation());
@@ -83,6 +83,15 @@ export default function PlacesExplorer() {
   const [detailError, setDetailError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (selectedSlug) {
+      setLoadingMarkers(false);
+      return;
+    }
+    if (markers.length > 0) {
+      setLoadingMarkers(false);
+      return;
+    }
+
     const run = async () => {
       setLoadingMarkers(true);
       setMarkersError(null);
@@ -93,12 +102,26 @@ export default function PlacesExplorer() {
         setLoadingMarkers(false);
         return;
       }
-      setMarkers((payload?.data?.markers ?? []) as PlaceMarker[]);
-      setLayers((payload?.data?.layers ?? null) as PlacesMapLayersV1 | null);
+
+      const nextMarkers = (payload?.data?.markers ?? []) as PlaceMarker[];
+      setMarkers(nextMarkers);
       setLoadingMarkers(false);
+
+      const regionIds = ((payload?.data?.place_region_ids ?? []) as string[]).filter(Boolean);
+      if (regionIds.length === 0) return;
+
+      setLoadingLayers(true);
+      const layersResponse = await fetch(
+        `/api/public/places?include_layers=1&include_markers=0&region_ids=${encodeURIComponent(regionIds.join(","))}`
+      );
+      const layersPayload = await layersResponse.json().catch(() => null);
+      if (layersResponse.ok) {
+        setLayers((layersPayload?.data?.layers ?? null) as PlacesMapLayersV1 | null);
+      }
+      setLoadingLayers(false);
     };
     run();
-  }, []);
+  }, [markers.length, selectedSlug]);
 
   const selectSlug = (slug: string | null) => {
     setSelectedSlug(slug);
@@ -148,18 +171,6 @@ export default function PlacesExplorer() {
   if (selectedSlug) {
     return (
       <main className="space-y-6">
-        <header className="admin-heading">
-          <p className="admin-heading__label">Szárnyfeszítő</p>
-          <h1 className="admin-heading__title admin-heading__title--large">Helyszín</h1>
-          <p className="admin-heading__description">
-            Publikált kártya (ugyanaz a contract, mint az Admin Publish tabon).
-          </p>
-        </header>
-
-        <Link href="/places" className="btn btn--secondary w-fit" onClick={() => selectSlug(null)}>
-          ← Vissza a térképhez
-        </Link>
-
         {loadingDetail ? (
           <div className="admin-stat-card admin-stat-card--note">Betöltés: {selectedName}…</div>
         ) : detailError ? (
@@ -215,7 +226,10 @@ export default function PlacesExplorer() {
           />
         )}
       </section>
+
+      {!loadingMarkers && loadingLayers ? (
+        <div className="place-panel admin-stat-card admin-stat-card--note">Rétegek betöltése…</div>
+      ) : null}
     </main>
   );
 }
-

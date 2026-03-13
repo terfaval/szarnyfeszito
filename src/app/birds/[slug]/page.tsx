@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import BirdCard from "@/components/public/BirdCard";
 import { getBirdById, getBirdBySlug, isUuid } from "@/lib/birdService";
@@ -86,9 +85,6 @@ export default async function BirdDetailPage({ params }: { params: { slug: strin
   return (
     <PublicShell>
       <main className={styles.page}>
-        <Link className={styles.backLink} href="/birds">
-          ← Vissza a madarakhoz
-        </Link>
         <BirdCard
           bird={{
             name_hu: bird.name_hu,

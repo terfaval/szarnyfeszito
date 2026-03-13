@@ -5,6 +5,7 @@ import { getLatestApprovedContentBlockForPlace } from "@/lib/placeContentService
 import { placeUiVariantsSchemaV1 } from "@/lib/placeContentSchema";
 import { getCurrentSeasonKey } from "@/lib/season";
 import { getSignedImageUrl, listApprovedCurrentIconicImagesForBirds } from "@/lib/imageService";
+import { listLatestApprovedContentBlocksForBirds } from "@/lib/contentService";
 
 export async function GET(_request: Request, ctx: { params: Promise<{ slug: string }> }) {
   const { slug } = await ctx.params;
@@ -70,10 +71,18 @@ export async function GET(_request: Request, ctx: { params: Promise<{ slug: stri
     .map((row) => ((row as { bird?: { id?: unknown } | null }).bird?.id as string | undefined) ?? "")
     .filter(Boolean);
 
-  const iconicRows = await listApprovedCurrentIconicImagesForBirds(visibleBirdIds);
+  const approvedContentByBirdId = await listLatestApprovedContentBlocksForBirds(visibleBirdIds);
+  const publicBirdIds = visibleBirdIds.filter((birdId) => approvedContentByBirdId.has(birdId));
+  const publicBirdIdSet = new Set(publicBirdIds);
+  const publicBirdLinks = visibleBirdLinks.filter((row) => {
+    const birdId = ((row as { bird?: { id?: unknown } | null }).bird?.id as string | undefined) ?? "";
+    return birdId ? publicBirdIdSet.has(birdId) : false;
+  });
+
+  const iconicRows = await listApprovedCurrentIconicImagesForBirds(publicBirdIds);
   const storagePathByBirdId = new Map(iconicRows.map((row) => [row.entity_id, row.storage_path]));
   const signedIconicPairs = await Promise.all(
-    visibleBirdIds.map(async (birdId) => {
+    publicBirdIds.map(async (birdId) => {
       const storagePath = storagePathByBirdId.get(birdId) ?? null;
       const signedUrl = storagePath ? await getSignedImageUrl(storagePath) : null;
       return [birdId, signedUrl] as const;
@@ -81,7 +90,7 @@ export async function GET(_request: Request, ctx: { params: Promise<{ slug: stri
   );
   const iconicUrlByBirdId = new Map(signedIconicPairs);
 
-  const birds = visibleBirdLinks
+  const birds = publicBirdLinks
     .map((row) => {
       const r = row as { rank?: unknown; frequency_band?: unknown; bird?: { id?: unknown; slug?: unknown; name_hu?: unknown } | null };
       const bird = r.bird ?? null;
@@ -145,7 +154,7 @@ export async function GET(_request: Request, ctx: { params: Promise<{ slug: stri
       },
       marker: safeMarker,
       content: parsedContent.data,
-      place_birds: publishedBirdLinks,
+      place_birds: publicBirdLinks,
       current_season: currentSeason,
       hero_image_src: heroImageUrl,
       birds,
