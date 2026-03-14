@@ -1,7 +1,7 @@
 "use client";
 
 import type { Feature, FeatureCollection } from "geojson";
-import type { PathOptions } from "leaflet";
+import type { Layer, PathOptions } from "leaflet";
 import { GeoJSON } from "react-leaflet";
 
 import type { PlaceMarker } from "@/types/place";
@@ -18,6 +18,12 @@ export type PlacesRegionVisualizationVariant =
   | "places_regions_v1_countries_filled";
 
 export type PlacesRegionFillMode = "uniform_v1" | "place_type_category_v1";
+
+export type RegionEventHandlers = {
+  onClick?: (regionId: string) => void;
+  onMouseOver?: (regionId: string) => void;
+  onMouseOut?: (regionId: string) => void;
+};
 
 const UNIFORM_STYLE: PathOptions = {
   color: "rgba(var(--brand-ink-rgb), 0.22)",
@@ -67,12 +73,14 @@ export default function PlacesRegionVisualization({
   selectedRegionId,
   fillMode = "uniform_v1",
   markers = [],
+  regionEventHandlers,
 }: {
   variant: PlacesRegionVisualizationVariant;
   layers: PlacesMapLayersV1 | null;
   selectedRegionId: string | null;
   fillMode?: PlacesRegionFillMode;
   markers?: PlaceMarker[];
+  regionEventHandlers?: RegionEventHandlers;
 }) {
   if (variant === "none") return null;
   if (!layers) return null;
@@ -94,8 +102,7 @@ export default function PlacesRegionVisualization({
   const categoryByRegionId = buildRegionCategoryMap(markers ?? [], fillMode);
 
   const regionStyle = (feature?: Feature): PathOptions => {
-    const props = (feature?.properties ?? {}) as Record<string, unknown>;
-    const id = typeof props.region_id === "string" ? props.region_id : "";
+    const id = resolveRegionId(feature) ?? "";
     const isSelected = Boolean(selectedRegionId) && id === selectedRegionId;
     if (isSelected) {
       return {
@@ -121,10 +128,37 @@ export default function PlacesRegionVisualization({
   const hasCountries = (layers.country_borders?.features?.length ?? 0) > 0;
   const hasRegions = (layers.regions?.features?.length ?? 0) > 0;
 
+  const resolveRegionId = (feature?: Feature) => {
+    const props = (feature?.properties ?? {}) as Record<string, unknown>;
+    const id = typeof props.region_id === "string" ? props.region_id : "";
+    return id || null;
+  };
+
+  const attachRegionEvents = (feature: Feature, layer: Layer) => {
+    if (!regionEventHandlers) return;
+    const regionId = resolveRegionId(feature);
+    if (!regionId) return;
+    if (regionEventHandlers.onClick) {
+      layer.on("click", () => regionEventHandlers.onClick?.(regionId));
+    }
+    if (regionEventHandlers.onMouseOver) {
+      layer.on("mouseover", () => regionEventHandlers.onMouseOver?.(regionId));
+    }
+    if (regionEventHandlers.onMouseOut) {
+      layer.on("mouseout", () => regionEventHandlers.onMouseOut?.(regionId));
+    }
+  };
+
   return (
     <>
       {hasCountries ? <GeoJSON data={layers.country_borders as FeatureCollection} style={countryStyle} /> : null}
-      {hasRegions ? <GeoJSON data={layers.regions as FeatureCollection} style={regionStyle} /> : null}
+      {hasRegions ? (
+        <GeoJSON
+          data={layers.regions as FeatureCollection}
+          style={regionStyle}
+          onEachFeature={attachRegionEvents}
+        />
+      ) : null}
     </>
   );
 }

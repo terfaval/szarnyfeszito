@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import PlacesMap from "@/components/maps/PlacesMap";
 import PlaceCardShort from "@/components/shared/PlaceCardShort";
 import PlaceTypeFilter from "@/components/maps/PlaceTypeFilter";
 import { HUNGARY_FULL_BOUNDS_V1 } from "@/components/maps/viewPresets";
 import type { PlaceMarker, PlaceType } from "@/types/place";
 import type { PlacesMapLayersV1 } from "@/types/placesMap";
+import { sortPlaceTypes } from "@/lib/placeTypeMeta";
 import styles from "./LandingPlacesMap.module.css";
 
 type LandingPlaceDetail = {
@@ -28,6 +29,32 @@ type LandingPlaceDetail = {
   }>;
 };
 
+type LandingPlaceResponseBird = {
+  id?: string;
+  slug?: string;
+  name_hu?: string;
+  iconicSrc?: string | null;
+};
+
+type LandingPlaceResponseData = {
+  place?: {
+    slug?: string;
+    name?: string;
+    place_type?: PlaceType | string;
+    county?: string | null;
+    nearest_city?: string | null;
+  };
+  content?: {
+    short?: string;
+  };
+  birds?: Array<LandingPlaceResponseBird | null | undefined>;
+};
+
+type LandingPlaceResponse = {
+  data?: LandingPlaceResponseData;
+  error?: string;
+};
+
 export default function LandingPlacesMap({
   markers,
   layers,
@@ -41,6 +68,23 @@ export default function LandingPlacesMap({
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [detailError, setDetailError] = useState<string | null>(null);
   const cacheRef = useRef<Map<string, LandingPlaceDetail>>(new Map());
+  const regionSlugById = useMemo(() => {
+    const map = new Map<string, string>();
+    markers.forEach((marker) => {
+      const regionId = (marker.leaflet_region_id ?? "").trim();
+      if (!regionId) return;
+      if (!map.has(regionId)) {
+        map.set(regionId, marker.slug);
+      }
+    });
+    return map;
+  }, [markers]);
+
+  const handleRegionHover = useCallback((slug: string | null) => {
+    setSelectedSlug(slug);
+  }, []);
+
+  const availableTypes = useMemo(() => sortPlaceTypes(markers.map((marker) => marker.place_type)), [markers]);
 
   const visibleMarkers = useMemo(() => {
     if (typeFilter === "all") return markers;
@@ -71,14 +115,14 @@ export default function LandingPlacesMap({
         const response = await fetch(`/api/public/places/${encodeURIComponent(activeSelectedSlug)}`, {
           signal: controller.signal,
         });
-        const payload = await response.json().catch(() => null);
+        const payload = (await response.json().catch(() => null)) as LandingPlaceResponse | null;
         if (!response.ok) {
           setDetailError(payload?.error ?? "Nem sikerült betölteni a helyszínt.");
           setDetail(null);
           return;
         }
 
-        const data = payload?.data ?? null;
+        const data: LandingPlaceResponseData | null = payload?.data ?? null;
         if (!data?.place) {
           setDetailError("Nincs elérhető helyszín.");
           setDetail(null);
@@ -140,20 +184,6 @@ export default function LandingPlacesMap({
 
   return (
     <section className={styles.mapFrame} aria-label="Places map preview">
-      <div className={styles.mapControls}>
-        <PlaceTypeFilter
-          value={typeFilter}
-          onChange={setTypeFilter}
-          className={styles.filterControl}
-          label="Típus"
-        />
-        {typeFilter !== "all" ? (
-          <button type="button" className={styles.clearFilter} onClick={() => setTypeFilter("all")}>
-            Szűrés törlése
-          </button>
-        ) : null}
-      </div>
-
       <div className={styles.mapBody}>
         <div className={styles.mapContainer}>
           <PlacesMap
@@ -161,6 +191,8 @@ export default function LandingPlacesMap({
             layers={layers}
             selectedSlug={activeSelectedSlug}
             onSelect={(slug) => setSelectedSlug((prev) => (prev === slug ? null : slug))}
+            onRegionHover={handleRegionHover}
+            regionSlugById={regionSlugById}
             layoutVariant="fill_parent_v1"
             basemap="bird"
             regionVisualization="places_regions_v1"
@@ -169,6 +201,15 @@ export default function LandingPlacesMap({
             defaultBounds={HUNGARY_FULL_BOUNDS_V1}
             defaultBoundsOptions={{ padding: [18, 18] }}
             toolBarVariant="bottom_right_v1"
+            toolBarTopControls={
+              <PlaceTypeFilter
+                variant="toolbar"
+                label="Szűrés"
+                value={typeFilter}
+                onChange={setTypeFilter}
+                availableTypes={availableTypes}
+              />
+            }
             showResetViewButton
           />
           <div className={styles.mapOverlay} aria-live="polite">

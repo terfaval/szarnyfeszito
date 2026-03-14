@@ -45,6 +45,16 @@
   gap: 10px;
 }
 
+.toolBarTop {
+  position: absolute;
+  top: clamp(12px, 2.5vw, 24px);
+  left: clamp(12px, 2.5vw, 24px);
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
 .toolGroup {
   border: 1px solid var(--line);
   background: var(--panel-2);

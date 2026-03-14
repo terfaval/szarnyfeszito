@@ -36,6 +36,7 @@ export default async function PublicHomePage() {
           placeLinkBasePath="/places?place="
           placeLinkJoiner=""
           placeLinkKey="slug"
+          useToolbarFilter
         />
 
         <Card className="stack">

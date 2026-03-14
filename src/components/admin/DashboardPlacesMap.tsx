@@ -10,6 +10,7 @@ import PlaceTypeFilter from "@/components/maps/PlaceTypeFilter";
 import { HUNGARY_FULL_BOUNDS_V1 } from "@/components/maps/viewPresets";
 import type { PlacesMapLayersV1 } from "@/types/placesMap";
 import type { PlaceMarker, PlaceType } from "@/types/place";
+import { sortPlaceTypes } from "@/lib/placeTypeMeta";
 import styles from "./DashboardPlacesMap.module.css";
 
 const Tooltip = dynamic(() => import("react-leaflet").then((module) => module.Tooltip), {
@@ -60,6 +61,7 @@ export type DashboardPlacesMapProps = {
   placeLinkBasePath?: string;
   placeLinkJoiner?: string;
   placeLinkKey?: "id" | "slug";
+  useToolbarFilter?: boolean;
 };
 
 function joinHref(basePath: string, joiner: string, value: string) {
@@ -77,6 +79,7 @@ export default function DashboardPlacesMap({
   placeLinkBasePath = "/admin/places",
   placeLinkJoiner = "/",
   placeLinkKey = "id",
+  useToolbarFilter = false,
 }: DashboardPlacesMapProps) {
   const [hoveredSlug, setHoveredSlug] = useState<string | null>(null);
   const [pinnedSlug, setPinnedSlug] = useState<string | null>(null);
@@ -94,6 +97,8 @@ export default function DashboardPlacesMap({
     return markers.filter((marker) => marker.place_type === typeFilter);
   }, [markers, typeFilter]);
 
+  const availableTypes = useMemo(() => sortPlaceTypes(markers.map((marker) => marker.place_type)), [markers]);
+
   const filteredActiveSlug =
     activeSlug && visibleMarkers.some((marker) => marker.slug === activeSlug) ? activeSlug : null;
   const panelOpen = Boolean(
@@ -102,6 +107,28 @@ export default function DashboardPlacesMap({
   const cardDetail = filteredActiveSlug ? detail : null;
   const cardLoading = filteredActiveSlug ? loading : false;
   const cardError = filteredActiveSlug ? error : null;
+
+  const regionSlugById = useMemo(() => {
+    const map = new Map<string, string>();
+    visibleMarkers.forEach((marker) => {
+      const regionId = (marker.leaflet_region_id ?? "").trim();
+      if (!regionId) return;
+      if (!map.has(regionId)) {
+        map.set(regionId, marker.slug);
+      }
+    });
+    return map;
+  }, [visibleMarkers]);
+
+  const handleRegionHover = (slug: string | null) => {
+    if (slug) {
+      setHoveredSlug(slug);
+      return;
+    }
+    if (!pinnedSlug) {
+      setHoveredSlug(null);
+    }
+  };
 
   useEffect(() => {
     const readPx = (value: string) => {
@@ -186,14 +213,16 @@ export default function DashboardPlacesMap({
   const markerBySlug = useMemo(() => new Map(visibleMarkers.map((m) => [m.slug, m])), [visibleMarkers]);
   const activeMarker = filteredActiveSlug ? markerBySlug.get(filteredActiveSlug) ?? null : null;
   const selectedRegionId = activeMarker?.leaflet_region_id?.trim() || null;
-    const boundsOptions = useMemo(() => {
-      const inset = Math.max(0, dashboardTopInsetPx);
-      return {
-        padding: [18, 18] as [number, number],
-        paddingTopLeft: [18, Math.round(inset + 18)] as [number, number],
-        paddingBottomRight: [18, 18] as [number, number],
-      };
-    }, [dashboardTopInsetPx]);
+  const boundsOptions = useMemo(() => {
+    const inset = Math.max(0, dashboardTopInsetPx);
+    return {
+      padding: [18, 18] as [number, number],
+      paddingTopLeft: [18, Math.round(inset + 18)] as [number, number],
+      paddingBottomRight: [18, 18] as [number, number],
+    };
+  }, [dashboardTopInsetPx]);
+
+  const showInlineFilterControls = !useToolbarFilter;
 
   return (
     <section className={styles.section} aria-label="Published places map">
@@ -209,19 +238,32 @@ export default function DashboardPlacesMap({
             markerColorMode="place_type_category_v1"
             interactionMode="bounded_hu_v1"
             toolBarVariant="bottom_right_v1"
+            toolBarTopControls={
+              useToolbarFilter && availableTypes.length > 0 ? (
+                <PlaceTypeFilter
+                  variant="toolbar"
+                  label="Szűrés"
+                  value={typeFilter}
+                  onChange={setTypeFilter}
+                  availableTypes={availableTypes}
+                />
+              ) : undefined
+            }
+            regionSlugById={regionSlugById}
+            onRegionHover={handleRegionHover}
             defaultBounds={HUNGARY_FULL_BOUNDS_V1}
             defaultBoundsOptions={boundsOptions}
             showResetViewButton
             onSelect={(slug) => setPinnedSlug((prev) => (prev === slug ? null : slug))}
-          markerEventHandlers={(marker) => ({
-            mouseover: () => setHoveredSlug(marker.slug),
-            mouseout: () => {
-              if (!pinnedSlug) {
-                setHoveredSlug(null);
-              }
-            },
-          })}
-          renderMarkerChildren={({ marker, isSelected }) => {
+            markerEventHandlers={(marker) => ({
+              mouseover: () => setHoveredSlug(marker.slug),
+              mouseout: () => {
+                if (!pinnedSlug) {
+                  setHoveredSlug(null);
+                }
+              },
+            })}
+            renderMarkerChildren={({ marker, isSelected }) => {
             if (!isSelected) return null;
             if (panelOpen) return null;
             const isPinned = pinnedSlug === marker.slug;
@@ -302,19 +344,22 @@ export default function DashboardPlacesMap({
         />
 
         <div className={styles.overlay}>
-          <div className={styles.overlayControls}>
-            <PlaceTypeFilter
-              className={styles.filterControl}
-              value={typeFilter}
-              onChange={setTypeFilter}
-              label="Típus"
-            />
-            {typeFilter !== "all" ? (
-              <button type="button" className={styles.clearFilter} onClick={() => setTypeFilter("all")}>
-                Szűrés törlése
-              </button>
-            ) : null}
-          </div>
+          {showInlineFilterControls ? (
+            <div className={styles.overlayControls}>
+              <PlaceTypeFilter
+                className={styles.filterControl}
+                value={typeFilter}
+                onChange={setTypeFilter}
+                label="Típus"
+                availableTypes={availableTypes}
+              />
+              {typeFilter !== "all" ? (
+                <button type="button" className={styles.clearFilter} onClick={() => setTypeFilter("all")}>
+                  Szűrés törlése
+                </button>
+              ) : null}
+            </div>
+          ) : null}
           <div className={styles.overlayCardWrapper}>
             {cardDetail ? (
               <PlaceCardShort

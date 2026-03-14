@@ -9,35 +9,6 @@
   height: clamp(360px, 45vw, 540px);
 }
 
-.mapControls {
-  padding: 0.85rem 1.25rem 0;
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  flex-wrap: wrap;
-}
-
-.filterControl {
-  min-width: 200px;
-}
-
-.clearFilter {
-  border-radius: 999px;
-  border: 1px solid var(--line);
-  background: rgba(var(--brand-ink-rgb), 0.05);
-  color: var(--foreground);
-  padding: 0.35rem 0.9rem;
-  font-size: 0.75rem;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  cursor: pointer;
-}
-
-.clearFilter:hover,
-.clearFilter:focus-visible {
-  background: rgba(var(--brand-ink-rgb), 0.1);
-}
-
 .mapBody {
   flex: 1;
   position: relative;

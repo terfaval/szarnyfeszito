@@ -25,6 +25,7 @@ import {
   RotateCcw,
   RotateCw,
   Star,
+  Funnel,
 } from "lucide-react";
 
 export type IconName =
@@ -54,7 +55,8 @@ export type IconName =
   | "institution"
   | "undo"
   | "redo"
-  | "favorite";
+  | "favorite"
+  | "filter";
 
 const ICON_MAP = {
   generate: Sparkles,
@@ -84,6 +86,7 @@ const ICON_MAP = {
   undo: RotateCcw,
   redo: RotateCw,
   favorite: Star,
+  filter: Funnel,
 } as const;
 
 type Props = {

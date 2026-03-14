@@ -26,6 +26,8 @@ export type PlacesMapMarkerColorMode = "uniform_v1" | "water_highlight_v1" | "pl
 export type PlacesMapInteractionMode = "static" | "bounded_hu_v1";
 export type PlacesMapToolBarVariant = "none" | "bottom_right_v1";
 
+export type RegionSlugMap = Map<string, string>;
+
 const PLACES_DEFAULT_CENTER_V1: [number, number] = [47.16, 19.5];
 const PLACES_DEFAULT_ZOOM_V1 = 6;
 const PLACES_DASHBOARD_MIN_ZOOM_V1 = 6;
@@ -82,6 +84,8 @@ export type PlacesMapProps = {
   selectedSlug: string | null;
   selectedRegionId?: string | null;
   onSelect?: (slug: string) => void;
+  onRegionHover?: (slug: string | null) => void;
+  regionSlugById?: RegionSlugMap;
   layoutVariant?: "responsive_v1" | "fill_parent_v1";
   basemap?: BasemapId;
   basemapPreset?: BasemapPresetKey;
@@ -96,6 +100,7 @@ export type PlacesMapProps = {
   defaultPanBy?: [number, number]; // [x, y] pixels
   showResetViewButton?: boolean;
   toolBarVariant?: PlacesMapToolBarVariant;
+  toolBarTopControls?: ReactNode;
   markerEventHandlers?: (marker: PlaceMarker) => LeafletEventHandlerFnMap | undefined;
   renderMarkerChildren?: (args: {
     marker: PlaceMarker;
@@ -129,6 +134,8 @@ export default function PlacesMap({
   selectedSlug,
   selectedRegionId = null,
   onSelect,
+  onRegionHover,
+  regionSlugById,
   layoutVariant = "responsive_v1",
   basemap = DEFAULT_BASEMAP,
   basemapPreset = DEFAULT_BASEMAP_PRESET,
@@ -143,6 +150,7 @@ export default function PlacesMap({
   defaultPanBy,
   showResetViewButton = false,
   toolBarVariant = "none",
+  toolBarTopControls,
   markerEventHandlers,
   renderMarkerChildren,
 }: PlacesMapProps) {
@@ -151,7 +159,6 @@ export default function PlacesMap({
   const mapRef = useRef<LeafletMap | null>(null);
   const [currentZoom, setCurrentZoom] = useState<number | null>(null);
   const didApplyInitialPanRef = useRef(false);
-
   const onMap = useCallback((map: LeafletMap) => {
     mapRef.current = map;
 
@@ -211,6 +218,37 @@ export default function PlacesMap({
   const canZoomIn = currentZoom === null ? true : currentZoom < maxZoom;
   const canZoomOut = currentZoom === null ? true : currentZoom > minZoom;
 
+  const resolveSlugForRegion = useCallback(
+    (regionId: string | null) => {
+      if (!regionId) return null;
+      const slug = regionSlugById?.get(regionId);
+      return slug ?? null;
+    },
+    [regionSlugById]
+  );
+
+  const handleRegionClick = useCallback(
+    (regionId: string) => {
+      const slug = resolveSlugForRegion(regionId);
+      if (!slug) return;
+      onSelect?.(slug);
+    },
+    [onSelect, resolveSlugForRegion]
+  );
+
+  const handleRegionMouseOver = useCallback(
+    (regionId: string) => {
+      const slug = resolveSlugForRegion(regionId);
+      if (!slug) return;
+      onRegionHover?.(slug);
+    },
+    [onRegionHover, resolveSlugForRegion]
+  );
+
+  const handleRegionMouseOut = useCallback(() => {
+    onRegionHover?.(null);
+  }, [onRegionHover]);
+
   const applyDefaultView = useCallback(
     (map: LeafletMap, opts: { animate: boolean }) => {
       if (mapDefaultBounds) {
@@ -255,6 +293,12 @@ export default function PlacesMap({
         layoutVariant === "fill_parent_v1" ? styles.layoutFill : styles.layout,
       ].join(" ")}
     >
+      {toolBarTopControls ? (
+        <div className={styles.toolBarTop} aria-label="Map filters">
+          {toolBarTopControls}
+        </div>
+      ) : null}
+
       {toolBarVariant === "bottom_right_v1" ? (
         <div className={styles.toolBar} aria-label="Map tools">
           <div className={styles.toolGroup} role="group" aria-label="Zoom">
@@ -352,6 +396,11 @@ export default function PlacesMap({
           selectedRegionId={selectedRegionId}
           fillMode={markerColorMode === "place_type_category_v1" ? "place_type_category_v1" : "uniform_v1"}
           markers={markers}
+          regionEventHandlers={{
+            onClick: handleRegionClick,
+            onMouseOver: handleRegionMouseOver,
+            onMouseOut: handleRegionMouseOut,
+          }}
         />
 
         {markers.map((marker) => {
