@@ -394,21 +394,23 @@
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 0.85rem;
-  max-width: min(820px, 100%);
+  max-width: min(1100px, 100%);
   margin: 0 auto;
+  justify-content: center;
+  justify-items: center;
 }
 
 .birdToolbar {
   display: flex;
   flex-wrap: wrap;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
   gap: 0.75rem;
   border: 1px solid rgba(var(--brand-ink-rgb), 0.25);
   border-radius: 18px;
   padding: 0.65rem 0.9rem;
   background: rgba(255, 255, 255, 0.02);
-  width: min(820px, 100%);
+  width: min(1100px, 100%);
   margin: 0 auto 0.85rem;
 }
 
@@ -448,12 +450,6 @@
   border-color: rgba(var(--brand-ink-rgb), 0.6);
 }
 
-@media (max-width: 1280px) {
-  .birdGrid {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-}
-
 @media (max-width: 1100px) {
   .birdGrid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -485,6 +481,8 @@
   text-decoration: none;
   color: inherit;
   transition: border-color 0.2s ease, transform 0.2s ease;
+  width: clamp(140px, 18vw, 180px);
+  min-height: 180px;
 }
 
 .birdCard:hover,

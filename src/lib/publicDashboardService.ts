@@ -1,7 +1,11 @@
 import { unstable_cache } from "next/cache";
 
 import { listPublishedBirdsForHabitatAssetsRefill } from "@/lib/birdService";
-import { getSignedApprovedHabitatTileUrlsByAssetKeys } from "@/lib/habitatStockAssetService";
+import {
+  computeHabitatStockAssetKeysForPlaceTypes,
+  getSignedApprovedHabitatTileUrlsByAssetKeys,
+  listHabitatStockAssets,
+} from "@/lib/habitatStockAssetService";
 import { SIGNED_IMAGE_URL_TTL_SECONDS } from "@/lib/imageSigning";
 import { getSignedImageUrl, listApprovedCurrentIconicImagesForBirds } from "@/lib/imageService";
 import { buildPlacesMapLayersV1 } from "@/lib/placesMapLayers";
@@ -28,7 +32,7 @@ export const PUBLIC_DASHBOARD_SPOTLIGHT_GROUPS_V1: PublicDashboardSpotlightGroup
   { key: "mountain", label: "Hegység", placeTypes: ["mountain_area"] },
 ];
 
-type SpotlightPlaceV1 = { id: string; name: string; slug: string };
+type SpotlightPlaceV1 = { id: string; name: string; slug: string; place_type: PlaceType };
 
 export type SpotlightBirdV1 = {
   id: string;
@@ -51,6 +55,7 @@ export type PublicDashboardV1 = {
   recentBirds: Awaited<ReturnType<typeof listPublishedBirdsForHabitatAssetsRefill>>;
   iconicPreviewByBirdId: Record<string, string | null>;
   habitatTilesByKey: Record<string, string | null>;
+  spotlightGroupHabitatTiles: Record<PublicDashboardSpotlightGroupV1["key"], string | null>;
 };
 
 function seasonLabelHu(currentSeason: SeasonKey) {
@@ -78,10 +83,11 @@ const getPublicDashboardV1Cached = unstable_cache(
 
     const allSpotlightPlaceTypes = Array.from(new Set(spotlightGroups.flatMap((g) => g.placeTypes)));
 
-    const [recentBirds, publishedMarkers, allSpotlightPlaces] = await Promise.all([
+    const [recentBirds, publishedMarkers, allSpotlightPlaces, habitatAssets] = await Promise.all([
       listPublishedBirdsForHabitatAssetsRefill({ limit: 5 }),
       listPublishedPlaceDashboardMarkers(),
       listPublishedPlacesByPrimaryType(allSpotlightPlaceTypes),
+      listHabitatStockAssets(),
     ]);
 
     const dashboardLayersPromise = buildPlacesMapLayersV1({
@@ -91,6 +97,15 @@ const getPublicDashboardV1Cached = unstable_cache(
 
     const placeTypesByGroup = new Map<PublicDashboardSpotlightGroupV1["key"], Set<PlaceType>>();
     spotlightGroups.forEach((group) => placeTypesByGroup.set(group.key, new Set(group.placeTypes)));
+
+    const groupHabitatAssetKey = new Map<PublicDashboardSpotlightGroupV1["key"], string | null>();
+    spotlightGroups.forEach((group) => {
+      const keys = computeHabitatStockAssetKeysForPlaceTypes({
+        placeTypes: group.placeTypes,
+        assets: habitatAssets,
+      });
+      groupHabitatAssetKey.set(group.key, keys[0] ?? null);
+    });
 
     const placesByGroup = new Map<PublicDashboardSpotlightGroupV1["key"], Array<(typeof allSpotlightPlaces)[number]>>();
     spotlightGroups.forEach((group) => placesByGroup.set(group.key, []));
@@ -182,13 +197,13 @@ const getPublicDashboardV1Cached = unstable_cache(
             slug: bird.slug,
             name_hu: bird.name_hu,
             habitatIconSrc: null,
-            places: [{ id: place.id, name: place.name, slug: place.slug }],
+            places: [{ id: place.id, name: place.name, slug: place.slug, place_type: place.place_type }],
             bestRank: row.rank,
           });
         } else {
           existing.bestRank = Math.min(existing.bestRank, row.rank);
           if (!existing.places.some((p) => p.id === place.id)) {
-            existing.places.push({ id: place.id, name: place.name, slug: place.slug });
+            existing.places.push({ id: place.id, name: place.name, slug: place.slug, place_type: place.place_type });
             if (existing.places.length > 3) {
               existing.places = existing.places.slice(0, 3);
             }
@@ -222,12 +237,20 @@ const getPublicDashboardV1Cached = unstable_cache(
       })
     );
 
+    const groupHabitatKeys = Array.from(
+      new Set(
+        Array.from(groupHabitatAssetKey.values()).filter(
+          (k): k is string => typeof k === "string" && k.trim().length > 0
+        )
+      )
+    );
     const habitatKeys = Array.from(
       new Set([
         ...recentBirds
           .map((bird) => (Array.isArray(bird.habitat_stock_asset_keys) ? bird.habitat_stock_asset_keys[0] : ""))
           .filter((k): k is string => typeof k === "string" && k.trim().length > 0),
         ...Array.from(habitatKeyByBirdId.values()),
+        ...groupHabitatKeys,
       ])
     );
     const habitatTilesMap = await getSignedApprovedHabitatTileUrlsByAssetKeys(habitatKeys);
@@ -236,6 +259,16 @@ const getPublicDashboardV1Cached = unstable_cache(
     habitatKeys.forEach((key) => {
       habitatTilesByKey[key] = habitatTilesMap.get(key) ?? null;
     });
+
+    const spotlightGroupHabitatTiles: Record<PublicDashboardSpotlightGroupV1["key"], string | null> = {
+      water: null,
+      forest: null,
+      mountain: null,
+    };
+    for (const group of spotlightGroups) {
+      const assetKey = groupHabitatAssetKey.get(group.key) ?? null;
+      spotlightGroupHabitatTiles[group.key] = assetKey ? habitatTilesByKey[assetKey] ?? null : null;
+    }
 
     for (const group of spotlightGroups) {
       spotlightBirdsByGroup[group.key] = (spotlightBirdsByGroup[group.key] ?? []).map((bird) => {
@@ -268,6 +301,7 @@ const getPublicDashboardV1Cached = unstable_cache(
       recentBirds,
       iconicPreviewByBirdId,
       habitatTilesByKey,
+      spotlightGroupHabitatTiles,
     };
   },
   ["public-dashboard-v1"],

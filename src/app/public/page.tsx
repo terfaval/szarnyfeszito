@@ -12,11 +12,16 @@ export const metadata = {
 
 export const revalidate = 120;
 
+
+const SPOTLIGHT_PLACE_LIMIT = 2;
+
+
 export default async function PublicHomePage() {
   const dashboard = await getPublicDashboardV1();
   const spotlightGroups = PUBLIC_DASHBOARD_SPOTLIGHT_GROUPS_V1;
   const recentBirds = dashboard.recentBirds;
   const currentSeasonLabel = dashboard.currentSeasonLabelHu;
+  const spotlightGroupHabitatTiles = dashboard.spotlightGroupHabitatTiles;
 
   return (
     <PublicShell>
@@ -44,45 +49,62 @@ export default async function PublicHomePage() {
 
           <div className="grid gap-4 md:grid-cols-3">
             {spotlightGroups.map((group) => {
-              const birdsForGroup = dashboard.spotlightBirdsByGroup[group.key] ?? [];
+              const allowedPlaceTypes = new Set(group.placeTypes);
+              const birdsForGroup = (dashboard.spotlightBirdsByGroup[group.key] ?? []).filter((bird) =>
+                bird.places.some((place) => allowedPlaceTypes.has(place.place_type))
+              );
+              const habitatAsset = spotlightGroupHabitatTiles[group.key] ?? null;
+
               return (
                 <div key={group.key} className="admin-stat-card">
                   <p className="admin-stat-label">{group.label}</p>
                   {birdsForGroup.length ? (
-                    <div className="mt-3 space-y-3">
-                      {birdsForGroup.map((bird) => (
-                        <div key={bird.id} className="flex items-start gap-3">
-                          {bird.habitatIconSrc ? (
-                            <img
-                              src={bird.habitatIconSrc}
-                              alt=""
-                              className="h-10 w-10 shrink-0 rounded-xl p-2"
-                              style={{ border: "1px solid var(--line)", background: "var(--panel-2)" }}
+                    <div className="dashboard-spotlight-birds mt-3">
+                      {birdsForGroup.map((bird) => {
+                        const columnPlaces = bird.places.filter((place) =>
+                          allowedPlaceTypes.has(place.place_type)
+                        );
+                        const visiblePlaces = columnPlaces.slice(0, SPOTLIGHT_PLACE_LIMIT);
+                        return (
+                          <div key={bird.id} className="dashboard-spotlight-bird">
+                            <BirdIcon
+                              habitatSrc={habitatAsset ?? bird.habitatIconSrc}
+                              iconicSrc={null}
+                              size={64}
+                              className="dashboard-spotlight-bird-icon"
                             />
-                          ) : (
-                            <div
-                              className="h-10 w-10 shrink-0 rounded-xl"
-                              style={{ border: "1px solid var(--line)", background: "var(--panel-2)" }}
-                            />
-                          )}
-                          <div className="min-w-0 flex-1">
-                            <Link href={`/birds/${bird.id}`} className="admin-nav-link">
-                              {bird.name_hu}
-                            </Link>
-                            <div className="mt-1 flex flex-wrap gap-2">
-                              {bird.places.map((place) => (
-                                <Link
-                                  key={place.id}
-                                  href={`/places?place=${place.slug}`}
-                                  className="admin-note-small hover:underline"
-                                >
-                                  {place.name}
-                                </Link>
-                              ))}
+                            <div className="dashboard-spotlight-bird-body">
+                              <Link href={`/birds/${bird.id}`} className="dashboard-spotlight-bird-name">
+                                {bird.name_hu}
+                              </Link>
+                              <div className="dashboard-spotlight-places-row">
+                                {visiblePlaces.map((place, index) => (
+                                  <span
+                                    key={place.id}
+                                    className="dashboard-spotlight-place-text"
+                                    aria-label={`Helyszín: ${place.name}`}
+                                  >
+                                    <Link
+                                      href={`/places?place=${place.slug}`}
+                                      className="dashboard-spotlight-place-link"
+                                    >
+                                      {place.name}
+                                    </Link>
+                                    {index < visiblePlaces.length - 1 && (
+                                      <span className="dashboard-spotlight-place-separator" aria-hidden="true">
+                                        &middot;
+                                      </span>
+                                    )}
+                                  </span>
+                                ))}
+                                {columnPlaces.length > SPOTLIGHT_PLACE_LIMIT ? (
+                                  <span className="dashboard-spotlight-place-ellipsis">…</span>
+                                ) : null}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   ) : (
                     <p className="admin-stat-note mt-3">Még nincs elérhető lista.</p>

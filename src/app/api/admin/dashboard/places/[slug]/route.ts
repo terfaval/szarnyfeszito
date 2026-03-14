@@ -5,6 +5,7 @@ import { getLatestApprovedContentBlockForPlace } from "@/lib/placeContentService
 import { placeUiVariantsSchemaV1 } from "@/lib/placeContentSchema";
 import { listApprovedPublishedBirdLinksForPlace } from "@/lib/placeBirdService";
 import { getCurrentSeasonKey } from "@/lib/season";
+import { listApprovedCurrentIconicImagesForBirds, getSignedImageUrl } from "@/lib/imageService";
 
 export const dynamic = "force-dynamic";
 
@@ -41,7 +42,7 @@ export async function GET(_request: Request, ctx: { params: Promise<{ slug: stri
     parsedContent && parsedContent.success ? parsedContent.data.variants : null;
 
   const placeBirds = await listApprovedPublishedBirdLinksForPlace(place.id);
-  const seasonalTopBirds = placeBirds
+  const seasonalRows = placeBirds
     .filter((row) => isBirdVisibleInSeason(row, currentSeason))
     .slice(0, 5)
     .map((row) => ({
@@ -53,6 +54,23 @@ export async function GET(_request: Request, ctx: { params: Promise<{ slug: stri
       is_iconic: row.is_iconic,
     }))
     .filter((row) => Boolean(row.id));
+
+  const uniqueBirdIds = Array.from(new Set(seasonalRows.map((row) => row.id))).filter(Boolean);
+  const iconicRows = await listApprovedCurrentIconicImagesForBirds(uniqueBirdIds);
+  const storageByBirdId = new Map(iconicRows.map((row) => [row.entity_id, row.storage_path]));
+  const iconicPairs = await Promise.all(
+    uniqueBirdIds.map(async (birdId) => {
+      const storagePath = storageByBirdId.get(birdId) ?? null;
+      const signed = storagePath ? await getSignedImageUrl(storagePath) : null;
+      return [birdId, signed] as const;
+    })
+  );
+  const iconicUrlByBirdId = new Map(iconicPairs);
+
+  const seasonalTopBirds = seasonalRows.map((row) => ({
+    ...row,
+    iconic_src: iconicUrlByBirdId.get(row.id) ?? null,
+  }));
 
   return NextResponse.json({
     data: {
@@ -73,4 +91,3 @@ export async function GET(_request: Request, ctx: { params: Promise<{ slug: stri
     },
   });
 }
-

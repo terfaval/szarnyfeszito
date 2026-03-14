@@ -9,13 +9,18 @@ import { DEFAULT_BASEMAP } from "./basemaps";
 import type { BasemapId, BasemapPresetKey } from "./basemaps";
 import { DEFAULT_BASEMAP_PRESET } from "./basemaps";
 import { Icon } from "@/ui/icons/Icon";
-import type { PlaceMarker, PlaceType } from "@/types/place";
+import type { PlaceMarker } from "@/types/place";
 import { HUNGARY_BORDER_110M, HUNGARY_WATER_MASK_110M } from "./hungaryBorder110m";
 import PlacesRegionVisualization, { type PlacesRegionVisualizationVariant } from "./PlacesRegionVisualization";
 import type { PlacesMapLayersV1 } from "@/types/placesMap";
 import ThemedMapContainer from "./ThemedMapContainer";
 import BasemapLayer from "./BasemapLayer";
 import { useTimeThemeMode } from "./useTimeThemeMode";
+import {
+  getHabitatCategoryForPlaceType,
+  HABITAT_CATEGORY_STYLE,
+  HABITAT_CATEGORY_WATER,
+} from "@/lib/placeHabitatCategory";
 
 export type PlacesMapMarkerColorMode = "uniform_v1" | "water_highlight_v1" | "place_type_category_v1";
 export type PlacesMapInteractionMode = "static" | "bounded_hu_v1";
@@ -30,28 +35,6 @@ const HUNGARY_MAX_BOUNDS_V1: LatLngBoundsExpression = [
   [45.3, 15.7],
   [48.7, 23.2],
 ];
-
-type PlaceTypeCategoryV1 = "waterfront" | "forest" | "mountains" | "other";
-
-function getPlaceTypeCategoryV1(placeType: PlaceType): PlaceTypeCategoryV1 {
-  if (
-    placeType === "lake" ||
-    placeType === "river" ||
-    placeType === "fishpond" ||
-    placeType === "reservoir" ||
-    placeType === "marsh" ||
-    placeType === "reedbed" ||
-    placeType === "salt_lake" ||
-    placeType === "urban_waterfront"
-  ) {
-    return "waterfront";
-  }
-  if (placeType === "forest_edge" || placeType === "urban_park" || placeType === "protected_area") {
-    return "forest";
-  }
-  if (placeType === "mountain_area") return "mountains";
-  return "other";
-}
 
 function buildMarkerPathOptions(args: {
   marker: PlaceMarker;
@@ -79,25 +62,16 @@ function buildMarkerPathOptions(args: {
   };
   if (markerColorMode === "uniform_v1") return uniform;
 
-  const category = getPlaceTypeCategoryV1(marker.place_type);
-  if (markerColorMode === "water_highlight_v1" && category !== "waterfront") {
+  const category = getHabitatCategoryForPlaceType(marker.place_type);
+  if (markerColorMode === "water_highlight_v1" && !HABITAT_CATEGORY_WATER.has(category)) {
     return uniform;
   }
-  const palette = {
-    waterfront: { fill: "rgba(var(--brand-ink-rgb), 0.62)", fillSelected: "rgba(var(--brand-ink-rgb), 0.95)" },
-    forest: { fill: "rgba(var(--brand-accent-rgb), 0.62)", fillSelected: "rgba(var(--brand-accent-rgb), 0.95)" },
-    mountains: { fill: "rgba(var(--brand-warm-rgb), 0.62)", fillSelected: "rgba(var(--brand-warm-rgb), 0.95)" },
-    other: { fill: "rgba(var(--brand-ink-rgb), 0.4)", fillSelected: "rgba(var(--brand-accent-rgb), 0.78)" },
-  } satisfies Record<PlaceTypeCategoryV1, { fill: string; fillSelected: string }>;
+  const scheme = HABITAT_CATEGORY_STYLE[category];
 
   return {
-    color: isSelected
-      ? "rgba(var(--brand-warm-rgb), 0.95)"
-      : isDark
-      ? "rgba(var(--brand-ink-rgb), 0.9)"
-      : "rgba(var(--brand-ink-rgb), 0.92)",
+    color: isSelected ? "rgba(var(--brand-warm-rgb), 0.95)" : scheme.color,
     weight: isSelected ? 2 : 1,
-    fillColor: isSelected ? palette[category].fillSelected : palette[category].fill,
+    fillColor: isSelected ? scheme.fillSelected : scheme.fill,
     fillOpacity: isDimmed ? 0.55 : 0.9,
     opacity: isDimmed ? 0.55 : 1,
   };

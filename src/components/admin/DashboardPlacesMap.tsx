@@ -5,9 +5,11 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 
 import PlacesMap from "@/components/maps/PlacesMap";
+import PlaceCardShort from "@/components/shared/PlaceCardShort";
+import PlaceTypeFilter from "@/components/maps/PlaceTypeFilter";
 import { HUNGARY_FULL_BOUNDS_V1 } from "@/components/maps/viewPresets";
 import type { PlacesMapLayersV1 } from "@/types/placesMap";
-import type { PlaceMarker } from "@/types/place";
+import type { PlaceMarker, PlaceType } from "@/types/place";
 import styles from "./DashboardPlacesMap.module.css";
 
 const Tooltip = dynamic(() => import("react-leaflet").then((module) => module.Tooltip), {
@@ -20,7 +22,7 @@ type HoverPlaceDetail = {
     id: string;
     slug: string;
     name: string;
-    place_type: string;
+    place_type: PlaceType;
     county: string | null;
     nearest_city: string | null;
   };
@@ -36,6 +38,7 @@ type HoverPlaceDetail = {
     rank: number;
     frequency_band: string;
     is_iconic: boolean;
+    iconic_src: string | null;
   }>;
 };
 
@@ -77,6 +80,7 @@ export default function DashboardPlacesMap({
 }: DashboardPlacesMapProps) {
   const [hoveredSlug, setHoveredSlug] = useState<string | null>(null);
   const [pinnedSlug, setPinnedSlug] = useState<string | null>(null);
+  const [typeFilter, setTypeFilter] = useState<PlaceType | "all">("all");
   const [detail, setDetail] = useState<HoverPlaceDetail | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -84,7 +88,20 @@ export default function DashboardPlacesMap({
 
   const cacheRef = useRef<Map<string, HoverPlaceDetail>>(new Map());
   const activeSlug = pinnedSlug ?? hoveredSlug;
-  const panelOpen = Boolean(pinnedSlug);
+
+  const visibleMarkers = useMemo(() => {
+    if (typeFilter === "all") return markers;
+    return markers.filter((marker) => marker.place_type === typeFilter);
+  }, [markers, typeFilter]);
+
+  const filteredActiveSlug =
+    activeSlug && visibleMarkers.some((marker) => marker.slug === activeSlug) ? activeSlug : null;
+  const panelOpen = Boolean(
+    pinnedSlug && visibleMarkers.some((marker) => marker.slug === pinnedSlug)
+  );
+  const cardDetail = filteredActiveSlug ? detail : null;
+  const cardLoading = filteredActiveSlug ? loading : false;
+  const cardError = filteredActiveSlug ? error : null;
 
   useEffect(() => {
     const readPx = (value: string) => {
@@ -107,45 +124,46 @@ export default function DashboardPlacesMap({
   }, []);
 
   useEffect(() => {
-    if (!activeSlug) return;
+    if (!filteredActiveSlug) return;
 
     const ctrl = new AbortController();
     const run = async () => {
-      const cached = cacheRef.current.get(activeSlug);
-      if (cached) {
-        setDetail(cached);
-        setError(null);
-        setLoading(false);
-        return;
-      }
+      try {
+        const cached = cacheRef.current.get(filteredActiveSlug);
+        if (cached) {
+          setDetail(cached);
+          setError(null);
+          return;
+        }
 
-      setLoading(true);
-      setError(null);
-      const response = await fetch(`${detailApiBasePath}/${encodeURIComponent(activeSlug)}`, {
-        signal: ctrl.signal,
-      });
-      const payload = await response.json().catch(() => null);
-      if (!response.ok) {
-        setError(payload?.error ?? "Nem sikerült betölteni a helyszínt.");
+        setLoading(true);
+        setError(null);
+        const response = await fetch(`${detailApiBasePath}/${encodeURIComponent(filteredActiveSlug)}`, {
+          signal: ctrl.signal,
+        });
+        const payload = await response.json().catch(() => null);
+        if (!response.ok) {
+          setError(payload?.error ?? "Nem sikerült betölteni a helyszínt.");
+          setDetail(null);
+          return;
+        }
+        const next = payload?.data as HoverPlaceDetail;
+        cacheRef.current.set(filteredActiveSlug, next);
+        setDetail(next);
+      } catch (err) {
+        if (ctrl.signal.aborted) {
+          return;
+        }
+        setError(err instanceof Error ? err.message : "Nem sikerült betölteni a helyszínt.");
         setDetail(null);
+      } finally {
         setLoading(false);
-        return;
       }
-      const next = payload?.data as HoverPlaceDetail;
-      cacheRef.current.set(activeSlug, next);
-      setDetail(next);
-      setLoading(false);
     };
 
-    run().catch((err) => {
-      if (ctrl.signal.aborted) return;
-      setError(err instanceof Error ? err.message : "Nem sikerült betölteni a helyszínt.");
-      setDetail(null);
-      setLoading(false);
-    });
-
+    run();
     return () => ctrl.abort();
-  }, [activeSlug]);
+  }, [detailApiBasePath, filteredActiveSlug]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -165,8 +183,8 @@ export default function DashboardPlacesMap({
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [hoveredSlug, pinnedSlug]);
 
-  const markerBySlug = useMemo(() => new Map(markers.map((m) => [m.slug, m])), [markers]);
-  const activeMarker = activeSlug ? markerBySlug.get(activeSlug) ?? null : null;
+  const markerBySlug = useMemo(() => new Map(visibleMarkers.map((m) => [m.slug, m])), [visibleMarkers]);
+  const activeMarker = filteredActiveSlug ? markerBySlug.get(filteredActiveSlug) ?? null : null;
   const selectedRegionId = activeMarker?.leaflet_region_id?.trim() || null;
     const boundsOptions = useMemo(() => {
       const inset = Math.max(0, dashboardTopInsetPx);
@@ -181,9 +199,9 @@ export default function DashboardPlacesMap({
     <section className={styles.section} aria-label="Published places map">
       <div className={styles.layout} style={{ position: "relative" }}>
           <PlacesMap
-            markers={markers}
+            markers={visibleMarkers}
             layers={layers}
-            selectedSlug={activeSlug}
+            selectedSlug={filteredActiveSlug}
             selectedRegionId={selectedRegionId}
             layoutVariant="fill_parent_v1"
             basemap="bird"
@@ -283,15 +301,60 @@ export default function DashboardPlacesMap({
           }}
         />
 
-        <div className={styles.overlay} aria-hidden>
-          <div className={styles.overlayCard}>
-            <p className={styles.overlayTitle}>Published places</p>
-            <p className={styles.overlaySubtitle}>{activeMarker ? activeMarker.name : "Magyarország"}</p>
+        <div className={styles.overlay}>
+          <div className={styles.overlayControls}>
+            <PlaceTypeFilter
+              className={styles.filterControl}
+              value={typeFilter}
+              onChange={setTypeFilter}
+              label="Típus"
+            />
+            {typeFilter !== "all" ? (
+              <button type="button" className={styles.clearFilter} onClick={() => setTypeFilter("all")}>
+                Szűrés törlése
+              </button>
+            ) : null}
+          </div>
+          <div className={styles.overlayCardWrapper}>
+            {cardDetail ? (
+              <PlaceCardShort
+                className={styles.placeCard}
+                place={cardDetail.place}
+                shortDescription={cardDetail.content.short}
+                birds={cardDetail.birds.map((bird) => ({
+                  id: bird.id,
+                  slug: bird.slug,
+                  name_hu: bird.name_hu,
+                  iconicSrc: bird.iconic_src,
+                }))}
+                placeLinkBasePath={placeLinkBasePath}
+                placeLinkJoiner={placeLinkJoiner}
+                birdLinkBasePath={birdLinkBasePath}
+                birdLinkJoiner={birdLinkJoiner}
+                birdLinkKey={birdLinkKey}
+                onClose={() => {
+                  setHoveredSlug(null);
+                  setPinnedSlug(null);
+                }}
+              />
+            ) : filteredActiveSlug ? (
+              <div className={styles.overlayCard}>
+                <p className={styles.overlayTitle}>{cardError ? "Hiba" : cardLoading ? "Betöltés…" : "Published places"}</p>
+                <p className={styles.overlaySubtitle}>
+                  {cardError ? cardError : cardLoading ? "Betöltés…" : activeMarker?.name ?? "Magyarország"}
+                </p>
+              </div>
+            ) : (
+              <div className={styles.overlayCard}>
+                <p className={styles.overlayTitle}>Published places</p>
+                <p className={styles.overlaySubtitle}>{activeMarker ? activeMarker.name : "Magyarország"}</p>
+              </div>
+            )}
           </div>
         </div>
       </div>
 
-      {panelOpen && activeSlug ? (
+      {panelOpen && filteredActiveSlug ? (
         <div className={styles.detailOverlay} role="dialog" aria-modal="true" aria-label="Helyszín részletek">
           <button
             type="button"
