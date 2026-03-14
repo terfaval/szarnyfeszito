@@ -3,6 +3,7 @@ import path from "node:path";
 import { enumEnv, optionalEnv, requiredEnv } from "@/lib/env";
 export const SUPABASE_URL = requiredEnv("SUPABASE_URL");
 export const SUPABASE_SERVICE_ROLE_KEY = requiredEnv("SUPABASE_SERVICE_ROLE_KEY");
+export const SUPABASE_ANON_KEY = requiredEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY");
 export const ADMIN_EMAIL = optionalEnv("ADMIN_EMAIL", "") ?? "";
 export const ADMIN_EMAIL_LOWERCASE = ADMIN_EMAIL.toLowerCase();
 export const SUPABASE_IMAGE_BUCKET =

@@ -4,7 +4,7 @@ import { getLatestApprovedContentBlockForPlace } from "@/lib/placeContentService
 import { placeUiVariantsSchemaV1 } from "@/lib/placeContentSchema";
 import { listApprovedPublishedBirdLinksForPlace } from "@/lib/placeBirdService";
 import { listBirds } from "@/lib/birdService";
-import { supabaseServerClient } from "@/lib/supabaseServerClient";
+import { createUserClient } from "@/lib/supabaseServerClient";
 import {
   getApprovedCurrentPlaceHeroImage,
   getSignedImageUrl,
@@ -118,7 +118,8 @@ export async function getPublicLandingV1(): Promise<PublicLandingV1> {
     // Keep this small and deterministic: take the most recently updated published places.
     // (We still filter out any place missing approved UI variants in the next step.)
     (async () => {
-      const { data, error } = await supabaseServerClient
+      const supabase = createUserClient({ route: "landingService" });
+      const { data, error } = await supabase
         .from("places")
         .select("id,slug,name,status,updated_at")
         .eq("status", "published")

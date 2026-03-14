@@ -1,6 +1,6 @@
 import { unstable_cache } from "next/cache";
 
-import { supabaseServerClient } from "@/lib/supabaseServerClient";
+import { createUserClient } from "@/lib/supabaseServerClient";
 import { isUuid } from "@/lib/birdService";
 import { getPlaceById, getPlaceBySlug, getPlaceMarkerById } from "@/lib/placeService";
 import { getLatestApprovedContentBlockForPlace } from "@/lib/placeContentService";
@@ -69,6 +69,7 @@ function isVisibleInSeason(season: SeasonKey, row: PlaceBirdRow) {
 
 async function buildPublicPlaceDetailV1(key: string): Promise<PublicPlaceDetailV1 | null> {
   const generatedAtIso = new Date().toISOString();
+  const supabase = createUserClient({ route: "publicRead.placeDetailService" });
 
   const place = isUuid(key) ? await getPlaceById(key) : await getPlaceBySlug(key);
   if (!place || place.status !== "published") {
@@ -90,7 +91,7 @@ async function buildPublicPlaceDetailV1(key: string): Promise<PublicPlaceDetailV
     return null;
   }
 
-  const { data: birdLinks, error } = await supabaseServerClient
+  const { data: birdLinks, error } = await supabase
     .from("place_birds")
     .select(
       "id,place_id,bird_id,pending_bird_name_hu,review_status,rank,frequency_band,is_iconic,visible_in_spring,visible_in_summer,visible_in_autumn,visible_in_winter,seasonality_note,bird:birds(id,slug,name_hu,status)"
@@ -161,7 +162,7 @@ async function buildPublicPlaceDetailV1(key: string): Promise<PublicPlaceDetailV
   const marker = place.location_precision === "hidden" ? null : await getPlaceMarkerById(place.id);
   const safeMarker = marker ? { lat: marker.lat, lng: marker.lng } : null;
 
-  const { data: heroRows, error: heroError } = await supabaseServerClient
+  const { data: heroRows, error: heroError } = await supabase
     .from("images")
     .select("storage_path")
     .eq("entity_type", "place")

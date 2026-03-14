@@ -1,6 +1,6 @@
 import { unstable_cache } from "next/cache";
 
-import { supabaseServerClient } from "@/lib/supabaseServerClient";
+import { createUserClient } from "@/lib/supabaseServerClient";
 import { listLatestApprovedContentBlocksForBirds } from "@/lib/contentService";
 import { listApprovedCurrentIconicImagesForBirds, getSignedImageUrl } from "@/lib/imageService";
 import {
@@ -75,8 +75,9 @@ export type PublicBirdsIndexQueryV1 = {
 
 async function buildPublicBirdsIndexV1(): Promise<PublicBirdsIndexV1> {
   const generatedAtIso = new Date().toISOString();
+  const supabase = createUserClient({ route: "publicRead.birdsIndexService" });
 
-  const { data: birdRows, error } = await supabaseServerClient
+  const { data: birdRows, error } = await supabase
     .from("birds")
     .select("id,slug,name_hu,name_latin,status,size_category,visibility_category,color_tags,habitat_stock_asset_keys,updated_at")
     .eq("status", "published")
@@ -104,7 +105,7 @@ async function buildPublicBirdsIndexV1(): Promise<PublicBirdsIndexV1> {
     })
   );
 
-  const { data: placeLinkRows, error: placeLinkError } = await supabaseServerClient
+  const { data: placeLinkRows, error: placeLinkError } = await supabase
     .from("place_birds")
     .select("bird_id,place:places!place_birds_place_id_fkey(slug,name,place_type,status,region_landscape)")
     .eq("review_status", "approved")
@@ -263,4 +264,3 @@ export function filterPublicBirdsIndexV1(args: { index: PublicBirdsIndexV1; quer
     filters: index.filters,
   };
 }
-

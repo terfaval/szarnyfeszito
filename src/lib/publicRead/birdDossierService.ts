@@ -9,7 +9,7 @@ import {
   listHabitatStockAssets,
 } from "@/lib/habitatStockAssetService";
 import { getSignedImageUrl } from "@/lib/imageService";
-import { supabaseServerClient } from "@/lib/supabaseServerClient";
+import { createUserClient } from "@/lib/supabaseServerClient";
 import type { BirdDossier } from "@/types/dossier";
 import { logPublicReadRegenerate, PUBLIC_READ_REVALIDATE_SECONDS } from "@/lib/publicRead/cache";
 
@@ -47,6 +47,7 @@ function isBirdDossier(value: unknown): value is BirdDossier {
 
 async function buildPublicBirdDossierV1(key: string): Promise<PublicBirdDossierV1 | null> {
   const generatedAtIso = new Date().toISOString();
+  const supabase = createUserClient({ route: "publicRead.birdDossierService" });
 
   const bird = isUuid(key) ? await getBirdById(key) : await getBirdBySlug(key);
   if (!bird || bird.status !== "published") return null;
@@ -56,7 +57,7 @@ async function buildPublicBirdDossierV1(key: string): Promise<PublicBirdDossierV
   let generationMeta: unknown = latestApproved?.generation_meta ?? null;
 
   if (!isBirdDossier(dossier)) {
-    const { data, error } = await supabaseServerClient
+    const { data, error } = await supabase
       .from("content_blocks")
       .select("blocks_json,generation_meta")
       .eq("entity_type", "bird")
@@ -95,7 +96,7 @@ async function buildPublicBirdDossierV1(key: string): Promise<PublicBirdDossierV
 
   const variants = ["main_habitat", "flight_clean", "nesting_clean", "main_habitat_pair_sexes_v1"] as const;
 
-  const { data, error } = await supabaseServerClient
+  const { data, error } = await supabase
     .from("images")
     .select("variant,storage_path")
     .eq("entity_type", "bird")

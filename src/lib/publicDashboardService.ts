@@ -11,7 +11,7 @@ import { getSignedImageUrl, listApprovedCurrentIconicImagesForBirds } from "@/li
 import { buildPlacesMapLayersV1 } from "@/lib/placesMapLayers";
 import { listPublishedPlaceDashboardMarkers, listPublishedPlacesByPrimaryType } from "@/lib/placeService";
 import { getCurrentSeasonKey, type SeasonKey } from "@/lib/season";
-import { supabaseServerClient } from "@/lib/supabaseServerClient";
+import { createUserClient } from "@/lib/supabaseServerClient";
 import type { PlaceType } from "@/types/place";
 
 export const PUBLIC_DASHBOARD_REVALIDATE_SECONDS = 120;
@@ -153,7 +153,8 @@ const getPublicDashboardV1Cached = unstable_cache(
     const habitatKeyByBirdId = new Map<string, string>();
 
     if (allSpotlightPlaceIds.length) {
-      const { data, error } = await supabaseServerClient
+      const supabase = createUserClient({ route: "publicDashboardService" });
+      const { data, error } = await supabase
         .from("place_birds")
         .select(
           "place_id,rank,visible_in_spring,visible_in_summer,visible_in_autumn,visible_in_winter,bird:birds(id,slug,name_hu,status,habitat_stock_asset_keys)"

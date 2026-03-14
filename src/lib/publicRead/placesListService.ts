@@ -1,6 +1,6 @@
 import { unstable_cache } from "next/cache";
 
-import { supabaseServerClient } from "@/lib/supabaseServerClient";
+import { createUserClient } from "@/lib/supabaseServerClient";
 import { listLatestApprovedContentBlocksForPlaces } from "@/lib/placeContentService";
 import { placeUiVariantsSchemaV1 } from "@/lib/placeContentSchema";
 import { getSignedImageUrl } from "@/lib/imageService";
@@ -45,10 +45,14 @@ export type PublicPlacesListQueryV1 = {
   region: string;
 };
 
+const PUBLIC_READ_ROUTE = "publicRead.placesListService";
+
 async function buildPublicPlacesListV1(): Promise<PublicPlacesListV1> {
   const generatedAtIso = new Date().toISOString();
 
-  const { data: placeRows, error } = await supabaseServerClient
+  const supabase = createUserClient({ route: PUBLIC_READ_ROUTE });
+
+  const { data: placeRows, error } = await supabase
     .from("places")
     .select("id,slug,name,place_type,region_landscape,county,nearest_city,status")
     .eq("status", "published")
@@ -64,7 +68,7 @@ async function buildPublicPlacesListV1(): Promise<PublicPlacesListV1> {
 
   const [contentBlocks, habitatAssets] = await Promise.all([listLatestApprovedContentBlocksForPlaces(placeIds), listHabitatStockAssets()]);
 
-  const { data: imageRows, error: imageError } = await supabaseServerClient
+  const { data: imageRows, error: imageError } = await supabase
     .from("images")
     .select("entity_id,storage_path")
     .eq("entity_type", "place")
@@ -169,4 +173,3 @@ export function filterPublicPlacesListV1(args: { list: PublicPlacesListV1; query
     filters,
   };
 }
-
