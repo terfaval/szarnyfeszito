@@ -87,7 +87,7 @@ export async function listLatestApprovedContentBlocksForBirds(birdIds: string[])
     throw error;
   }
 
-  (data ?? []).forEach((row) => {
+  (data ?? []).forEach((row: ContentBlock) => {
     const block = row as ContentBlock;
     if (!block?.entity_id) return;
     if (!out.has(block.entity_id)) {

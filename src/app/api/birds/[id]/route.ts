@@ -85,8 +85,12 @@ export async function PATCH(
     }
 
     const approvedByVariant = new Map<string, boolean>();
-    (data ?? []).forEach((row) => {
-      approvedByVariant.set(row.variant, row.review_status === "approved");
+    type ImageValidationRow = { variant?: unknown; review_status?: unknown };
+    ((data ?? []) as ImageValidationRow[]).forEach((row) => {
+      const variant = typeof row.variant === "string" ? row.variant : "";
+      const status = typeof row.review_status === "string" ? row.review_status : "";
+      if (!variant) return;
+      approvedByVariant.set(variant, status === "approved");
     });
 
     const gateOk = requiredVariants.every((variant) => approvedByVariant.get(variant) === true);

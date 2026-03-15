@@ -296,7 +296,7 @@ export async function getPlaceBirdLinkSummaries(placeIds: string[]): Promise<Pla
     });
   });
 
-  (data ?? []).forEach((raw) => {
+  (data ?? []).forEach((raw: Row) => {
     const row = raw as Row;
     const placeId = typeof row?.place_id === "string" ? row.place_id : "";
     if (!placeId) return;
@@ -418,7 +418,7 @@ export async function listSuggestedBirdQueue(): Promise<SuggestedBirdQueueItem[]
       throw placesError;
     }
 
-    (places ?? []).forEach((place) => {
+    (places ?? []).forEach((place: { id?: unknown; name?: unknown; slug?: unknown }) => {
       const id = typeof place?.id === "string" ? place.id : "";
       const name = typeof place?.name === "string" ? place.name : "";
       const slug = typeof place?.slug === "string" ? place.slug : "";

@@ -1,4 +1,4 @@
-import { createClient, type Client, type SupabaseClientOptions } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient, type SupabaseClientOptions } from "@supabase/supabase-js";
 import {
   SUPABASE_ANON_KEY,
   SUPABASE_SERVICE_ROLE_KEY,
@@ -14,7 +14,7 @@ type LoggingMetadata = {
 };
 
 const DEFAULT_ROUTE = "unknown-route";
-const BASE_CLIENT_OPTIONS: SupabaseClientOptions<unknown> = {
+const BASE_CLIENT_OPTIONS: SupabaseClientOptions<"public"> = {
   auth: {
     persistSession: false,
     detectSessionInUrl: false,
@@ -76,7 +76,7 @@ function instrumentQueryBuilder<T extends object>(
   });
 }
 
-function instrumentClient(client: Client, metadata: LoggingMetadata): Client {
+function instrumentClient(client: SupabaseClient, metadata: LoggingMetadata): SupabaseClient {
   const patched = client;
   const originalFrom = patched.from.bind(patched);
   patched.from = (table: string) => {
@@ -85,7 +85,7 @@ function instrumentClient(client: Client, metadata: LoggingMetadata): Client {
   };
 
   const originalRpc = patched.rpc.bind(patched);
-  patched.rpc = (...args: Parameters<Client["rpc"]>) => {
+  patched.rpc = (...args: Parameters<SupabaseClient["rpc"]>) => {
     const table = typeof args[0] === "string" ? args[0] : "rpc";
     logDbOperation({
       operation: "DB_RPC",
@@ -99,8 +99,8 @@ function instrumentClient(client: Client, metadata: LoggingMetadata): Client {
   return patched;
 }
 
-function buildClientOptions(accessToken?: string): SupabaseClientOptions<unknown> {
-  const options: SupabaseClientOptions<unknown> = {
+function buildClientOptions(accessToken?: string): SupabaseClientOptions<"public"> {
+  const options: SupabaseClientOptions<"public"> = {
     ...BASE_CLIENT_OPTIONS,
     auth: {
       ...BASE_CLIENT_OPTIONS.auth,
@@ -119,7 +119,7 @@ function createInstrumentedClient(
   clientType: ClientType,
   route?: string,
   accessToken?: string
-): Client {
+): SupabaseClient {
   const metadata: LoggingMetadata = {
     clientType,
     route: route?.trim() || DEFAULT_ROUTE,
@@ -128,11 +128,11 @@ function createInstrumentedClient(
   return instrumentClient(client, metadata);
 }
 
-export function createAdminClient(options?: { route?: string }): Client {
+export function createAdminClient(options?: { route?: string }): SupabaseClient {
   return createInstrumentedClient(SUPABASE_SERVICE_ROLE_KEY, "admin", options?.route);
 }
 
-export function createUserClient(options?: { route?: string; accessToken?: string }): Client {
+export function createUserClient(options?: { route?: string; accessToken?: string }): SupabaseClient {
   return createInstrumentedClient(
     SUPABASE_ANON_KEY,
     "user",
@@ -141,11 +141,11 @@ export function createUserClient(options?: { route?: string; accessToken?: strin
   );
 }
 
-function createClientProxy(factory: () => Client): Client {
-  return new Proxy({} as Client, {
+function createClientProxy(factory: () => SupabaseClient): SupabaseClient {
+  return new Proxy({} as SupabaseClient, {
     get(_, prop) {
       const client = factory();
-      const value = (client as Record<PropertyKey, unknown>)[prop];
+      const value = (client as unknown as Record<PropertyKey, unknown>)[prop];
       if (typeof value === "function") {
         const method = value as (...args: unknown[]) => unknown;
         return (...args: unknown[]) => method.apply(client, args);

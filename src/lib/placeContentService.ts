@@ -80,7 +80,7 @@ export async function listLatestApprovedContentBlocksForPlaces(placeIds: string[
     throw error;
   }
 
-  (data ?? []).forEach((row) => {
+  (data ?? []).forEach((row: PlaceContentBlockRecord) => {
     const block = row as PlaceContentBlockRecord;
     if (!block?.entity_id) return;
     if (!out.has(block.entity_id)) {

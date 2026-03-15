@@ -87,7 +87,7 @@ export async function listHabitatStockAssetKeysForBirds(birdIds: string[]) {
   }
 
   type HabitatKeysRow = { id?: unknown; habitat_stock_asset_keys?: unknown };
-  (data ?? []).forEach((row) => {
+  (data ?? []).forEach((row: HabitatKeysRow) => {
     const r = row as HabitatKeysRow;
     const id = typeof r?.id === "string" ? r.id : "";
     const keys = Array.isArray(r?.habitat_stock_asset_keys)

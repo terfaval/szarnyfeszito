@@ -93,7 +93,11 @@ export async function generateUniquePhenomenonSlug(base: string): Promise<string
     throw error;
   }
 
-  const existingSlugs = new Set((data ?? []).map((record) => record.slug));
+  const existingSlugs = new Set(
+    ((data ?? []) as Array<{ slug?: unknown }>)
+      .map((record) => (typeof record.slug === "string" ? record.slug : ""))
+      .filter(Boolean)
+  );
   if (!existingSlugs.has(baseSlug)) return baseSlug;
 
   let suffix = 2;
@@ -197,4 +201,3 @@ export async function deletePhenomenonById(id: string): Promise<void> {
   const { error } = await supabaseServerClient.from("phenomena").delete().eq("id", id);
   if (error) throw error;
 }
-

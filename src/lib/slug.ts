@@ -37,7 +37,11 @@ export async function generateUniqueBirdSlug(nameLatin: string): Promise<string>
     throw error;
   }
 
-  const existingSlugs = new Set((data ?? []).map((record) => record.slug));
+  const existingSlugs = new Set(
+    ((data ?? []) as Array<{ slug?: unknown }>)
+      .map((record) => (typeof record.slug === "string" ? record.slug : ""))
+      .filter(Boolean)
+  );
 
   if (!existingSlugs.has(baseSlug)) {
     return baseSlug;
@@ -74,7 +78,11 @@ export async function generateUniquePlaceSlug(name: string): Promise<string> {
     throw error;
   }
 
-  const existingSlugs = new Set((data ?? []).map((record) => record.slug));
+  const existingSlugs = new Set(
+    ((data ?? []) as Array<{ slug?: unknown }>)
+      .map((record) => (typeof record.slug === "string" ? record.slug : ""))
+      .filter(Boolean)
+  );
 
   if (!existingSlugs.has(baseSlug)) {
     return baseSlug;

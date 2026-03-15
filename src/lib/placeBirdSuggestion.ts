@@ -264,7 +264,7 @@ export async function suggestPlaceBirdLinksV1(args: {
   const existingBirdIds = new Set<string>();
   const existingPending = new Set<string>();
   let maxRank = 0;
-  (existing ?? []).forEach((row) => {
+  (existing ?? []).forEach((row: Record<string, unknown>) => {
     const coerced = coerceExistingPlaceBirdRow(row);
     if (!coerced) return;
 

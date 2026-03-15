@@ -14,7 +14,13 @@ import type { PlaceType } from "@/types/place";
 
 type PlaceLinkRow = {
   bird_id?: unknown;
-  place?: { slug?: unknown; name?: unknown; place_type?: unknown; status?: unknown; region_landscape?: unknown } | null;
+  place?: Array<{
+    slug?: unknown;
+    name?: unknown;
+    place_type?: unknown;
+    status?: unknown;
+    region_landscape?: unknown;
+  }> | null;
 };
 
 const SIZE_LABELS: Record<BirdSizeCategory, string> = {
@@ -121,10 +127,11 @@ async function buildPublicBirdsIndexV1(): Promise<PublicBirdsIndexV1> {
   const regionSet = new Set<string>();
   const placeListMap = new Map<string, { slug: string; name: string }>();
 
-  (placeLinkRows ?? []).forEach((row) => {
+  (placeLinkRows ?? []).forEach((row: PlaceLinkRow) => {
     const r = row as PlaceLinkRow;
     const birdId = typeof r?.bird_id === "string" ? r.bird_id : "";
-    const place = r?.place ?? null;
+    const placeArray = Array.isArray(r.place) ? r.place : [];
+    const place = placeArray[0] ?? null;
     const status = typeof place?.status === "string" ? place.status : "";
     if (!birdId || !place || status !== "published") return;
 

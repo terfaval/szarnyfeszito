@@ -81,7 +81,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: (error as Error)?.message ?? "Unable to validate birds." }, { status: 400 });
   }
 
-  const foundIds = new Set((birds ?? []).map((row) => row.id as string));
+  type BirdValidationRow = { id?: unknown };
+  const foundIds = new Set(
+    ((birds ?? []) as BirdValidationRow[])
+      .map((row) => (typeof row.id === "string" ? row.id : ""))
+      .filter((id): id is string => Boolean(id))
+  );
   const missing = uniqueBirdIds.filter((id) => !foundIds.has(id));
   if (missing.length > 0) {
     return NextResponse.json({ error: "Some birds are missing or not published." }, { status: 400 });

@@ -83,7 +83,7 @@ async function buildPublicPlacesListV1(): Promise<PublicPlacesListV1> {
 
   const heroUrlByPlaceId = new Map<string, string | null>();
   await Promise.all(
-    (imageRows ?? []).map(async (row) => {
+    (imageRows ?? []).map(async (row: ImageRow) => {
       const r = row as ImageRow;
       const placeId = typeof r.entity_id === "string" ? r.entity_id : "";
       const storagePath = typeof r.storage_path === "string" ? r.storage_path : "";

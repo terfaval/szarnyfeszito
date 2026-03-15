@@ -28,7 +28,10 @@ export async function POST(request: Request) {
 
   const spas = (spaRows ?? []) as Array<Partial<SpaRegionRow>>;
   const spaMetas = spas
-    .map((row) => ({ region_id: String(row.region_id ?? "").trim(), name: String(row.name ?? "").trim() }))
+    .map((row: Partial<SpaRegionRow>) => ({
+      region_id: String(row.region_id ?? "").trim(),
+      name: String(row.name ?? "").trim(),
+    }))
     .filter((row) => row.region_id && row.name);
 
   const regionIds = spaMetas.map((row) => row.region_id);
@@ -49,7 +52,10 @@ export async function POST(request: Request) {
 
   const existingRegionIds = new Set(
     (existingRows ?? [])
-      .map((row) => String((row as Record<string, unknown>).region_id ?? "").trim())
+      .map((row: Record<string, unknown>) => {
+        const id = typeof row.region_id === "string" ? row.region_id : "";
+        return id.trim();
+      })
       .filter(Boolean)
   );
   const missing = spaMetas.filter((row) => !existingRegionIds.has(row.region_id));

@@ -105,9 +105,14 @@ async function buildPublicPlaceDetailV1(key: string): Promise<PublicPlaceDetailV
     throw error;
   }
 
+  type BirdLinkRow = {
+    bird?: Array<{ id?: unknown; slug?: unknown; name_hu?: unknown; status?: unknown }> | null;
+  };
+
   const publishedBirdLinks = (birdLinks ?? [])
-    .map((row) => {
-      const bird = (row as { bird?: { id?: unknown; slug?: unknown; name_hu?: unknown; status?: unknown } | null }).bird;
+    .map((row: BirdLinkRow) => {
+      const birdArray = Array.isArray(row.bird) ? row.bird : [];
+      const bird = birdArray[0] ?? null;
       if (!bird || bird.status !== "published") {
         return null;
       }

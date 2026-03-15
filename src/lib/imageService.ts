@@ -463,11 +463,14 @@ export async function generateImagesForBird(
 
   const reviewNoteByVariant = new Map<ImageVariant, string>();
   const reviewStatusByVariant = new Map<ImageVariant, ImageReviewStatus>();
-  (currentImages ?? []).forEach((row) => {
-    const variant = row.variant as ImageVariant | undefined;
+  (currentImages ?? []).forEach((row: Record<string, unknown>) => {
+    const variant = typeof row.variant === "string" ? (row.variant as ImageVariant) : undefined;
     const note =
       typeof row.review_comment === "string" ? row.review_comment.trim() : "";
-    const reviewStatus = row.review_status as ImageReviewStatus | undefined;
+    const reviewStatus =
+      typeof row.review_status === "string"
+        ? (row.review_status as ImageReviewStatus)
+        : undefined;
     if (variant) {
       if (reviewStatus) {
         reviewStatusByVariant.set(variant, reviewStatus);
@@ -755,7 +758,16 @@ export async function generateImagesForBird(
   }
 
   const requiredPresent = new Set<ImageVariant>(
-    (requiredCurrent ?? []).map((row) => row.variant as ImageVariant)
+    ((requiredCurrent ?? []) as Record<string, unknown>[]).reduce<ImageVariant[]>(
+      (ids, row) => {
+        const variant = typeof row.variant === "string" ? (row.variant as ImageVariant) : undefined;
+        if (variant) {
+          ids.push(variant);
+        }
+        return ids;
+      },
+      []
+    )
   );
   const required_success = REQUIRED_IMAGE_VARIANTS.every((variant) => requiredPresent.has(variant));
 
@@ -832,10 +844,13 @@ export async function generateHeroImageForPlace(
 
   const reviewNoteByVariant = new Map<ImageVariant, string>();
   const reviewStatusByVariant = new Map<ImageVariant, ImageReviewStatus>();
-  (currentImages ?? []).forEach((row) => {
-    const variant = row.variant as ImageVariant | undefined;
+  (currentImages ?? []).forEach((row: Record<string, unknown>) => {
+    const variant = typeof row.variant === "string" ? (row.variant as ImageVariant) : undefined;
     const note = typeof row.review_comment === "string" ? row.review_comment.trim() : "";
-    const reviewStatus = row.review_status as ImageReviewStatus | undefined;
+    const reviewStatus =
+      typeof row.review_status === "string"
+        ? (row.review_status as ImageReviewStatus)
+        : undefined;
     if (variant) {
       if (reviewStatus) {
         reviewStatusByVariant.set(variant, reviewStatus);
@@ -1185,8 +1200,16 @@ async function importLegacyStorageImagesForBird(birdId: string): Promise<ImageRe
     return [];
   }
 
-  const scientificNames = new Set((scientificFiles ?? []).map((file) => file.name));
-  const iconicNames = new Set((iconicFiles ?? []).map((file) => file.name));
+  const scientificNames = new Set<string>(
+    ((scientificFiles ?? []) as Array<{ name?: unknown }>)
+      .map((file) => (typeof file.name === "string" ? file.name : ""))
+      .filter(Boolean)
+  );
+  const iconicNames = new Set<string>(
+    ((iconicFiles ?? []) as Array<{ name?: unknown }>)
+      .map((file) => (typeof file.name === "string" ? file.name : ""))
+      .filter(Boolean)
+  );
 
   const now = new Date().toISOString();
   const toInsert = LEGACY_IMAGE_FILES.filter((spec) => {
