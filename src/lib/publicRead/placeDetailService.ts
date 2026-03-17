@@ -77,19 +77,34 @@ async function buildPublicPlaceDetailV1(key: string): Promise<PublicPlaceDetailV
   }
 
   const contentBlock = await getLatestApprovedContentBlockForPlace(place.id);
-  if (!contentBlock || contentBlock.review_status !== "approved" || !contentBlock.blocks_json) {
+  if (!contentBlock || contentBlock.review_status !== "approved") {
     return null;
   }
 
-  const parsedContent = placeUiVariantsSchemaV1.safeParse(contentBlock.blocks_json);
-  if (!parsedContent.success) {
+  const parsedContent = contentBlock.blocks_json
+    ? placeUiVariantsSchemaV1.safeParse(contentBlock.blocks_json)
+    : null;
+  if (parsedContent && !parsedContent.success) {
     console.error("Invalid published place content payload", {
       place_id: place.id,
       block_id: contentBlock.id,
       issues: parsedContent.error.issues,
     });
-    return null;
   }
+
+  const fallbackContent = placeUiVariantsSchemaV1.parse({
+    schema_version: "place_ui_variants_v1",
+    language: "hu",
+    variants: {
+      teaser: contentBlock.short ?? "",
+      short: contentBlock.short ?? "",
+      long: contentBlock.long ?? "",
+      ethics_tip: contentBlock.ethics_tip ?? "",
+      did_you_know: contentBlock.did_you_know ?? "",
+    },
+  });
+
+  const content = parsedContent && parsedContent.success ? parsedContent.data : fallbackContent;
 
   const { data: birdLinks, error } = await supabase
     .from("place_birds")
@@ -211,7 +226,7 @@ async function buildPublicPlaceDetailV1(key: string): Promise<PublicPlaceDetailV
       updated_at: place.updated_at,
     },
     marker: safeMarker,
-    content: parsedContent.data,
+    content,
     place_birds: publicBirdLinks as unknown[],
     current_season: currentSeason,
     hero_image_src: heroImageUrl,

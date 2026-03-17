@@ -148,10 +148,15 @@ export async function getPublicLandingV1(): Promise<PublicLandingV1> {
     if (spotlightPlaces.length >= 3) break;
 
     const contentBlock = await getLatestApprovedContentBlockForPlace(place.id);
-    if (!contentBlock?.blocks_json) continue;
+    if (!contentBlock) continue;
 
-    const parsed = placeUiVariantsSchemaV1.safeParse(contentBlock.blocks_json);
-    if (!parsed.success) continue;
+    // Fallback to legacy content blocks that lack the schema wrapper.
+    const parsed = contentBlock.blocks_json
+      ? placeUiVariantsSchemaV1.safeParse(contentBlock.blocks_json)
+      : null;
+    const variants = parsed && parsed.success ? parsed.data.variants : null;
+    const fallbackShort = typeof contentBlock.short === "string" ? contentBlock.short : null;
+    const fallbackTeaser = typeof contentBlock.short === "string" ? contentBlock.short : null;
 
     const heroImage = await getApprovedCurrentPlaceHeroImage(place.id);
     const heroImageSrc = heroImage?.storage_path ? await getSignedImageUrl(heroImage.storage_path) : null;
@@ -168,8 +173,8 @@ export async function getPublicLandingV1(): Promise<PublicLandingV1> {
       id: place.id,
       slug: place.slug,
       name: place.name,
-      teaser: parsed.data.variants.teaser ?? null,
-      short: parsed.data.variants.short ?? null,
+      teaser: variants?.teaser || fallbackTeaser,
+      short: variants?.short || fallbackShort,
       hero_image_src: heroImageSrc ?? null,
       birds: placeBirds.map((bird) => ({ ...bird, iconic_src: null })),
     });

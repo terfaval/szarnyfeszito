@@ -109,9 +109,13 @@ async function buildPublicPlacesListV1(): Promise<PublicPlacesListV1> {
   const base = places
     .map((place) => {
       const block = contentBlocks.get(place.id) ?? null;
-      if (!block?.blocks_json) return null;
-      const parsed = placeUiVariantsSchemaV1.safeParse(block.blocks_json);
-      if (!parsed.success) return null;
+      // Fallback to legacy content blocks that lack the schema wrapper.
+      const parsed = block?.blocks_json
+        ? placeUiVariantsSchemaV1.safeParse(block.blocks_json)
+        : null;
+      const variants = parsed && parsed.success ? parsed.data.variants : null;
+      const fallbackShort = typeof block?.short === "string" ? block.short : "";
+      const fallbackTeaser = typeof block?.short === "string" ? block.short : "";
       const habitatKey = habitatKeyByPlaceId.get(place.id) ?? null;
       const habitatSrc = habitatKey ? habitatUrlByKey.get(habitatKey) ?? null : null;
       return {
@@ -122,8 +126,8 @@ async function buildPublicPlacesListV1(): Promise<PublicPlacesListV1> {
         region_landscape: place.region_landscape ?? null,
         county: place.county ?? null,
         nearest_city: place.nearest_city ?? null,
-        teaser: parsed.data.variants.teaser ?? "",
-        short: parsed.data.variants.short ?? "",
+        teaser: variants?.teaser || fallbackTeaser,
+        short: variants?.short || fallbackShort,
         hero_image_src: heroUrlByPlaceId.get(place.id) ?? null,
         habitat_key: habitatKey,
         habitat_src: habitatSrc ?? null,
