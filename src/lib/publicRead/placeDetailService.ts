@@ -6,7 +6,11 @@ import { getPlaceById, getPlaceBySlug, getPlaceMarkerById } from "@/lib/placeSer
 import { getLatestApprovedContentBlockForPlace } from "@/lib/placeContentService";
 import { placeUiVariantsSchemaV1, type PlaceUiVariantsV1 } from "@/lib/placeContentSchema";
 import { getCurrentSeasonKey, type SeasonKey } from "@/lib/season";
-import { getSignedImageUrl, listApprovedCurrentIconicImagesForBirds } from "@/lib/imageService";
+import {
+  getSignedImageUrl,
+  listApprovedCurrentIconicImagesForBirds,
+  PUBLIC_SIGNED_IMAGE_URL_TTL_SECONDS,
+} from "@/lib/imageService";
 import { listLatestApprovedContentBlocksForBirds } from "@/lib/contentService";
 import { logPublicReadRegenerate, PUBLIC_READ_REVALIDATE_SECONDS } from "@/lib/publicRead/cache";
 import type { PlaceFrequencyBand, PlaceNotableUnit, PlaceType } from "@/types/place";
@@ -157,7 +161,11 @@ async function buildPublicPlaceDetailV1(key: string): Promise<PublicPlaceDetailV
   const signedIconicPairs = await Promise.all(
     publicBirdIds.map(async (birdId) => {
       const storagePath = storagePathByBirdId.get(birdId) ?? null;
-      const signedUrl = storagePath ? await getSignedImageUrl(storagePath) : null;
+      const signedUrl = storagePath
+        ? await getSignedImageUrl(storagePath, {
+            ttlSeconds: PUBLIC_SIGNED_IMAGE_URL_TTL_SECONDS,
+          })
+        : null;
       return [birdId, signedUrl] as const;
     })
   );
@@ -199,7 +207,11 @@ async function buildPublicPlaceDetailV1(key: string): Promise<PublicPlaceDetailV
   const heroStoragePath = typeof (heroRows?.[0] as { storage_path?: unknown } | undefined)?.storage_path === "string"
     ? String((heroRows?.[0] as { storage_path?: unknown }).storage_path)
     : "";
-  const heroImageUrl = heroStoragePath ? await getSignedImageUrl(heroStoragePath) : null;
+  const heroImageUrl = heroStoragePath
+    ? await getSignedImageUrl(heroStoragePath, {
+        ttlSeconds: PUBLIC_SIGNED_IMAGE_URL_TTL_SECONDS,
+      })
+    : null;
 
   const out: PublicPlaceDetailV1 = {
     generatedAtIso,

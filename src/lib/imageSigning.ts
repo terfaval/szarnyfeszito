@@ -2,6 +2,7 @@ import { supabaseServerClient } from "@/lib/supabaseServerClient";
 import { SUPABASE_IMAGE_BUCKET } from "@/lib/config";
 
 export const SIGNED_IMAGE_URL_TTL_SECONDS = 60 * 5;
+export const PUBLIC_SIGNED_IMAGE_URL_TTL_SECONDS = 60 * 60;
 
 function extractBucketPath(storagePath: string) {
   const normalized = storagePath.replace(/^\/+/, "");
@@ -9,9 +10,13 @@ function extractBucketPath(storagePath: string) {
   return { bucket, path: rest.join("/") };
 }
 
-export async function getSignedImageUrl(storagePath: string) {
+export async function getSignedImageUrl(
+  storagePath: string,
+  options?: { ttlSeconds?: number }
+) {
   const normalized = storagePath.replace(/^\/+/, "");
   const { bucket, path } = extractBucketPath(normalized);
+  const ttlSeconds = options?.ttlSeconds ?? SIGNED_IMAGE_URL_TTL_SECONDS;
 
   const attempts: Array<{ bucket: string; path: string }> = [];
   if (bucket && path) {
@@ -33,7 +38,7 @@ export async function getSignedImageUrl(storagePath: string) {
 
     const { data, error } = await supabaseServerClient.storage
       .from(attempt.bucket)
-      .createSignedUrl(attempt.path, SIGNED_IMAGE_URL_TTL_SECONDS);
+      .createSignedUrl(attempt.path, ttlSeconds);
 
     if (!error && data?.signedUrl) {
       return data.signedUrl;

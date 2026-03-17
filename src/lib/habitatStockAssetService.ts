@@ -279,7 +279,10 @@ export function resolveHabitatStockAssetKeyForHabitatClass(args: {
   return args.assets.some((asset) => asset.key === fallbackKey) ? fallbackKey : null;
 }
 
-export async function getSignedApprovedHabitatTileUrlsByAssetKeys(keys: string[]) {
+export async function getSignedApprovedHabitatTileUrlsByAssetKeys(
+  keys: string[],
+  options?: { ttlSeconds?: number }
+) {
   const uniqueKeys = Array.from(new Set(keys.map((k) => k.trim()).filter(Boolean))).slice(0, 200);
   const out = new Map<string, string | null>();
   uniqueKeys.forEach((k) => out.set(k, null));
@@ -306,7 +309,7 @@ export async function getSignedApprovedHabitatTileUrlsByAssetKeys(keys: string[]
         out.set(key, null);
         return;
       }
-      const signed = await getSignedImageUrl(img.storage_path);
+      const signed = await getSignedImageUrl(img.storage_path, options);
       out.set(key, signed ?? null);
     })
   );

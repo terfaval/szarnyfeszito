@@ -9,6 +9,7 @@ import {
   getApprovedCurrentPlaceHeroImage,
   getSignedImageUrl,
   listApprovedCurrentIconicImagesForBirds,
+  PUBLIC_SIGNED_IMAGE_URL_TTL_SECONDS,
 } from "@/lib/imageService";
 import type { BirdVisibilityCategory } from "@/types/bird";
 
@@ -159,7 +160,11 @@ export async function getPublicLandingV1(): Promise<PublicLandingV1> {
     const fallbackTeaser = typeof contentBlock.short === "string" ? contentBlock.short : null;
 
     const heroImage = await getApprovedCurrentPlaceHeroImage(place.id);
-    const heroImageSrc = heroImage?.storage_path ? await getSignedImageUrl(heroImage.storage_path) : null;
+    const heroImageSrc = heroImage?.storage_path
+      ? await getSignedImageUrl(heroImage.storage_path, {
+          ttlSeconds: PUBLIC_SIGNED_IMAGE_URL_TTL_SECONDS,
+        })
+      : null;
 
     const placeBirdLinks = await listApprovedPublishedBirdLinksForPlace(place.id);
     const placeBirds = uniqueById(
@@ -191,7 +196,11 @@ export async function getPublicLandingV1(): Promise<PublicLandingV1> {
   const iconicSrcByBirdId = new Map<string, string | null>();
   await Promise.all(
     iconicImages.map(async (row) => {
-      const url = row.storage_path ? await getSignedImageUrl(row.storage_path) : null;
+      const url = row.storage_path
+        ? await getSignedImageUrl(row.storage_path, {
+            ttlSeconds: PUBLIC_SIGNED_IMAGE_URL_TTL_SECONDS,
+          })
+        : null;
       iconicSrcByBirdId.set(row.entity_id, url ?? null);
     })
   );

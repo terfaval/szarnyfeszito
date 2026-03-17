@@ -2,7 +2,11 @@ import { unstable_cache } from "next/cache";
 
 import { createUserClient } from "@/lib/supabaseServerClient";
 import { listLatestApprovedContentBlocksForBirds } from "@/lib/contentService";
-import { listApprovedCurrentIconicImagesForBirds, getSignedImageUrl } from "@/lib/imageService";
+import {
+  listApprovedCurrentIconicImagesForBirds,
+  getSignedImageUrl,
+  PUBLIC_SIGNED_IMAGE_URL_TTL_SECONDS,
+} from "@/lib/imageService";
 import {
   computeHabitatStockAssetKeysForPlaceTypes,
   getSignedApprovedHabitatTileUrlsByAssetKeys,
@@ -106,7 +110,11 @@ async function buildPublicBirdsIndexV1(): Promise<PublicBirdsIndexV1> {
   const iconicUrlByBirdId = new Map<string, string | null>();
   await Promise.all(
     iconicImages.map(async (img) => {
-      const url = img.storage_path ? await getSignedImageUrl(img.storage_path) : null;
+      const url = img.storage_path
+        ? await getSignedImageUrl(img.storage_path, {
+            ttlSeconds: PUBLIC_SIGNED_IMAGE_URL_TTL_SECONDS,
+          })
+        : null;
       iconicUrlByBirdId.set(img.entity_id, url ?? null);
     })
   );
@@ -175,7 +183,8 @@ async function buildPublicBirdsIndexV1(): Promise<PublicBirdsIndexV1> {
   });
 
   const habitatUrlByKey = await getSignedApprovedHabitatTileUrlsByAssetKeys(
-    Array.from(new Set(Array.from(habitatKeyByBirdId.values()).filter(Boolean))) as string[]
+    Array.from(new Set(Array.from(habitatKeyByBirdId.values()).filter(Boolean))) as string[],
+    { ttlSeconds: PUBLIC_SIGNED_IMAGE_URL_TTL_SECONDS }
   );
 
   const items = birds

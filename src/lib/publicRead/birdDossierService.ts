@@ -8,7 +8,7 @@ import {
   listApprovedPublishedPlaceTypesForBird,
   listHabitatStockAssets,
 } from "@/lib/habitatStockAssetService";
-import { getSignedImageUrl } from "@/lib/imageService";
+import { getSignedImageUrl, PUBLIC_SIGNED_IMAGE_URL_TTL_SECONDS } from "@/lib/imageService";
 import { createUserClient } from "@/lib/supabaseServerClient";
 import type { BirdDossier } from "@/types/dossier";
 import { logPublicReadRegenerate, PUBLIC_READ_REVALIDATE_SECONDS } from "@/lib/publicRead/cache";
@@ -84,7 +84,9 @@ async function buildPublicBirdDossierV1(key: string): Promise<PublicBirdDossierV
     listHabitatStockAssets(),
   ]);
   const habitatKeys = computeHabitatStockAssetKeysForPlaceTypes({ placeTypes, assets: habitatAssets }).slice(0, 8);
-  const tilesByKey = await getSignedApprovedHabitatTileUrlsByAssetKeys(habitatKeys);
+  const tilesByKey = await getSignedApprovedHabitatTileUrlsByAssetKeys(habitatKeys, {
+    ttlSeconds: PUBLIC_SIGNED_IMAGE_URL_TTL_SECONDS,
+  });
   const assetByKey = new Map(habitatAssets.map((a) => [a.key, a] as const));
   const habitats = habitatKeys
     .map((key) => ({
@@ -123,7 +125,11 @@ async function buildPublicBirdDossierV1(key: string): Promise<PublicBirdDossierV
   const signedByVariantEntries = await Promise.all(
     variants.map(async (variant) => {
       const storagePath = storagePathByVariant.get(variant) ?? "";
-      const signed = storagePath ? await getSignedImageUrl(storagePath) : null;
+      const signed = storagePath
+        ? await getSignedImageUrl(storagePath, {
+            ttlSeconds: PUBLIC_SIGNED_IMAGE_URL_TTL_SECONDS,
+          })
+        : null;
       return [variant, signed] as const;
     })
   );

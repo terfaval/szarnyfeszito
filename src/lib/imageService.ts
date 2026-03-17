@@ -27,7 +27,7 @@ import { getScienceDossierForBird, upsertScienceDossierDraft } from "@/lib/scien
 import { AIJsonParseError, AISchemaMismatchError } from "@/lib/aiUtils";
 import { getVisualBriefForBird, upsertVisualBriefDraft } from "@/lib/visualBriefService";
 import { getHabitatStockAssetByKey } from "@/lib/habitatStockAssetService";
-export { getSignedImageUrl } from "@/lib/imageSigning";
+export { getSignedImageUrl, PUBLIC_SIGNED_IMAGE_URL_TTL_SECONDS } from "@/lib/imageSigning";
 
 const REQUIRED_IMAGE_VARIANTS: ImageVariant[] = [
   "main_habitat",

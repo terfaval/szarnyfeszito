@@ -3,7 +3,7 @@ import { unstable_cache } from "next/cache";
 import { createUserClient } from "@/lib/supabaseServerClient";
 import { listLatestApprovedContentBlocksForPlaces } from "@/lib/placeContentService";
 import { placeUiVariantsSchemaV1 } from "@/lib/placeContentSchema";
-import { getSignedImageUrl } from "@/lib/imageService";
+import { getSignedImageUrl, PUBLIC_SIGNED_IMAGE_URL_TTL_SECONDS } from "@/lib/imageService";
 import {
   getSignedApprovedHabitatTileUrlsByAssetKeys,
   listHabitatStockAssets,
@@ -88,7 +88,9 @@ async function buildPublicPlacesListV1(): Promise<PublicPlacesListV1> {
       const placeId = typeof r.entity_id === "string" ? r.entity_id : "";
       const storagePath = typeof r.storage_path === "string" ? r.storage_path : "";
       if (!placeId || !storagePath) return;
-      const url = await getSignedImageUrl(storagePath);
+      const url = await getSignedImageUrl(storagePath, {
+        ttlSeconds: PUBLIC_SIGNED_IMAGE_URL_TTL_SECONDS,
+      });
       heroUrlByPlaceId.set(placeId, url ?? null);
     })
   );
@@ -103,7 +105,8 @@ async function buildPublicPlacesListV1(): Promise<PublicPlacesListV1> {
   });
 
   const habitatUrlByKey = await getSignedApprovedHabitatTileUrlsByAssetKeys(
-    Array.from(new Set(Array.from(habitatKeyByPlaceId.values()).filter(Boolean))) as string[]
+    Array.from(new Set(Array.from(habitatKeyByPlaceId.values()).filter(Boolean))) as string[],
+    { ttlSeconds: PUBLIC_SIGNED_IMAGE_URL_TTL_SECONDS }
   );
 
   const base = places
