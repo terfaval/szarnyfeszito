@@ -427,7 +427,8 @@ export default function YogaPage() {
 
   const resolveStrengthDisplay = useCallback(
     (workout: (typeof STRENGTH_WORKOUTS)[number], options?: { isEditing?: boolean }) => {
-      if (!workout.progression || typeof workout.baseRounds !== "number") {
+      const progression = workout.progression;
+      if (!progression || typeof workout.baseRounds !== "number") {
         return {
           roundsLabel: workout.rounds,
           exercises: workout.exercises,
@@ -443,8 +444,8 @@ export default function YogaPage() {
 
       const countBefore = strengthProgress[workout.id] ?? 0;
       const countAfter = options?.isEditing ? countBefore : countBefore + 1;
-      const bonusReps = Math.floor(countAfter / workout.progression.repEvery);
-      const bonusRounds = Math.floor(countAfter / workout.progression.roundEvery);
+      const bonusReps = Math.floor(countAfter / progression.repEvery);
+      const bonusRounds = Math.floor(countAfter / progression.roundEvery);
       const roundsValue = workout.baseRounds + bonusRounds;
 
       const exercises = workout.exercises.map((exercise) => {
@@ -454,7 +455,7 @@ export default function YogaPage() {
         }
         return {
           ...exercise,
-          reps: formatReps(parsed, bonusReps, workout.progression.timeIncrementSeconds),
+          reps: formatReps(parsed, bonusReps, progression.timeIncrementSeconds),
         };
       });
 
