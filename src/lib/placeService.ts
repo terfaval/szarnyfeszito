@@ -270,8 +270,6 @@ export async function listPublishedPlaceMarkers(): Promise<PlaceMarker[]> {
     )
     .eq("status", "published")
     .neq("location_precision", "hidden")
-    .not("lat", "is", null)
-    .not("lng", "is", null)
     .order("name", { ascending: true });
 
   if (error) {
@@ -279,20 +277,48 @@ export async function listPublishedPlaceMarkers(): Promise<PlaceMarker[]> {
   }
 
   const rows = (data ?? []) as Array<Record<string, unknown>>;
-  return rows.map((row) => ({
-    id: String(row.id ?? ""),
-    slug: String(row.slug ?? ""),
-    name: String(row.name ?? ""),
-    place_type: row.place_type as PlaceMarker["place_type"],
-    status: row.status as PlaceMarker["status"],
-    location_precision: row.location_precision as PlaceMarker["location_precision"],
-    sensitivity_level: row.sensitivity_level as PlaceMarker["sensitivity_level"],
-    is_beginner_friendly: Boolean(row.is_beginner_friendly),
-    leaflet_region_id: typeof row.leaflet_region_id === "string" ? row.leaflet_region_id : null,
-    lat: typeof row.lat === "number" ? row.lat : null,
-    lng: typeof row.lng === "number" ? row.lng : null,
-    updated_at: String(row.updated_at ?? ""),
-  }));
+  const regionIds = Array.from(
+    new Set(rows.map((r) => String(r.leaflet_region_id ?? "").trim()).filter(Boolean))
+  );
+  let bboxById: Record<string, { south: number; west: number; north: number; east: number }> = {};
+  try {
+    bboxById = await getDistributionRegionBboxesById(regionIds);
+  } catch {
+    bboxById = {};
+  }
+
+  const out: PlaceMarker[] = [];
+  rows.forEach((row) => {
+    const leafletRegionId = String(row.leaflet_region_id ?? "").trim();
+    const bbox = leafletRegionId ? bboxById[leafletRegionId] : undefined;
+    const pinLat =
+      bbox && Number.isFinite(bbox.south) && Number.isFinite(bbox.north)
+        ? (bbox.south + bbox.north) / 2
+        : (typeof row.lat === "number" ? row.lat : null);
+    const pinLng =
+      bbox && Number.isFinite(bbox.west) && Number.isFinite(bbox.east)
+        ? (bbox.west + bbox.east) / 2
+        : (typeof row.lng === "number" ? row.lng : null);
+
+    if (pinLat === null || pinLng === null) return;
+
+    out.push({
+      id: String(row.id ?? ""),
+      slug: String(row.slug ?? ""),
+      name: String(row.name ?? ""),
+      place_type: row.place_type as PlaceMarker["place_type"],
+      status: row.status as PlaceMarker["status"],
+      location_precision: row.location_precision as PlaceMarker["location_precision"],
+      sensitivity_level: row.sensitivity_level as PlaceMarker["sensitivity_level"],
+      is_beginner_friendly: Boolean(row.is_beginner_friendly),
+      leaflet_region_id: leafletRegionId || null,
+      lat: pinLat,
+      lng: pinLng,
+      updated_at: String(row.updated_at ?? ""),
+    });
+  });
+
+  return out;
 }
 
 export async function listPublishedPlaceDashboardMarkers(): Promise<PlaceMarker[]> {
