@@ -2,11 +2,13 @@ import { supabaseServerClient } from "@/lib/supabaseServerClient";
 import type { ActivityLogRow, ActivityType } from "@/types/activity";
 
 const ACTIVITY_LOG_FIELDS =
-  "id,date,activity_type,category,exercise_id,label,duration_minutes,distance_km,intensity,notes,metadata,created_at,updated_at";
+  "id,date,activity_type,category,exercise_id,label,duration_minutes,distance_km,intensity,notes,metadata,user_id,created_at,updated_at";
 
 export type ActivityLogFilters = {
   startDate?: string;
   endDate?: string;
+  userId?: string;
+  includeLegacy?: boolean;
 };
 
 export async function listActivityLogs(filters: ActivityLogFilters = {}) {
@@ -22,6 +24,14 @@ export async function listActivityLogs(filters: ActivityLogFilters = {}) {
 
   if (filters.endDate) {
     query.lte("date", filters.endDate);
+  }
+
+  if (filters.userId) {
+    if (filters.includeLegacy) {
+      query.or(`user_id.eq.${filters.userId},user_id.is.null`);
+    } else {
+      query.eq("user_id", filters.userId);
+    }
   }
 
   const { data, error } = await query;
@@ -44,6 +54,7 @@ export type ActivityLogPayload = {
   intensity?: number | null;
   notes?: string | null;
   metadata?: Record<string, unknown> | null;
+  userId?: string | null;
 };
 
 export async function createActivityLog(payload: ActivityLogPayload) {
@@ -60,6 +71,7 @@ export async function createActivityLog(payload: ActivityLogPayload) {
       intensity: payload.intensity ?? null,
       notes: payload.notes ?? null,
       metadata: payload.metadata ?? null,
+      user_id: payload.userId ?? null,
     })
     .select(ACTIVITY_LOG_FIELDS)
     .single();
@@ -85,6 +97,7 @@ export async function updateActivityLog(id: string, payload: ActivityLogPayload)
       intensity: payload.intensity ?? null,
       notes: payload.notes ?? null,
       metadata: payload.metadata ?? null,
+      user_id: payload.userId ?? null,
     })
     .eq("id", id)
     .select(ACTIVITY_LOG_FIELDS)
@@ -167,4 +180,35 @@ export async function listYogaTemplates(limit = 500) {
   });
 
   return Array.from(templatesByKey.values()) as YogaTemplate[];
+}
+
+export async function countStrengthLogs({
+  workoutId,
+  userId,
+  includeLegacy = true,
+}: {
+  workoutId: string;
+  userId?: string | null;
+  includeLegacy?: boolean;
+}) {
+  const query = supabaseServerClient
+    .from("activity_logs")
+    .select("id", { count: "exact", head: true })
+    .eq("activity_type", "strength")
+    .eq("exercise_id", workoutId);
+
+  if (userId) {
+    if (includeLegacy) {
+      query.or(`user_id.eq.${userId},user_id.is.null`);
+    } else {
+      query.eq("user_id", userId);
+    }
+  }
+
+  const { count, error } = await query;
+  if (error) {
+    throw error;
+  }
+
+  return count ?? 0;
 }

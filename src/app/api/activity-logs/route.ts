@@ -74,7 +74,11 @@ export async function GET(request: Request) {
   const month = url.searchParams.get("month") ?? undefined;
   const filters = buildMonthFilters(month);
 
-  const logs = await listActivityLogs(filters);
+  const logs = await listActivityLogs({
+    ...filters,
+    userId: user.id,
+    includeLegacy: true,
+  });
   return NextResponse.json({ data: logs });
 }
 
@@ -138,6 +142,7 @@ export async function POST(request: Request) {
     intensity: typeof intensity === "number" ? intensity : null,
     notes: typeof notes === "string" ? notes : null,
     metadata: safeMetadata,
+    userId: user.id,
   });
 
   return NextResponse.json({ data: log }, { status: 201 });
@@ -203,6 +208,7 @@ export async function PATCH(request: Request) {
     intensity: typeof intensity === "number" ? intensity : null,
     notes: typeof notes === "string" ? notes : null,
     metadata: safeMetadata,
+    userId: user.id,
   });
 
   return NextResponse.json({ data: log }, { status: 200 });
