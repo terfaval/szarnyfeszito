@@ -1395,7 +1395,7 @@ select.input optgroup {
 .yoga-overlay {
   position: fixed;
   inset: 0;
-  z-index: 60;
+  z-index: 1400;
   display: grid;
   place-items: center;
   padding: 1rem;

@@ -369,7 +369,10 @@ export default function YogaPage() {
   const [runDistance, setRunDistance] = useState("");
   const [runDuration, setRunDuration] = useState("");
   const [runNotes, setRunNotes] = useState("");
-  const [showExtraStrength, setShowExtraStrength] = useState(false);
+  const [showExtraStrengthMain, setShowExtraStrengthMain] = useState(false);
+  const [extraStrengthCategory, setExtraStrengthCategory] = useState<"easy" | "intense" | null>(null);
+  const [showExtraStrengthOverlay, setShowExtraStrengthOverlay] = useState(false);
+  const [overlayExtraOnly, setOverlayExtraOnly] = useState(false);
   const [strengthProgress, setStrengthProgress] = useState<Record<string, number>>({});
 
   const [savingState, setSavingState] = useState<Record<ActivityType, boolean>>({
@@ -633,6 +636,8 @@ export default function YogaPage() {
     setOverlayItemId(null);
     setOverlayExerciseDetail(null);
     setEditingLog(null);
+    setOverlayExtraOnly(false);
+    setShowExtraStrengthOverlay(false);
 
     setYogaTitle("");
     setYogaDuration("10");
@@ -740,6 +745,8 @@ export default function YogaPage() {
     setOverlayItemId(null);
     setOverlayExerciseDetail(null);
     setEditingLog(null);
+    setOverlayExtraOnly(false);
+    setShowExtraStrengthOverlay(false);
   };
 
   const handleCloseOverlay = () => {
@@ -961,7 +968,7 @@ export default function YogaPage() {
           progression: display.progression,
         },
       },
-      "Er?s?t?s r?gz?tve."
+      "Erősítés rögzítve."
     );
 
     if (ok) {
@@ -998,7 +1005,7 @@ export default function YogaPage() {
           progression: display.progression,
         },
       },
-      editingLog?.activity_type === "strength" ? "Er?s?t?s friss?tve." : "Er?s?t?s r?gz?tve.",
+      editingLog?.activity_type === "strength" ? "Erősítés frissítve." : "Erősítés rögzítve.",
       editingLog?.activity_type === "strength" ? { method: "PATCH", id: editingLog.id } : undefined
     );
 
@@ -1153,6 +1160,9 @@ export default function YogaPage() {
 
     if (overlaySubcategory) {
       setOverlaySubcategory(null);
+      if (overlayActivity === "strength") {
+        setOverlayExtraOnly(false);
+      }
       return;
     }
 
@@ -1630,21 +1640,27 @@ export default function YogaPage() {
               )}
 
               
+
 {overlayActivity === "strength" && !overlaySubcategory && (
                 <>
                   <div className="yoga-deck__grid">
                     {(["easy", "intense"] as const).map((category) => {
                       const primary = strengthPrimaryByCategory[category];
-                      const title = primary?.label ?? (category === "easy" ? "Er?s?t?s A" : "Er?s?t?s B");
+                      const title = primary?.label ?? (category === "easy" ? "Erősítés A" : "Erősítés B");
                       const description =
-                        category === "easy" ? "Als?test + core f?kusz." : "Fels?test + core + teljes test.";
+                        category === "easy"
+                          ? "Alsótest + core fókusz."
+                          : "Felsőtest + core + teljes test.";
                       return (
                         <button
                           key={category}
                           type="button"
                           className="yoga-deck-card"
                           style={{ ["--card-accent" as never]: SUBCATEGORY_COLORS.strength[category] } as any}
-                          onClick={() => setOverlaySubcategory(category)}
+                          onClick={() => {
+                            setOverlayExtraOnly(false);
+                            setOverlaySubcategory(category);
+                          }}
                         >
                           <span
                             className="yoga-deck-card__corner"
@@ -1662,14 +1678,50 @@ export default function YogaPage() {
                       );
                     })}
                   </div>
+
                   {hasExtraStrength && (
                     <button
                       type="button"
                       className="btn btn--ghost"
-                      onClick={() => setShowExtraStrength((prev) => !prev)}
+                      onClick={() =>
+                        setShowExtraStrengthOverlay((prev) => {
+                          const next = !prev;
+                          if (!next) {
+                            setOverlayExtraOnly(false);
+                          }
+                          return next;
+                        })
+                      }
                     >
-                      {showExtraStrength ? "Kevesebb er?s?t?s" : "Tov?bbi er?s?t?sek"}
+                      {showExtraStrengthOverlay ? "Kevesebb erősítés" : "További gyakorlatok"}
                     </button>
+                  )}
+
+                  {hasExtraStrength && showExtraStrengthOverlay && (
+                    <div className="yoga-deck__grid">
+                      {(["easy", "intense"] as const).map((category) => (
+                        <button
+                          key={`extra-${category}`}
+                          type="button"
+                          className="yoga-deck-card"
+                          style={{ ["--card-accent" as never]: SUBCATEGORY_COLORS.strength[category] } as any}
+                          onClick={() => {
+                            setOverlayExtraOnly(true);
+                            setOverlaySubcategory(category);
+                          }}
+                        >
+                          <strong className="yoga-deck-card__title">
+                            {category === "easy" ? "ENYHE" : "INTENZÍV"}
+                          </strong>
+                          <p className="yoga-deck-card__desc">
+                            {category === "easy" ? "Kíméletes blokkok" : "Nagyobb terhelés"}
+                          </p>
+                          <span className="yoga-deck-card__plus" aria-hidden="true">
+                            <Plus size={18} />
+                          </span>
+                        </button>
+                      ))}
+                    </div>
                   )}
                 </>
               )}
@@ -1678,17 +1730,11 @@ export default function YogaPage() {
 
 {overlayActivity === "strength" && overlaySubcategory && (
                 <>
-                  {hasExtraStrength && (
-                    <button
-                      type="button"
-                      className="btn btn--ghost"
-                      onClick={() => setShowExtraStrength((prev) => !prev)}
-                    >
-                      {showExtraStrength ? "Kevesebb er?s?t?s" : "Tov?bbi er?s?t?sek"}
-                    </button>
-                  )}
                   <div className="yoga-deck__grid">
-                    {getStrengthWorkoutsForCategory(overlaySubcategory, showExtraStrength).map((workout) => {
+                    {(overlayExtraOnly
+                      ? getStrengthWorkoutsForCategory(overlaySubcategory, true).filter((workout) => !workout.isPrimary)
+                      : getStrengthWorkoutsForCategory(overlaySubcategory, false).filter((workout) => workout.isPrimary)
+                    ).map((workout) => {
                       const display = resolveStrengthDisplay(workout, { isEditing: isEditingStrength(workout.id) });
                       return (
                         <div
@@ -1700,7 +1746,7 @@ export default function YogaPage() {
                             <strong className="yoga-detail-card__title">{workout.label}</strong>
                           </header>
                           <p className="yoga-detail-card__desc">
-                            Dokument?lt gyakorlatlista. Az i ikonra kattintva r?szletek.
+                            Dokumentált gyakorlatlista. Az i ikonra kattintva részletek.
                           </p>
                           <div className="yoga-exercise-list">
                             {display.exercises.map((exercise) => {
@@ -1718,7 +1764,7 @@ export default function YogaPage() {
                                         detail: exercise.detail,
                                       })
                                     }
-                                    aria-label="R?szletek"
+                                    aria-label="Részletek"
                                   >
                                     <Info size={16} />
                                   </button>
@@ -1732,7 +1778,7 @@ export default function YogaPage() {
                                           type="button"
                                           className="btn btn--ghost"
                                           onClick={() => setOverlayExerciseDetail(null)}
-                                          aria-label="Bez?r?s"
+                                          aria-label="Bezárás"
                                         >
                                           <X size={14} />
                                         </button>
@@ -1753,7 +1799,7 @@ export default function YogaPage() {
                               onClick={() => handleSaveStrengthById(workout.id)}
                               disabled={savingState.strength}
                             >
-                              {savingState.strength ? "Ment?s..." : "R?gz?t?s"}
+                              {savingState.strength ? "Mentés..." : "Rögzítés"}
                             </button>
                             {statusMessages.strength && <p className="yoga-status">{statusMessages.strength}</p>}
                             {errorMessages.strength && <p className="yoga-error">{errorMessages.strength}</p>}
@@ -2105,12 +2151,12 @@ export default function YogaPage() {
             </div>
           </article>
 
-                    <article className="yoga-activity-card yoga-activity-card--split">
+                              <article className="yoga-activity-card yoga-activity-card--split">
             <header className="yoga-activity-header">
               <Repeat size={18} />
               <div>
-                <p className="yoga-activity-label">Er?s?t?s (A / B)</p>
-                <p className="yoga-activity-sub">v?lassz A vagy B blokkot, a tov?bbiak rejtve</p>
+                <p className="yoga-activity-label">Erősítés (A / B)</p>
+                <p className="yoga-activity-sub">válassz A vagy B blokkot, a továbbiak rejtve</p>
               </div>
             </header>
 
@@ -2135,18 +2181,48 @@ export default function YogaPage() {
                         <span>{display.roundsLabel}</span>
                       </div>
                       <ul>
-                        {display.exercises.map((exercise) => (
-                          <li key={exercise.name}>
-                            <span>{exercise.name}</span>
-                            <span>{exercise.reps}</span>
-                            {exercise.detail && (
-                              <details>
-                                <summary>R?szletek</summary>
-                                <div className="yoga-exercise-detail-inline">{renderExerciseDetail(exercise.detail)}</div>
-                              </details>
-                            )}
-                          </li>
-                        ))}
+                        {display.exercises.map((exercise) => {
+                          const detailKey = `main:${primary.id}:${exercise.name}`;
+                          const isOpen = overlayExerciseDetail?.key === detailKey;
+                          return (
+                            <li key={exercise.name}>
+                              <button
+                                type="button"
+                                className="yoga-exercise-info"
+                                onClick={() =>
+                                  setOverlayExerciseDetail({
+                                    key: detailKey,
+                                    title: exercise.name,
+                                    detail: exercise.detail,
+                                  })
+                                }
+                                aria-label="Részletek"
+                              >
+                                <Info size={16} />
+                              </button>
+                              <span>{exercise.name}</span>
+                              <span>{exercise.reps}</span>
+                              {isOpen && (
+                                <div className="yoga-exercise-popover">
+                                  <div className="yoga-exercise-popover__head">
+                                    <strong>{overlayExerciseDetail.title}</strong>
+                                    <button
+                                      type="button"
+                                      className="btn btn--ghost"
+                                      onClick={() => setOverlayExerciseDetail(null)}
+                                      aria-label="Bezárás"
+                                    >
+                                      <X size={14} />
+                                    </button>
+                                  </div>
+                                  <div className="yoga-exercise-popover__body">
+                                    {renderExerciseDetail(overlayExerciseDetail.detail)}
+                                  </div>
+                                </div>
+                              )}
+                            </li>
+                          );
+                        })}
                       </ul>
                     </button>
                   </div>
@@ -2158,18 +2234,45 @@ export default function YogaPage() {
               <button
                 type="button"
                 className="btn btn--ghost"
-                onClick={() => setShowExtraStrength((prev) => !prev)}
+                onClick={() =>
+                  setShowExtraStrengthMain((prev) => {
+                    const next = !prev;
+                    if (!next) {
+                      setExtraStrengthCategory(null);
+                    }
+                    return next;
+                  })
+                }
               >
-                {showExtraStrength ? "Kevesebb er?s?t?s" : "Tov?bbi er?s?t?sek"}
+                {showExtraStrengthMain ? "Kevesebb erősítés" : "További gyakorlatok"}
               </button>
             )}
 
-            {hasExtraStrength && showExtraStrength && (
+            {hasExtraStrength && showExtraStrengthMain && (
               <div className="yoga-activity-grid--cards">
-                {(["easy", "intense"] as const).map((category) => (
-                  <div key={`extra-${category}`} className="yoga-subgrid">
-                    <p className="yoga-subgrid__label">{category === "easy" ? "K?nny?" : "Intenz?v"}</p>
-                    {getStrengthWorkoutsForCategory(category, true)
+                {extraStrengthCategory === null ? (
+                  <div className="yoga-subgrid">
+                    <p className="yoga-subgrid__label">További gyakorlatok</p>
+                    {(["easy", "intense"] as const).map((category) => (
+                      <button
+                        key={`extra-pick-${category}`}
+                        type="button"
+                        className="yoga-subcard"
+                        onClick={() => setExtraStrengthCategory(category)}
+                      >
+                        <div className="yoga-subcard__head">
+                          <strong>{category === "easy" ? "Enyhe" : "Intenzív"}</strong>
+                          <span>{category === "easy" ? "Kíméletes blokkok" : "Nagyobb terhelés"}</span>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="yoga-subgrid">
+                    <p className="yoga-subgrid__label">
+                      {extraStrengthCategory === "easy" ? "Enyhe" : "Intenzív"}
+                    </p>
+                    {getStrengthWorkoutsForCategory(extraStrengthCategory, true)
                       .filter((workout) => !workout.isPrimary)
                       .map((workout) => {
                         const display = resolveStrengthDisplay(workout, { isEditing: isEditingStrength(workout.id) });
@@ -2185,24 +2288,61 @@ export default function YogaPage() {
                               <span>{display.roundsLabel}</span>
                             </div>
                             <ul>
-                              {display.exercises.map((exercise) => (
-                                <li key={exercise.name}>
-                                  <span>{exercise.name}</span>
-                                  <span>{exercise.reps}</span>
-                                  {exercise.detail && (
-                                    <details>
-                                      <summary>R?szletek</summary>
-                                      <div className="yoga-exercise-detail-inline">{renderExerciseDetail(exercise.detail)}</div>
-                                    </details>
-                                  )}
-                                </li>
-                              ))}
+                              {display.exercises.map((exercise) => {
+                                const detailKey = `extra:${workout.id}:${exercise.name}`;
+                                const isOpen = overlayExerciseDetail?.key === detailKey;
+                                return (
+                                  <li key={exercise.name}>
+                                    <button
+                                      type="button"
+                                      className="yoga-exercise-info"
+                                      onClick={() =>
+                                        setOverlayExerciseDetail({
+                                          key: detailKey,
+                                          title: exercise.name,
+                                          detail: exercise.detail,
+                                        })
+                                      }
+                                      aria-label="Részletek"
+                                    >
+                                      <Info size={16} />
+                                    </button>
+                                    <span>{exercise.name}</span>
+                                    <span>{exercise.reps}</span>
+                                    {isOpen && (
+                                      <div className="yoga-exercise-popover">
+                                        <div className="yoga-exercise-popover__head">
+                                          <strong>{overlayExerciseDetail.title}</strong>
+                                          <button
+                                            type="button"
+                                            className="btn btn--ghost"
+                                            onClick={() => setOverlayExerciseDetail(null)}
+                                            aria-label="Bezárás"
+                                          >
+                                            <X size={14} />
+                                          </button>
+                                        </div>
+                                        <div className="yoga-exercise-popover__body">
+                                          {renderExerciseDetail(overlayExerciseDetail.detail)}
+                                        </div>
+                                      </div>
+                                    )}
+                                  </li>
+                                );
+                              })}
                             </ul>
                           </button>
                         );
                       })}
+                    <button
+                      type="button"
+                      className="btn btn--ghost"
+                      onClick={() => setExtraStrengthCategory(null)}
+                    >
+                      Vissza a kategóriákhoz
+                    </button>
                   </div>
-                ))}
+                )}
               </div>
             )}
 
@@ -2213,7 +2353,7 @@ export default function YogaPage() {
                 onClick={handleSaveStrength}
                 disabled={savingState.strength}
               >
-                {savingState.strength ? "Ment?s..." : "Er?s?t?s napl?z?sa"}
+                {savingState.strength ? "Mentés..." : "Erősítés naplózása"}
               </button>
               {statusMessages.strength && <p className="yoga-status">{statusMessages.strength}</p>}
               {errorMessages.strength && <p className="yoga-error">{errorMessages.strength}</p>}

@@ -302,9 +302,9 @@ export const ACL_ROUTINES: ACLRoutine[] = [
 export const STRENGTH_WORKOUTS: StrengthWorkout[] = [
   {
     id: "strength-a",
-    label: "Er?s?t?s A",
+    label: "Erősítés A",
     category: "easy",
-    rounds: "3 k?r",
+    rounds: "3 kör",
     baseRounds: 3,
     progression: {
       repEvery: 2,
@@ -315,45 +315,45 @@ export const STRENGTH_WORKOUTS: StrengthWorkout[] = [
     exercises: [
       {
         name: "Single Leg RDL",
-        reps: "3?6/oldal",
-        detail: `Kiindul?: tests?ly egy l?bon.
-Mozdulat: cs?p? h?tra, t?rzs el?re, vissza.
-F?kusz: lass? kontroll, t?rd stabil.`,
+        reps: "3×6/oldal",
+        detail: `Kiinduló: testsúly egy lábon.
+Mozdulat: csípő hátra, törzs előre, vissza.
+Fókusz: lassú kontroll, térd stabil.`,
       },
       {
         name: "Reverse Lunge",
-        reps: "3?8/oldal",
-        detail: "H?tral?p?s, kontroll?lt mozg?s.",
+        reps: "3×8/oldal",
+        detail: "Hátralépés, kontrollált mozgás.",
       },
       {
         name: "Squat",
-        reps: "3?10",
-        detail: "Lass? ereszked?s.",
+        reps: "3×10",
+        detail: "Lassú ereszkedés.",
       },
       {
         name: "Single Leg Bridge",
-        reps: "3?10/oldal",
-        detail: "Farizom er?.",
+        reps: "3×10/oldal",
+        detail: "Farizom erő.",
       },
       {
         name: "Side Plank Hip Lift",
-        reps: "3?10/oldal",
-        detail: `Mozdulat: oldals? plankben cs?p? le/fel.
-F?kusz: t?rzs stabil, cs?p? oldala dolgozik.`,
+        reps: "3×10/oldal",
+        detail: `Mozdulat: oldalsó plankben csípő le/fel.
+Fókusz: törzs stabil, csípő oldala dolgozik.`,
       },
       {
         name: "Hollow Hold",
-        reps: "3?20-30 mp",
-        detail: `Mozdulat: bord?k le, has akt?v.
-F?kusz: der?k nem emelkedik el.`,
+        reps: "3×20-30 mp",
+        detail: `Mozdulat: bordák le, has aktív.
+Fókusz: derék nem emelkedik el.`,
       },
     ],
   },
   {
     id: "strength-b",
-    label: "Er?s?t?s B",
+    label: "Erősítés B",
     category: "intense",
-    rounds: "4 k?r",
+    rounds: "4 kör",
     baseRounds: 4,
     progression: {
       repEvery: 2,
@@ -364,94 +364,94 @@ F?kusz: der?k nem emelkedik el.`,
     exercises: [
       {
         name: "Push-up",
-        reps: "4?6-10",
-        detail: "V?ll alatt k?z, t?rzs egyenes, lass? leenged?s.",
+        reps: "4×6-10",
+        detail: "Váll alatt kéz, törzs egyenes, lassú leengedés.",
       },
       {
         name: "Pike Push-up",
-        reps: "3?6-8",
-        detail: "Cs?p? magas, v?ll tol?er?.",
+        reps: "3×6-8",
+        detail: "Csípő magas, váll tolóerő.",
       },
       {
         name: "Step Back Lunge",
-        reps: "3?8/oldal",
-        detail: "H?tral?p?s, kontroll?lt mozg?s.",
+        reps: "3×8/oldal",
+        detail: "Hátralépés, kontrollált mozgás.",
       },
       {
         name: "Glute Bridge Hold",
-        reps: "3?30 mp",
-        detail: "Cs?p? fent tart.",
+        reps: "3×30 mp",
+        detail: "Csípő fent tart.",
       },
       {
         name: "Bird Dog",
-        reps: "3?12/oldal",
-        detail: `Kiindul?: n?gyk?zl?b.
-Mozdulat: ellent?tes kar-l?b ny?jt.
-F?kusz: medence stabil, lass? kontroll.`,
+        reps: "3×12/oldal",
+        detail: `Kiinduló: négykézláb.
+Mozdulat: ellentétes kar-láb nyújt.
+Fókusz: medence stabil, lassú kontroll.`,
       },
       {
         name: "Plank Shoulder Tap",
-        reps: "2?20 ?rint?s",
-        detail: `Kiindul?: plank.
-Mozdulat: v?ll ?rint?s v?ltott k?zzel.
-F?kusz: cs?p? nem billeg.`,
+        reps: "2×20 érintés",
+        detail: `Kiinduló: plank.
+Mozdulat: váll érintés váltott kézzel.
+Fókusz: csípő nem billeg.`,
       },
     ],
   },
   {
     id: "easy-a",
-    label: "Csendes Ac?l",
+    label: "Csendes Acél",
     category: "easy",
-    rounds: "3 k?r",
+    rounds: "3 kör",
     isPrimary: false,
     exercises: [
-      { name: "Push-up", reps: "3?6-8", detail: "V?ll alatt k?z, t?rzs egyenes, lass? leenged?s." },
-      { name: "Squat", reps: "3?8-10", detail: "Cs?p? h?tra, sarok stabil." },
-      { name: "Glute Bridge", reps: "3?12", detail: "Sarok nyom, cs?p? emel." },
-      { name: "Dead Bug", reps: "3?8/oldal", detail: "H?t a talajon, ellent?tes kar-l?b ny?jt." },
-      { name: "Bird Dog", reps: "3?10/oldal", detail: "N?gyk?zl?b, ellent?tes kar-l?b ny?jt." },
+      { name: "Push-up", reps: "3×6-8", detail: "Váll alatt kéz, törzs egyenes, lassú leengedés." },
+      { name: "Squat", reps: "3×8-10", detail: "Csípő hátra, sarok stabil." },
+      { name: "Glute Bridge", reps: "3×12", detail: "Sarok nyom, csípő emel." },
+      { name: "Dead Bug", reps: "3×8/oldal", detail: "Hát a talajon, ellentétes kar-láb nyújt." },
+      { name: "Bird Dog", reps: "3×10/oldal", detail: "Négykézláb, ellentétes kar-láb nyújt." },
     ],
   },
   {
     id: "easy-b",
-    label: "Farkasl?p?s",
+    label: "Farkaslépés",
     category: "easy",
-    rounds: "3 k?r",
+    rounds: "3 kör",
     isPrimary: false,
     exercises: [
-      { name: "Narrow Push-up", reps: "3?6-8", detail: "Kezek k?zelebb, tricepsz dolgozik." },
-      { name: "Reverse Lunge", reps: "3?8/oldal", detail: "H?tral?p?s, kontroll?lt mozg?s." },
-      { name: "Single Leg Bridge", reps: "3?8/oldal", detail: "Farizom f?kusz." },
-      { name: "Side Plank", reps: "3?20 mp/oldal", detail: "Test egy vonalban." },
-      { name: "Superman Hold", reps: "3?20 mp", detail: "Hason fekve, kar-l?b emel." },
+      { name: "Narrow Push-up", reps: "3×6-8", detail: "Kezek közelebb, tricepsz dolgozik." },
+      { name: "Reverse Lunge", reps: "3×8/oldal", detail: "Hátralépés, kontrollált mozgás." },
+      { name: "Single Leg Bridge", reps: "3×8/oldal", detail: "Farizom fókusz." },
+      { name: "Side Plank", reps: "3×20 mp/oldal", detail: "Test egy vonalban." },
+      { name: "Superman Hold", reps: "3×20 mp", detail: "Hason fekve, kar-láb emel." },
     ],
   },
   {
     id: "intense-a",
-    label: "Viharver?",
+    label: "Viharverő",
     category: "intense",
-    rounds: "4 k?r",
+    rounds: "4 kör",
     isPrimary: false,
     exercises: [
-      { name: "Decline Push-up", reps: "3?6", detail: "L?b megemelve, v?ll er?s?t?s." },
-      { name: "Squat", reps: "3?10", detail: "Lass? ereszked?s." },
-      { name: "Reverse Lunge", reps: "3?8/oldal", detail: "Stabil t?rd." },
-      { name: "Single Leg Bridge", reps: "3?10/oldal", detail: "Farizom er?." },
-      { name: "Hollow Hold", reps: "3?30 mp", detail: "Core fesz?t?s." },
+      { name: "Decline Push-up", reps: "3×6", detail: "Láb megemelve, váll erősítés." },
+      { name: "Squat", reps: "3×10", detail: "Lassú ereszkedés." },
+      { name: "Reverse Lunge", reps: "3×8/oldal", detail: "Stabil térd." },
+      { name: "Single Leg Bridge", reps: "3×10/oldal", detail: "Farizom erő." },
+      { name: "Hollow Hold", reps: "3×30 mp", detail: "Core feszítés." },
     ],
   },
   {
     id: "intense-b",
-    label: "Hegyl?nc",
+    label: "Hegylánc",
     category: "intense",
-    rounds: "4 k?r",
+    rounds: "4 kör",
     isPrimary: false,
     exercises: [
-      { name: "Pike Push-up", reps: "3?6-8", detail: "Cs?p? magas, v?ll tol?er?." },
-      { name: "Wide Squat", reps: "3?10-12", detail: "Sz?les ?ll?s, t?rd kifel?." },
-      { name: "Step Squat", reps: "3?10", detail: "Guggol?s + oldal l?p?s." },
-      { name: "Bridge Hold", reps: "3?30 mp", detail: "Cs?p? fent tart." },
-      { name: "Bird Dog", reps: "3?12/oldal", detail: "Stabil t?rzs." },
+      { name: "Pike Push-up", reps: "3×6-8", detail: "Csípő magas, váll tolóerő." },
+      { name: "Wide Squat", reps: "3×10-12", detail: "Széles állás, térd kifelé." },
+      { name: "Step Squat", reps: "3×10", detail: "Guggolás + oldal lépés." },
+      { name: "Bridge Hold", reps: "3×30 mp", detail: "Csípő fent tart." },
+      { name: "Bird Dog", reps: "3×12/oldal", detail: "Stabil törzs." },
     ],
   },
 ];
@@ -462,6 +462,8 @@ export const ACTIVITY_COLORS: Record<ActivityType, string> = {
   acl: "#16a34a",
   running: "#facc15",
 };
+
+
 
 
 
