@@ -229,7 +229,9 @@ export async function createBird(input: BirdCreateInput): Promise<Bird> {
       name_latin,
       status: "draft",
     })
-    .select("*")
+    .select(
+      "id,slug,name_hu,name_latin,status,published_at,published_revision,science_dossier_status,visual_brief_status,size_category,visibility_category,classification_status,color_tags,habitat_stock_asset_keys,created_at,updated_at"
+    )
     .single();
 
   if (error || !data) {
@@ -270,7 +272,9 @@ export async function updateBird(input: BirdUpdateInput): Promise<Bird> {
     .from("birds")
     .update(payload)
     .eq("id", id)
-    .select("*")
+    .select(
+      "id,slug,name_hu,name_latin,status,published_at,published_revision,science_dossier_status,visual_brief_status,size_category,visibility_category,classification_status,color_tags,habitat_stock_asset_keys,created_at,updated_at"
+    )
     .single();
 
   if (error || !data) {

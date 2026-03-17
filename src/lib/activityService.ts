@@ -1,6 +1,9 @@
 import { supabaseServerClient } from "@/lib/supabaseServerClient";
 import type { ActivityLogRow, ActivityType } from "@/types/activity";
 
+const ACTIVITY_LOG_FIELDS =
+  "id,date,activity_type,category,exercise_id,label,duration_minutes,distance_km,intensity,notes,metadata,created_at,updated_at";
+
 export type ActivityLogFilters = {
   startDate?: string;
   endDate?: string;
@@ -9,7 +12,7 @@ export type ActivityLogFilters = {
 export async function listActivityLogs(filters: ActivityLogFilters = {}) {
   const query = supabaseServerClient
     .from("activity_logs")
-    .select("*")
+    .select(ACTIVITY_LOG_FIELDS)
     .order("date", { ascending: false })
     .order("created_at", { ascending: false });
 
@@ -58,7 +61,7 @@ export async function createActivityLog(payload: ActivityLogPayload) {
       notes: payload.notes ?? null,
       metadata: payload.metadata ?? null,
     })
-    .select()
+    .select(ACTIVITY_LOG_FIELDS)
     .single();
 
   if (error) {
@@ -84,7 +87,7 @@ export async function updateActivityLog(id: string, payload: ActivityLogPayload)
       metadata: payload.metadata ?? null,
     })
     .eq("id", id)
-    .select()
+    .select(ACTIVITY_LOG_FIELDS)
     .single();
 
   if (error) {

@@ -2,6 +2,9 @@ import { GeneratedContent, ContentBlock, ReviewStatus } from "@/types/content";
 import { supabaseServerClient } from "@/lib/supabaseServerClient";
 import { BirdDossier, GenerationMeta } from "@/types/dossier";
 
+const CONTENT_BLOCK_FIELDS =
+  "id,entity_type,entity_id,short,long,feature_block,did_you_know,ethics_tip,review_status,version,blocks_json,generation_meta,created_at,updated_at";
+
 export async function createContentBlockForBird(
   birdId: string,
   content: GeneratedContent
@@ -21,7 +24,7 @@ export async function createContentBlockForBird(
   const { data, error } = await supabaseServerClient
     .from("content_blocks")
     .insert(payload)
-    .select("*")
+    .select(CONTENT_BLOCK_FIELDS)
     .single();
 
   if (error || !data) {
@@ -36,7 +39,7 @@ export async function getLatestContentBlockForBird(
 ): Promise<ContentBlock | null> {
   const { data, error } = await supabaseServerClient
     .from("content_blocks")
-    .select("*")
+    .select(CONTENT_BLOCK_FIELDS)
     .eq("entity_type", "bird")
     .eq("entity_id", birdId)
     .order("updated_at", { ascending: false })
@@ -55,7 +58,7 @@ export async function getLatestApprovedContentBlockForBird(
 ): Promise<ContentBlock | null> {
   const { data, error } = await supabaseServerClient
     .from("content_blocks")
-    .select("*")
+    .select(CONTENT_BLOCK_FIELDS)
     .eq("entity_type", "bird")
     .eq("entity_id", birdId)
     .eq("review_status", "approved")
@@ -77,7 +80,7 @@ export async function listLatestApprovedContentBlocksForBirds(birdIds: string[])
 
   const { data, error } = await supabaseServerClient
     .from("content_blocks")
-    .select("*")
+    .select(CONTENT_BLOCK_FIELDS)
     .eq("entity_type", "bird")
     .eq("review_status", "approved")
     .in("entity_id", ids)
@@ -160,7 +163,7 @@ export async function updateContentBlock(
     .from("content_blocks")
     .update(payload)
     .eq("id", blockId)
-    .select("*")
+    .select(CONTENT_BLOCK_FIELDS)
     .single();
 
   if (error || !data) {

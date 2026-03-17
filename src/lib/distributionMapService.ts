@@ -1,12 +1,15 @@
 import { supabaseServerClient } from "@/lib/supabaseServerClient";
 import type { BirdDistributionMapRecord, BirdDistributionMapPayloadV1 } from "@/types/distributionMap";
 
+const DISTRIBUTION_MAP_FIELDS =
+  "id,bird_id,schema_version,summary,references_list,ranges,generation_meta,created_at,updated_at";
+
 export async function getDistributionMapForBird(
   birdId: string
 ): Promise<BirdDistributionMapRecord | null> {
   const { data, error } = await supabaseServerClient
     .from("bird_distribution_maps")
-    .select("*")
+    .select(DISTRIBUTION_MAP_FIELDS)
     .eq("bird_id", birdId)
     .maybeSingle();
 
@@ -40,7 +43,7 @@ export async function upsertDistributionMapForBird(args: {
   const { data, error } = await supabaseServerClient
     .from("bird_distribution_maps")
     .upsert(row, { onConflict: "bird_id" })
-    .select("*")
+    .select(DISTRIBUTION_MAP_FIELDS)
     .single();
 
   if (error || !data) {
