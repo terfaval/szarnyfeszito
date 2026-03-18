@@ -7,9 +7,8 @@ import { getLatestApprovedContentBlockForPlace } from "@/lib/placeContentService
 import { placeUiVariantsSchemaV1, type PlaceUiVariantsV1 } from "@/lib/placeContentSchema";
 import { getCurrentSeasonKey, type SeasonKey } from "@/lib/season";
 import {
-  getSignedImageUrl,
+  getPublicImageUrl,
   listApprovedCurrentIconicImagesForBirds,
-  PUBLIC_SIGNED_IMAGE_URL_TTL_SECONDS,
 } from "@/lib/imageService";
 import { listLatestApprovedContentBlocksForBirds } from "@/lib/contentService";
 import { logPublicReadRegenerate, PUBLIC_READ_REVALIDATE_SECONDS } from "@/lib/publicRead/cache";
@@ -162,9 +161,7 @@ async function buildPublicPlaceDetailV1(key: string): Promise<PublicPlaceDetailV
     publicBirdIds.map(async (birdId) => {
       const storagePath = storagePathByBirdId.get(birdId) ?? null;
       const signedUrl = storagePath
-        ? await getSignedImageUrl(storagePath, {
-            ttlSeconds: PUBLIC_SIGNED_IMAGE_URL_TTL_SECONDS,
-          })
+        ? getPublicImageUrl(storagePath)
         : null;
       return [birdId, signedUrl] as const;
     })
@@ -208,9 +205,7 @@ async function buildPublicPlaceDetailV1(key: string): Promise<PublicPlaceDetailV
     ? String((heroRows?.[0] as { storage_path?: unknown }).storage_path)
     : "";
   const heroImageUrl = heroStoragePath
-    ? await getSignedImageUrl(heroStoragePath, {
-        ttlSeconds: PUBLIC_SIGNED_IMAGE_URL_TTL_SECONDS,
-      })
+    ? getPublicImageUrl(heroStoragePath)
     : null;
 
   const out: PublicPlaceDetailV1 = {

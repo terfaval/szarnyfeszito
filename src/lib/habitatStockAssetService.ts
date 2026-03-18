@@ -1,6 +1,6 @@
 import { supabaseServerClient } from "@/lib/supabaseServerClient";
 import type { ImageRecord } from "@/types/image";
-import { getSignedImageUrl } from "@/lib/imageSigning";
+import { getPublicImageUrl } from "@/lib/imageSigning";
 import type { PlaceType } from "@/types/place";
 
 const HABITAT_STOCK_ASSET_SEED_V1 = [
@@ -281,7 +281,7 @@ export function resolveHabitatStockAssetKeyForHabitatClass(args: {
 
 export async function getSignedApprovedHabitatTileUrlsByAssetKeys(
   keys: string[],
-  options?: { ttlSeconds?: number }
+  _options?: { ttlSeconds?: number }
 ) {
   const uniqueKeys = Array.from(new Set(keys.map((k) => k.trim()).filter(Boolean))).slice(0, 200);
   const out = new Map<string, string | null>();
@@ -309,8 +309,8 @@ export async function getSignedApprovedHabitatTileUrlsByAssetKeys(
         out.set(key, null);
         return;
       }
-      const signed = await getSignedImageUrl(img.storage_path, options);
-      out.set(key, signed ?? null);
+      const publicUrl = getPublicImageUrl(img.storage_path);
+      out.set(key, publicUrl ?? null);
     })
   );
 

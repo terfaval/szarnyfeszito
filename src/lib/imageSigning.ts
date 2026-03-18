@@ -47,3 +47,36 @@ export async function getSignedImageUrl(
 
   return null;
 }
+
+export function getPublicImageUrl(storagePath: string) {
+  const normalized = storagePath.replace(/^\/+/, "");
+  const { bucket, path } = extractBucketPath(normalized);
+
+  const attempts: Array<{ bucket: string; path: string }> = [];
+  if (bucket && path) {
+    attempts.push({ bucket, path });
+  }
+
+  // If the stored path is missing the bucket prefix (legacy), retry with configured bucket.
+  if (normalized) {
+    const legacyPath = normalized.startsWith(`${SUPABASE_IMAGE_BUCKET}/`)
+      ? normalized.slice(SUPABASE_IMAGE_BUCKET.length + 1)
+      : normalized;
+    attempts.push({ bucket: SUPABASE_IMAGE_BUCKET, path: legacyPath });
+  }
+
+  for (const attempt of attempts) {
+    if (!attempt.bucket || !attempt.path) {
+      continue;
+    }
+    const { data } = supabaseServerClient.storage
+      .from(attempt.bucket)
+      .getPublicUrl(attempt.path);
+    const publicUrl = data?.publicUrl ?? "";
+    if (publicUrl) {
+      return publicUrl;
+    }
+  }
+
+  return null;
+}

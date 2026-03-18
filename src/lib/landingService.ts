@@ -7,9 +7,8 @@ import { listBirds } from "@/lib/birdService";
 import { createUserClient } from "@/lib/supabaseServerClient";
 import {
   getApprovedCurrentPlaceHeroImage,
-  getSignedImageUrl,
+  getPublicImageUrl,
   listApprovedCurrentIconicImagesForBirds,
-  PUBLIC_SIGNED_IMAGE_URL_TTL_SECONDS,
 } from "@/lib/imageService";
 import type { BirdVisibilityCategory } from "@/types/bird";
 
@@ -160,11 +159,7 @@ export async function getPublicLandingV1(): Promise<PublicLandingV1> {
     const fallbackTeaser = typeof contentBlock.short === "string" ? contentBlock.short : null;
 
     const heroImage = await getApprovedCurrentPlaceHeroImage(place.id);
-    const heroImageSrc = heroImage?.storage_path
-      ? await getSignedImageUrl(heroImage.storage_path, {
-          ttlSeconds: PUBLIC_SIGNED_IMAGE_URL_TTL_SECONDS,
-        })
-      : null;
+    const heroImageSrc = heroImage?.storage_path ? getPublicImageUrl(heroImage.storage_path) : null;
 
     const placeBirdLinks = await listApprovedPublishedBirdLinksForPlace(place.id);
     const placeBirds = uniqueById(
@@ -197,9 +192,7 @@ export async function getPublicLandingV1(): Promise<PublicLandingV1> {
   await Promise.all(
     iconicImages.map(async (row) => {
       const url = row.storage_path
-        ? await getSignedImageUrl(row.storage_path, {
-            ttlSeconds: PUBLIC_SIGNED_IMAGE_URL_TTL_SECONDS,
-          })
+        ? getPublicImageUrl(row.storage_path)
         : null;
       iconicSrcByBirdId.set(row.entity_id, url ?? null);
     })

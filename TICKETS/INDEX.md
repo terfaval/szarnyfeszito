@@ -38,6 +38,21 @@ Ajánlott sorrend:
 6. T106 – Place Text Generation
 7. T107 – Phenomenon Text Generation
 
+Phenomena v1 followup (későbbi bővítések):
+1. PHENOMENA_V1_FOLLOWUP_01 – Advanced scoring model
+2. PHENOMENA_V1_FOLLOWUP_02 – Full score breakdown fields
+3. PHENOMENA_V1_FOLLOWUP_03 – Per-type threshold tuning
+4. PHENOMENA_V1_FOLLOWUP_04 – Spectacle vs stability tuning
+5. PHENOMENA_V1_FOLLOWUP_05 – Extended discovery schema
+6. PHENOMENA_V1_FOLLOWUP_06 – Supporting traits / bird groups / ids
+7. PHENOMENA_V1_FOLLOWUP_07 – Ecological driver structured model
+8. PHENOMENA_V1_FOLLOWUP_08 – Variability / uncertainty model
+9. PHENOMENA_V1_FOLLOWUP_09 – Multi-place phenomena
+10. PHENOMENA_V1_FOLLOWUP_10 – phenomenon_places activation
+11. PHENOMENA_V1_FOLLOWUP_11 – Corridor / multi-site events
+12. PHENOMENA_V1_FOLLOWUP_12 – Taxonomy expansion rollout
+13. PHENOMENA_V1_FOLLOWUP_13 – Type-aware ethics expansion
+
 ✔ Ezzel teljessé válik az entitás-háló.
 
 ---

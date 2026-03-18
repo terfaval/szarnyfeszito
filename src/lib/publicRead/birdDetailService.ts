@@ -9,9 +9,8 @@ import {
   listHabitatStockAssets,
 } from "@/lib/habitatStockAssetService";
 import {
-  getSignedImageUrl,
+  getPublicImageUrl,
   listApprovedCurrentIconicImagesForBirds,
-  PUBLIC_SIGNED_IMAGE_URL_TTL_SECONDS,
 } from "@/lib/imageService";
 import type { BirdColorTag, BirdSizeCategory, BirdVisibilityCategory } from "@/types/bird";
 import type { FeatureBlock } from "@/types/content";
@@ -56,9 +55,7 @@ async function buildPublicBirdDetailV1(key: string): Promise<PublicBirdDetailV1 
 
   const iconicImage = iconicImages[0] ?? null;
   const iconicSrc = iconicImage?.storage_path
-    ? await getSignedImageUrl(iconicImage.storage_path, {
-        ttlSeconds: PUBLIC_SIGNED_IMAGE_URL_TTL_SECONDS,
-      })
+    ? getPublicImageUrl(iconicImage.storage_path)
     : null;
 
   let habitatKey: string | null = null;
@@ -74,9 +71,7 @@ async function buildPublicBirdDetailV1(key: string): Promise<PublicBirdDetailV1 
   }
 
   const habitatUrlByKey = habitatKey
-    ? await getSignedApprovedHabitatTileUrlsByAssetKeys([habitatKey], {
-        ttlSeconds: PUBLIC_SIGNED_IMAGE_URL_TTL_SECONDS,
-      })
+    ? await getSignedApprovedHabitatTileUrlsByAssetKeys([habitatKey])
     : new Map();
   const habitatSrc = habitatKey ? habitatUrlByKey.get(habitatKey) ?? null : null;
 
