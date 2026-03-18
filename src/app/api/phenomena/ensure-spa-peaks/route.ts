@@ -87,7 +87,9 @@ export async function POST(request: Request) {
       title,
       season: "autumn",
       region_id: row.region_id,
-      phenomenon_type: "migration_peak",\n      origin: "legacy_spa",\n    });
+      phenomenon_type: "migration_peak",
+      origin: "legacy_spa",
+    });
     created.push({ id: phenomenon.id, region_id: phenomenon.region_id, slug: phenomenon.slug, title: phenomenon.title });
   }
 
@@ -101,4 +103,6 @@ export async function POST(request: Request) {
     },
   });
 }
+
+
 
