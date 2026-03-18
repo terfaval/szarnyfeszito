@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+﻿import { NextResponse } from "next/server";
 import { getAdminUserFromCookies } from "@/lib/auth";
 import { getPhenomenonById, updatePhenomenon, deletePhenomenonById } from "@/lib/phenomenonService";
 import { getLatestApprovedContentBlockForPhenomenon } from "@/lib/phenomenonContentService";
@@ -125,13 +125,15 @@ export async function PATCH(request: Request, ctx: { params: Promise<{ id: strin
 
     if (!title) missing.push("title");
     if (!slug) missing.push("slug");
-    if (!regionId) missing.push("region_id");
+    if (!regionId && !existing.place_id) missing.push("place_id_or_region_id");
     if (!season) missing.push("season");
     if (!start || !isMmdd(start)) missing.push("typical_start_mmdd");
     if (!end || !isMmdd(end)) missing.push("typical_end_mmdd");
 
-    const regionValidation = await validateSpaRegionId(regionId);
-    if (!regionValidation.ok) missing.push("region_id_valid_spa");
+    if (regionId) {
+      const regionValidation = await validateSpaRegionId(regionId);
+      if (!regionValidation.ok) missing.push("region_id_valid_spa");
+    }
 
     const latestContent = await getLatestApprovedContentBlockForPhenomenon(existing.id);
     if (!latestContent || latestContent.review_status !== "approved") {
@@ -211,3 +213,6 @@ export async function DELETE(request: Request, ctx: { params: Promise<{ id: stri
   await deletePhenomenonById(phenomenon.id);
   return NextResponse.json({ data: { phenomenon_id: phenomenon.id, deleted: true } });
 }
+
+
+

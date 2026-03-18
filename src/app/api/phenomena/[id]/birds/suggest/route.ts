@@ -1,7 +1,8 @@
-import { NextResponse } from "next/server";
+﻿import { NextResponse } from "next/server";
 import { getAdminUserFromCookies } from "@/lib/auth";
 import { getPhenomenonById } from "@/lib/phenomenonService";
 import { getDistributionRegionCatalogMetaById } from "@/lib/distributionRegionCatalogService";
+import { getPlaceById } from "@/lib/placeService";
 import { suggestPhenomenonBirdLinksV1 } from "@/lib/phenomenonBirdSuggestion";
 import { AIJsonParseError, AISchemaMismatchError } from "@/lib/aiUtils";
 import { AI_MODEL_TEXT } from "@/lib/aiConfig";
@@ -14,13 +15,27 @@ export async function POST(_request: Request, ctx: { params: Promise<{ id: strin
   const phenomenon = await getPhenomenonById(id);
   if (!phenomenon) return NextResponse.json({ error: "Phenomenon not found." }, { status: 404 });
 
-  const region = await getDistributionRegionCatalogMetaById(phenomenon.region_id);
-  if (!region) {
-    return NextResponse.json({ error: "Region catalog entry not found for this phenomenon." }, { status: 404 });
+  let contextName = "";
+  if (phenomenon.place_id) {
+    const place = await getPlaceById(phenomenon.place_id);
+    if (!place) {
+      return NextResponse.json({ error: "Place not found for this phenomenon." }, { status: 404 });
+    }
+    contextName = place.name;
+  } else if (phenomenon.region_id) {
+    const region = await getDistributionRegionCatalogMetaById(phenomenon.region_id);
+    if (!region) {
+      return NextResponse.json({ error: "Region catalog entry not found for this phenomenon." }, { status: 404 });
+    }
+    contextName = region.name;
+  }
+
+  if (!contextName) {
+    return NextResponse.json({ error: "Phenomenon context missing (place or region)." }, { status: 409 });
   }
 
   try {
-    const result = await suggestPhenomenonBirdLinksV1({ phenomenon, region_name: region.name });
+    const result = await suggestPhenomenonBirdLinksV1({ phenomenon, region_name: contextName });
     return NextResponse.json({
       data: {
         phenomenon_id: phenomenon.id,
@@ -74,4 +89,3 @@ export async function POST(_request: Request, ctx: { params: Promise<{ id: strin
     );
   }
 }
-

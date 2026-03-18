@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+﻿import { NextResponse } from "next/server";
 import { getAdminUserFromCookies } from "@/lib/auth";
 import { getPhenomenonById, updatePhenomenon } from "@/lib/phenomenonService";
 import {
@@ -10,6 +10,8 @@ import { AIJsonParseError, AISchemaMismatchError } from "@/lib/aiUtils";
 import { AI_MODEL_TEXT } from "@/lib/aiConfig";
 import { getDistributionRegionCatalogMetaById } from "@/lib/distributionRegionCatalogService";
 import { suggestPhenomenonBirdLinksV1 } from "@/lib/phenomenonBirdSuggestion";
+import { getDiscoveryDraftById } from "@/lib/phenomenonDiscoveryDraftService";
+import { getPlaceById } from "@/lib/placeService";
 import type { GenerationMeta } from "@/types/dossier";
 
 export async function POST(request: Request, ctx: { params: Promise<{ id: string }> }) {
@@ -24,9 +26,35 @@ export async function POST(request: Request, ctx: { params: Promise<{ id: string
     return NextResponse.json({ error: "Phenomenon not found." }, { status: 404 });
   }
 
-  const region = await getDistributionRegionCatalogMetaById(phenomenon.region_id);
-  if (!region) {
-    return NextResponse.json({ error: "Region catalog entry not found for this phenomenon." }, { status: 404 });
+  let contextName = "";
+  let contextId = "";
+  if (phenomenon.place_id) {
+    const place = await getPlaceById(phenomenon.place_id);
+    if (!place) {
+      return NextResponse.json({ error: "Place not found for this phenomenon." }, { status: 404 });
+    }
+    contextName = place.name;
+    contextId = place.id;
+  } else if (phenomenon.region_id) {
+    const region = await getDistributionRegionCatalogMetaById(phenomenon.region_id);
+    if (!region) {
+      return NextResponse.json({ error: "Region catalog entry not found for this phenomenon." }, { status: 404 });
+    }
+    contextName = contextName;
+    contextId = region.region_id;
+  }
+
+  if (!contextName) {
+    return NextResponse.json({ error: "Phenomenon context missing (place or region)." }, { status: 409 });
+  }
+
+  if (!phenomenon.discovery_draft_id) {
+    return NextResponse.json({ error: "Discovery draft missing for this phenomenon." }, { status: 409 });
+  }
+
+  const discoveryDraft = await getDiscoveryDraftById(phenomenon.discovery_draft_id);
+  if (!discoveryDraft) {
+    return NextResponse.json({ error: "Discovery draft not found for this phenomenon." }, { status: 404 });
   }
 
   const existingBlock = await getLatestContentBlockForPhenomenon(phenomenon.id);
@@ -34,10 +62,17 @@ export async function POST(request: Request, ctx: { params: Promise<{ id: string
   const reviewNote = existingBlock?.generation_meta?.review_comment ?? null;
 
   try {
-    const generationResult = await generatePhenomenonDraftV1({
-      region_name: region.name,
-      region_id: region.region_id,
+        const generationResult = await generatePhenomenonDraftV1({
+      region_name: contextName,
+      region_id: contextId,
       season: phenomenon.season,
+      discovery: {
+        phenomenon_type: discoveryDraft.phenomenon_type,
+        typical_start_mmdd: discoveryDraft.typical_start_mmdd,
+        typical_end_mmdd: discoveryDraft.typical_end_mmdd,
+        why_here: discoveryDraft.why_here,
+        why_now: discoveryDraft.why_now,
+      },
       admin_description: phenomenon.generation_input,
       existing_payload: existingPayload,
       review_note: reviewNote,
@@ -59,14 +94,10 @@ export async function POST(request: Request, ctx: { params: Promise<{ id: string
     });
 
     const nextTitle = generationResult.payload.phenomenon.title?.trim() || phenomenon.title;
-    const startMmdd = generationResult.payload.phenomenon.typical_start_mmdd;
-    const endMmdd = generationResult.payload.phenomenon.typical_end_mmdd;
 
     const updatedPhenomenon = await updatePhenomenon({
       id: phenomenon.id,
       title: nextTitle,
-      typical_start_mmdd: startMmdd ?? undefined,
-      typical_end_mmdd: endMmdd ?? undefined,
     });
 
     let birdSuggestions:
@@ -77,7 +108,7 @@ export async function POST(request: Request, ctx: { params: Promise<{ id: string
     try {
       const suggestionResult = await suggestPhenomenonBirdLinksV1({
         phenomenon: updatedPhenomenon,
-        region_name: region.name,
+        region_name: contextName,
       });
       birdSuggestions = {
         inserted_count: suggestionResult.inserted.length,
@@ -141,3 +172,5 @@ export async function POST(request: Request, ctx: { params: Promise<{ id: string
     );
   }
 }
+
+

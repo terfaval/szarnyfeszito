@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+﻿import { NextResponse } from "next/server";
 import { getAdminUserFromCookies } from "@/lib/auth";
 import { supabaseServerClient } from "@/lib/supabaseServerClient";
 import { createPhenomenon, generateUniquePhenomenonSlug } from "@/lib/phenomenonService";
@@ -70,7 +70,7 @@ export async function POST(request: Request) {
           season: "autumn",
           phenomenon_type: "migration_peak",
           region_id: row.region_id,
-          title: `Őszi vonulási csúcs – ${row.name}`,
+          title: `Ĺszi vonulĂˇsi csĂşcs â€“ ${row.name}`,
         })),
         dry_run: true,
       },
@@ -80,15 +80,14 @@ export async function POST(request: Request) {
   const created: Array<{ id: string; region_id: string; slug: string; title: string }> = [];
 
   for (const row of missing) {
-    const title = `Őszi vonulási csúcs – ${row.name}`;
+    const title = `Ĺszi vonulĂˇsi csĂşcs â€“ ${row.name}`;
     const slug = await generateUniquePhenomenonSlug(`${row.name} oszi vonulasi csucs`);
     const phenomenon = await createPhenomenon({
       slug,
       title,
       season: "autumn",
       region_id: row.region_id,
-      phenomenon_type: "migration_peak",
-    });
+      phenomenon_type: "migration_peak",\n      origin: "legacy_spa",\n    });
     created.push({ id: phenomenon.id, region_id: phenomenon.region_id, slug: phenomenon.slug, title: phenomenon.title });
   }
 
@@ -102,3 +101,4 @@ export async function POST(request: Request) {
     },
   });
 }
+

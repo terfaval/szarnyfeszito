@@ -1,4 +1,4 @@
-import { Card } from "@/ui/components/Card";
+﻿import { Card } from "@/ui/components/Card";
 import { isUuid } from "@/lib/birdService";
 import { getPhenomenonById, getPhenomenonBySlug } from "@/lib/phenomenonService";
 import { getLatestApprovedContentBlockForPhenomenon } from "@/lib/phenomenonContentService";
@@ -6,7 +6,7 @@ import { listApprovedPublishedBirdLinksForPhenomenon } from "@/lib/phenomenonBir
 import PhenomenonPublishAction from "@/components/admin/PhenomenonPublishAction";
 
 export const metadata = {
-  title: "Phenomenon publish — Szárnyfeszítő Admin",
+  title: "Phenomenon publish â€” SzĂˇrnyfeszĂ­tĹ‘ Admin",
 };
 
 export const dynamic = "force-dynamic";
@@ -37,7 +37,7 @@ export default async function PhenomenonPublishPage({
   const missing: string[] = [];
   if (!nonEmpty(phenomenon.title)) missing.push("title");
   if (!nonEmpty(phenomenon.slug)) missing.push("slug");
-  if (!nonEmpty(phenomenon.region_id)) missing.push("region_id");
+  if (!nonEmpty(phenomenon.region_id) && !nonEmpty(phenomenon.place_id)) missing.push("place_id_or_region_id");
   if (!nonEmpty(phenomenon.season)) missing.push("season");
   if (!isMmdd(phenomenon.typical_start_mmdd)) missing.push("typical_start_mmdd");
   if (!isMmdd(phenomenon.typical_end_mmdd)) missing.push("typical_end_mmdd");
@@ -61,4 +61,5 @@ export default async function PhenomenonPublishPage({
     </Card>
   );
 }
+
 

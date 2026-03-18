@@ -27,6 +27,7 @@ export default function PhenomenonEditorForm({ phenomenon, spaRegions }: Phenome
   const [title, setTitle] = useState(phenomenon.title ?? "");
   const [slug, setSlug] = useState(phenomenon.slug ?? "");
   const [season, setSeason] = useState<PhenomenonSeason>(phenomenon.season);
+  const [placeId] = useState(phenomenon.place_id ?? "");
   const [regionId, setRegionId] = useState(phenomenon.region_id ?? "");
   const [startMmdd, setStartMmdd] = useState(phenomenon.typical_start_mmdd ?? "");
   const [endMmdd, setEndMmdd] = useState(phenomenon.typical_end_mmdd ?? "");
@@ -151,6 +152,15 @@ export default function PhenomenonEditorForm({ phenomenon, spaRegions }: Phenome
             </div>
           </label>
 
+          {placeId ? (
+            <label className="form-field">
+              <span className="form-field__label">place_id (read-only)</span>
+              <div className="form-field__row">
+                <Input value={placeId} readOnly />
+              </div>
+            </label>
+          ) : null}
+
           <div className="grid gap-4 md:grid-cols-2">
             <label className="form-field">
               <span className="form-field__label">season</span>
@@ -172,7 +182,12 @@ export default function PhenomenonEditorForm({ phenomenon, spaRegions }: Phenome
             <label className="form-field">
               <span className="form-field__label">region_id (SPA)</span>
               <div className="form-field__row">
-                <select className="input" value={regionId} onChange={(event) => setRegionId(event.target.value)}>
+                <select
+                  className="input"
+                  value={regionId}
+                  onChange={(event) => setRegionId(event.target.value)}
+                  disabled={Boolean(placeId)}
+                >
                   {displayRegions.map((r) => (
                     <option key={r.region_id} value={r.region_id}>
                       {r.displayName}

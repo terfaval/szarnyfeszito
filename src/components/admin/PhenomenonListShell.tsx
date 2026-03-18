@@ -7,7 +7,12 @@ import { Button } from "@/ui/components/Button";
 import { Card } from "@/ui/components/Card";
 import { Input } from "@/ui/components/Input";
 import { StatusPill } from "@/ui/components/StatusPill";
-import type { Phenomenon, PhenomenonSeason, SpaRegionOption } from "@/types/phenomenon";
+import {
+  PHENOMENON_SEASON_VALUES,
+  type Phenomenon,
+  type PhenomenonSeason,
+  type SpaRegionOption,
+} from "@/types/phenomenon";
 
 type PhenomenonListShellProps = {
   phenomena: Phenomenon[];
@@ -23,6 +28,7 @@ export default function PhenomenonListShell({ phenomena, spaRegions }: Phenomeno
   const [message, setMessage] = useState<string | null>(null);
 
   const [createSeason, setCreateSeason] = useState<PhenomenonSeason>("autumn");
+  const [createPlaceId, setCreatePlaceId] = useState<string>("");
   const [createRegionId, setCreateRegionId] = useState<string>(spaRegions[0]?.region_id ?? "");
   const [createGenerationInput, setCreateGenerationInput] = useState<string>("");
   const countryNames = useMemo(() => {
@@ -59,14 +65,16 @@ export default function PhenomenonListShell({ phenomena, spaRegions }: Phenomeno
     return phenomena.filter((item) => {
       const title = item.title?.toLowerCase?.() ?? "";
       const slug = item.slug?.toLowerCase?.() ?? "";
-      const regionId = item.region_id?.toLowerCase?.() ?? "";
-      return (
-        title.includes(normalizedSearch) ||
-        slug.includes(normalizedSearch) ||
-        regionId.includes(normalizedSearch)
-      );
-    });
-  }, [normalizedSearch, phenomena]);
+        const regionId = item.region_id?.toLowerCase?.() ?? "";
+        const placeId = item.place_id?.toLowerCase?.() ?? "";
+        return (
+          title.includes(normalizedSearch) ||
+          slug.includes(normalizedSearch) ||
+          regionId.includes(normalizedSearch) ||
+          placeId.includes(normalizedSearch)
+        );
+      });
+    }, [normalizedSearch, phenomena]);
 
   const ensureSpaAutumnPeaks = async () => {
     setEnsuring(true);
@@ -94,8 +102,6 @@ export default function PhenomenonListShell({ phenomena, spaRegions }: Phenomeno
 
   const createPhenomenon = async (event: FormEvent) => {
     event.preventDefault();
-    if (!createRegionId.trim()) return;
-
     setCreating(true);
     setError(null);
     setMessage(null);
@@ -104,7 +110,8 @@ export default function PhenomenonListShell({ phenomena, spaRegions }: Phenomeno
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        region_id: createRegionId,
+        place_id: createPlaceId.trim() ? createPlaceId.trim() : null,
+        region_id: createPlaceId.trim() ? null : createRegionId,
         season: createSeason,
         generation_input: createGenerationInput.trim() ? createGenerationInput.trim() : null,
       }),
@@ -148,13 +155,25 @@ export default function PhenomenonListShell({ phenomena, spaRegions }: Phenomeno
       <Card className="stack">
         <p className="admin-subheading">Create</p>
         <form className="grid gap-3 md:grid-cols-3" onSubmit={createPhenomenon}>
+          <label className="form-field md:col-span-3">
+            <span className="form-field__label">Place ID (place-first)</span>
+            <div className="form-field__row">
+              <Input
+                value={createPlaceId}
+                onChange={(event) => setCreatePlaceId(event.target.value)}
+                placeholder="UUID of place to run discovery"
+              />
+            </div>
+          </label>
+
           <label className="form-field">
-            <span className="form-field__label">SPA region</span>
+            <span className="form-field__label">SPA region (legacy)</span>
             <div className="form-field__row">
               <select
                 className="input"
                 value={createRegionId}
                 onChange={(event) => setCreateRegionId(event.target.value)}
+                disabled={Boolean(createPlaceId.trim())}
               >
                 {displayRegions.map((r) => (
                   <option key={r.region_id} value={r.region_id}>
@@ -168,14 +187,17 @@ export default function PhenomenonListShell({ phenomena, spaRegions }: Phenomeno
           <label className="form-field">
             <span className="form-field__label">Season</span>
             <div className="form-field__row">
-              <select
-                className="input"
-                value={createSeason}
-                onChange={(event) => setCreateSeason(event.target.value as PhenomenonSeason)}
-              >
-                <option value="autumn">autumn</option>
-                <option value="spring">spring</option>
-              </select>
+                <select
+                  className="input"
+                  value={createSeason}
+                  onChange={(event) => setCreateSeason(event.target.value as PhenomenonSeason)}
+                >
+                  {PHENOMENON_SEASON_VALUES.map((value) => (
+                    <option key={value} value={value}>
+                      {value}
+                    </option>
+                  ))}
+                </select>
             </div>
           </label>
 
@@ -220,12 +242,13 @@ export default function PhenomenonListShell({ phenomena, spaRegions }: Phenomeno
                   <Link className="admin-nav-link" href={`/admin/phenomena/${item.id}`}>
                     {item.title}
                   </Link>
-                  <p className="text-xs text-zinc-500">
-                    <span className="font-medium">{item.season}</span> · {item.phenomenon_type} · region {item.region_id}
-                    {item.typical_start_mmdd && item.typical_end_mmdd
-                      ? ` · ${item.typical_start_mmdd} → ${item.typical_end_mmdd}`
-                      : ""}
-                  </p>
+                    <p className="text-xs text-zinc-500">
+                      <span className="font-medium">{item.season}</span> · {item.phenomenon_type} ·{" "}
+                      {item.place_id ? `place ${item.place_id}` : `region ${item.region_id}`}
+                      {item.typical_start_mmdd && item.typical_end_mmdd
+                        ? ` · ${item.typical_start_mmdd} → ${item.typical_end_mmdd}`
+                        : ""}
+                    </p>
                 </div>
                 <StatusPill status={item.status} />
               </li>

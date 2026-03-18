@@ -13,7 +13,7 @@ import {
 } from "@/types/phenomenon";
 
 const PHENOMENON_SELECT =
-  "id,slug,title,phenomenon_type,season,region_id,typical_start_mmdd,typical_end_mmdd,status,generation_input,published_at,created_at,updated_at";
+  "id,slug,title,phenomenon_type,season,place_id,region_id,typical_start_mmdd,typical_end_mmdd,status,generation_input,discovery_draft_id,origin,published_at,created_at,updated_at";
 
 type ListPhenomenaOptions = {
   search?: string;
@@ -114,21 +114,27 @@ export async function createPhenomenon(input: {
   title: string;
   phenomenon_type?: PhenomenonType;
   season: PhenomenonSeason;
-  region_id: string;
+  place_id?: string | null;
+  region_id?: string | null;
   typical_start_mmdd?: string | null;
   typical_end_mmdd?: string | null;
   generation_input?: string | null;
+  discovery_draft_id?: string | null;
+  origin?: string | null;
 }): Promise<Phenomenon> {
   const payload = {
     slug: input.slug.trim(),
     title: input.title.trim(),
     phenomenon_type: input.phenomenon_type ?? ("migration_peak" as const),
     season: input.season,
-    region_id: input.region_id.trim(),
+    place_id: input.place_id ?? null,
+    region_id: input.region_id?.trim() || null,
     typical_start_mmdd: input.typical_start_mmdd?.trim() || null,
     typical_end_mmdd: input.typical_end_mmdd?.trim() || null,
     status: "draft" as const,
     generation_input: input.generation_input?.trim() || null,
+    discovery_draft_id: input.discovery_draft_id ?? null,
+    origin: input.origin?.trim() || null,
     updated_at: new Date().toISOString(),
   };
 
@@ -146,11 +152,14 @@ export async function updatePhenomenon(input: {
   slug?: string;
   title?: string;
   season?: PhenomenonSeason;
-  region_id?: string;
+  place_id?: string | null;
+  region_id?: string | null;
   typical_start_mmdd?: string | null;
   typical_end_mmdd?: string | null;
   status?: PhenomenonStatus;
   generation_input?: string | null;
+  discovery_draft_id?: string | null;
+  origin?: string | null;
   published_at?: string | null;
 }): Promise<Phenomenon> {
   const { id, ...rest } = input;
@@ -171,6 +180,9 @@ export async function updatePhenomenon(input: {
   if (typeof mutablePayload.region_id === "string") {
     mutablePayload.region_id = mutablePayload.region_id.trim();
   }
+  if (Object.prototype.hasOwnProperty.call(mutablePayload, "place_id")) {
+    mutablePayload.place_id = typeof mutablePayload.place_id === "string" ? mutablePayload.place_id : null;
+  }
   if (typeof mutablePayload.typical_start_mmdd === "string") {
     mutablePayload.typical_start_mmdd = mutablePayload.typical_start_mmdd.trim() || null;
   }
@@ -179,6 +191,9 @@ export async function updatePhenomenon(input: {
   }
   if (typeof mutablePayload.generation_input === "string") {
     mutablePayload.generation_input = mutablePayload.generation_input.trim() || null;
+  }
+  if (typeof mutablePayload.origin === "string") {
+    mutablePayload.origin = mutablePayload.origin.trim() || null;
   }
 
   const payload = { ...mutablePayload, updated_at: new Date().toISOString() };
