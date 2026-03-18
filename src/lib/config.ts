@@ -49,6 +49,31 @@ export const DISTRIBUTION_REGION_CATALOG_REPO_DIR = path.resolve(
 export const NODE_ENV = process.env.NODE_ENV?.trim() || "development";
 export const IS_PRODUCTION = NODE_ENV === "production";
 
+function numericEnv(name: string, fallback: number) {
+  const raw = optionalEnv(name);
+  if (!raw) return fallback;
+  const value = Number(raw);
+  return Number.isFinite(value) ? value : fallback;
+}
+
+// Phenomena discovery thresholds (server-side only).
+export const PHENOMENA_DISCOVERY_GATE_PLAUSIBILITY = numericEnv(
+  "PHENOMENA_DISCOVERY_GATE_PLAUSIBILITY",
+  0.55
+);
+export const PHENOMENA_DISCOVERY_GATE_CONFIDENCE = numericEnv(
+  "PHENOMENA_DISCOVERY_GATE_CONFIDENCE",
+  0.4
+);
+export const PHENOMENA_DISCOVERY_LOW_PLAUSIBILITY = numericEnv(
+  "PHENOMENA_DISCOVERY_LOW_PLAUSIBILITY",
+  0.35
+);
+export const PHENOMENA_DISCOVERY_LOW_CONFIDENCE = numericEnv(
+  "PHENOMENA_DISCOVERY_LOW_CONFIDENCE",
+  0.2
+);
+
 function deriveAppUrl(): string {
   const explicit = optionalEnv("NEXT_PUBLIC_APP_URL");
   if (explicit) return explicit;

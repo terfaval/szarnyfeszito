@@ -6,21 +6,24 @@ import { Button } from "@/ui/components/Button";
 import { Card } from "@/ui/components/Card";
 import { Input } from "@/ui/components/Input";
 import type { Phenomenon, PhenomenonSeason, SpaRegionOption } from "@/types/phenomenon";
+import type { PhenomenonDiscoveryDraft } from "@/types/phenomenonDiscovery";
 import { PHENOMENON_SEASON_VALUES } from "@/types/phenomenon";
 
 type PhenomenonEditorFormProps = {
   phenomenon: Phenomenon;
   spaRegions: SpaRegionOption[];
+  discoveryDraft: PhenomenonDiscoveryDraft | null;
 };
 
 function asString(value: unknown) {
   return typeof value === "string" ? value.trim() : "";
 }
 
-export default function PhenomenonEditorForm({ phenomenon, spaRegions }: PhenomenonEditorFormProps) {
+export default function PhenomenonEditorForm({ phenomenon, spaRegions, discoveryDraft }: PhenomenonEditorFormProps) {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [refreshingDiscovery, setRefreshingDiscovery] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
@@ -98,6 +101,24 @@ export default function PhenomenonEditorForm({ phenomenon, spaRegions }: Phenome
     setSaving(false);
   };
 
+  const refreshDiscovery = async () => {
+    setRefreshingDiscovery(true);
+    setError(null);
+    setMessage(null);
+
+    const response = await fetch(`/api/phenomena/${phenomenon.id}/discovery/refresh`, { method: "POST" });
+    const payload = await response.json().catch(() => null);
+    if (!response.ok) {
+      setError(payload?.error ?? "Unable to refresh discovery.");
+      setRefreshingDiscovery(false);
+      return;
+    }
+
+    setMessage("Discovery refreshed. Refreshing...");
+    router.refresh();
+    setRefreshingDiscovery(false);
+  };
+
   const generateContent = async () => {
     setGenerating(true);
     setError(null);
@@ -135,6 +156,47 @@ export default function PhenomenonEditorForm({ phenomenon, spaRegions }: Phenome
           </Button>
         </div>
       </header>
+
+      <Card className="stack">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="admin-subheading">Discovery draft</p>
+            <p className="admin-note-small">
+              Structured draft is the source of truth for type + timing. Regenerate explicitly when needed.
+            </p>
+          </div>
+          <Button type="button" variant="ghost" onClick={refreshDiscovery} disabled={refreshingDiscovery || saving}>
+            {refreshingDiscovery ? "Refreshing..." : "Refresh discovery"}
+          </Button>
+        </div>
+        {discoveryDraft ? (
+          <div className="grid gap-3 md:grid-cols-2 text-sm text-zinc-600">
+            <p>
+              <span className="font-medium text-zinc-800">Type:</span> {discoveryDraft.phenomenon_type}
+            </p>
+            <p>
+              <span className="font-medium text-zinc-800">Season:</span> {discoveryDraft.season}
+            </p>
+            <p>
+              <span className="font-medium text-zinc-800">Window:</span> {discoveryDraft.typical_start_mmdd} →{" "}
+              {discoveryDraft.typical_end_mmdd}
+            </p>
+            <p>
+              <span className="font-medium text-zinc-800">Scores:</span> plausibility{" "}
+              {discoveryDraft.plausibility_score.toFixed(2)} · confidence{" "}
+              {discoveryDraft.confidence_score.toFixed(2)}
+            </p>
+            <p className="md:col-span-2">
+              <span className="font-medium text-zinc-800">Why here:</span> {discoveryDraft.why_here}
+            </p>
+            <p className="md:col-span-2">
+              <span className="font-medium text-zinc-800">Why now:</span> {discoveryDraft.why_now}
+            </p>
+          </div>
+        ) : (
+          <p className="admin-note-small">No discovery draft found for this phenomenon.</p>
+        )}
+      </Card>
 
       <form id="phenomenon-general-form" className="space-y-6" onSubmit={save}>
         <Card className="stack">
@@ -189,7 +251,7 @@ export default function PhenomenonEditorForm({ phenomenon, spaRegions }: Phenome
                   disabled={Boolean(placeId)}
                 >
                   {displayRegions.map((r) => (
-                    <option key={r.region_id} value={r.region_id}>
+                    <option key={r.region_id ?? "unknown"} value={r.region_id ?? ""}>
                       {r.displayName}
                     </option>
                   ))}

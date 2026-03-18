@@ -5,6 +5,7 @@ import type {
   PhenomenonSeason,
   PhenomenonStatus,
   PhenomenonType,
+  PhenomenonOrigin,
 } from "@/types/phenomenon";
 import {
   PHENOMENON_SEASON_VALUES,
@@ -120,7 +121,7 @@ export async function createPhenomenon(input: {
   typical_end_mmdd?: string | null;
   generation_input?: string | null;
   discovery_draft_id?: string | null;
-  origin?: string | null;
+  origin?: PhenomenonOrigin | null;
 }): Promise<Phenomenon> {
   const payload = {
     slug: input.slug.trim(),
@@ -153,13 +154,14 @@ export async function updatePhenomenon(input: {
   title?: string;
   season?: PhenomenonSeason;
   place_id?: string | null;
+  phenomenon_type?: PhenomenonType;
   region_id?: string | null;
   typical_start_mmdd?: string | null;
   typical_end_mmdd?: string | null;
   status?: PhenomenonStatus;
   generation_input?: string | null;
   discovery_draft_id?: string | null;
-  origin?: string | null;
+  origin?: PhenomenonOrigin | null;
   published_at?: string | null;
 }): Promise<Phenomenon> {
   const { id, ...rest } = input;

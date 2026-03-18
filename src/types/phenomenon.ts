@@ -27,6 +27,9 @@ export type PhenomenonType = (typeof PHENOMENON_TYPE_VALUES)[number];
 export const PHENOMENON_BIRD_REVIEW_STATUS_VALUES = ["suggested", "approved"] as const;
 export type PhenomenonBirdReviewStatus = (typeof PHENOMENON_BIRD_REVIEW_STATUS_VALUES)[number];
 
+export const PHENOMENON_ORIGIN_VALUES = ["legacy_spa", "place_discovery_v1"] as const;
+export type PhenomenonOrigin = (typeof PHENOMENON_ORIGIN_VALUES)[number];
+
 export type Phenomenon = {
   id: string;
   slug: string;
@@ -40,7 +43,7 @@ export type Phenomenon = {
   status: PhenomenonStatus;
   generation_input: string | null;
   discovery_draft_id: string | null;
-  origin: string | null;
+  origin: PhenomenonOrigin | null;
   published_at: string | null;
   created_at: string;
   updated_at: string;

@@ -11,8 +11,15 @@ import {
   DISCOVERY_PROFILE_VERSION,
   DISCOVERY_SCORING_VERSION,
   DISCOVERY_TAXONOMY_VERSION,
+  selectBestCandidate,
   selectTopCandidate,
 } from "@/lib/phenomenonDiscovery";
+import {
+  PHENOMENA_DISCOVERY_GATE_CONFIDENCE,
+  PHENOMENA_DISCOVERY_GATE_PLAUSIBILITY,
+  PHENOMENA_DISCOVERY_LOW_CONFIDENCE,
+  PHENOMENA_DISCOVERY_LOW_PLAUSIBILITY,
+} from "@/lib/config";
 
 function asString(value: unknown) {
   return typeof value === "string" ? value.trim() : "";
@@ -73,21 +80,37 @@ export async function POST(request: Request) {
       season,
     });
 
-    const top = selectTopCandidate(candidates, { plausibility: 0.55, confidence: 0.4 });
+    const top = selectTopCandidate(candidates, {
+      plausibility: PHENOMENA_DISCOVERY_GATE_PLAUSIBILITY,
+      confidence: PHENOMENA_DISCOVERY_GATE_CONFIDENCE,
+    });
+    const fallback = top ? null : selectBestCandidate(candidates);
+    const chosen = top ?? fallback;
+    if (!chosen) {
+      return NextResponse.json({ error: "No phenomenon candidates for this place + season." }, { status: 409 });
+    }
     if (!top) {
-      return NextResponse.json({ error: "No plausible phenomenon candidates for this place + season." }, { status: 409 });
+      const lowOk =
+        chosen.plausibility_score >= PHENOMENA_DISCOVERY_LOW_PLAUSIBILITY &&
+        chosen.confidence_score >= PHENOMENA_DISCOVERY_LOW_CONFIDENCE;
+      if (!lowOk) {
+        return NextResponse.json(
+          { error: "No plausible phenomenon candidates for this place + season." },
+          { status: 409 }
+        );
+      }
     }
 
     const discoveryDraft = await createPhenomenonDiscoveryDraft({
       place_id: place.id,
       season,
-      phenomenon_type: top.phenomenon_type,
-      typical_start_mmdd: top.typical_start_mmdd,
-      typical_end_mmdd: top.typical_end_mmdd,
-      plausibility_score: top.plausibility_score,
-      confidence_score: top.confidence_score,
-      why_here: top.why_here,
-      why_now: top.why_now,
+      phenomenon_type: chosen.phenomenon_type,
+      typical_start_mmdd: chosen.typical_start_mmdd,
+      typical_end_mmdd: chosen.typical_end_mmdd,
+      plausibility_score: chosen.plausibility_score,
+      confidence_score: chosen.confidence_score,
+      why_here: chosen.why_here,
+      why_now: chosen.why_now,
       profile_version: DISCOVERY_PROFILE_VERSION,
       scoring_version: DISCOVERY_SCORING_VERSION,
       taxonomy_version: DISCOVERY_TAXONOMY_VERSION,
@@ -103,9 +126,9 @@ export async function POST(request: Request) {
       season,
       place_id: place.id,
       region_id: place.leaflet_region_id ?? null,
-      phenomenon_type: top.phenomenon_type,
-      typical_start_mmdd: top.typical_start_mmdd,
-      typical_end_mmdd: top.typical_end_mmdd,
+      phenomenon_type: chosen.phenomenon_type,
+      typical_start_mmdd: chosen.typical_start_mmdd,
+      typical_end_mmdd: chosen.typical_end_mmdd,
       discovery_draft_id: discoveryDraft.id,
       origin: "place_discovery_v1",
       generation_input: typeof body?.generation_input === "string" ? body.generation_input : null,

@@ -251,3 +251,8 @@ export function selectTopCandidate(
   if (gated.length === 0) return null;
   return gated.sort((a, b) => b.opportunity_score - a.opportunity_score)[0];
 }
+
+export function selectBestCandidate(candidates: DiscoveryCandidate[]): DiscoveryCandidate | null {
+  if (candidates.length === 0) return null;
+  return candidates.slice().sort((a, b) => b.opportunity_score - a.opportunity_score)[0];
+}

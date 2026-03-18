@@ -1,9 +1,10 @@
-import { Card } from "@/ui/components/Card";
+﻿import { Card } from "@/ui/components/Card";
 import Link from "next/link";
 import { isUuid } from "@/lib/birdService";
 import { getPhenomenonById, getPhenomenonBySlug } from "@/lib/phenomenonService";
 import PhenomenonEditorForm from "@/components/admin/PhenomenonEditorForm";
 import { listDistributionRegionCatalogMeta } from "@/lib/distributionRegionCatalogService";
+import { getDiscoveryDraftById } from "@/lib/phenomenonDiscoveryDraftService";
 
 export const metadata = {
   title: "Phenomenon editor — Szárnyfeszítő Admin",
@@ -57,9 +58,13 @@ export default async function PhenomenonEditorPage({
       })),
   ].sort((a, b) => a.name.localeCompare(b.name, "hu"));
 
+  const discoveryDraft = phenomenon.discovery_draft_id
+    ? await getDiscoveryDraftById(phenomenon.discovery_draft_id)
+    : null;
+
   return (
     <Card className="place-panel place-panel-general">
-      <PhenomenonEditorForm phenomenon={phenomenon} spaRegions={spaRegions} />
+      <PhenomenonEditorForm phenomenon={phenomenon} spaRegions={spaRegions} discoveryDraft={discoveryDraft} />
     </Card>
   );
 }
