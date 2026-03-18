@@ -176,7 +176,7 @@ export default function PhenomenonListShell({ phenomena, spaRegions }: Phenomeno
                 disabled={Boolean(createPlaceId.trim())}
               >
                 {displayRegions.map((r) => (
-                  <option key={r.region_id} value={r.region_id}>
+                  <option key={r.region_id ?? "unknown"} value={r.region_id ?? ""}>
                     {r.displayName}
                   </option>
                 ))}
