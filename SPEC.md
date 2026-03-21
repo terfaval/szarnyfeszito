@@ -32,6 +32,7 @@ and persists `bird_distribution_maps.ranges[]`.
 - Publish gate (állapotvezérelt)
 - Verziózás (alap szinten)
 - Dokumentált pipeline
+- Spirit Library (Admin): statikus konyvtar-app egyetlen JSON forrasbol (D60)
 - Bird distribution map modul (D24): polygon alapú elterjedési zónák + közös legend (Studio)
 - Bird distribution map batch frissítés (D46): admin-oldali eszköz az összes madár térképének újragenerálására (Studio)
   - Minden státusz-réteghez rövid megjegyzés (note) készül, ami hoverre megjelenik a Studio felületen.
@@ -122,7 +123,8 @@ Rules:
 - Grid layout: 3 places per row.
 - Filters (v1): search, place type, region.
 
----
+---
+
 
 ## 3. Entitások
 
@@ -503,6 +505,16 @@ Megjegyzés: a pontos contract és a nyitott döntések a `TICKETS/yoga/yoga_gur
 - The `/admin` Dashboard shows the most recent “My sightings” list for the current admin.
 
 ---
+
+
+### 7.8 Spirit Library (Admin)
+
+- Uj admin menu: `/admin/spirit`.
+- Read-only konyvtar-app egyetlen lokalis JSON forrasbol (nincs DB, nincs runtime AI).
+- Build-time validacio: egyedi id-k, themes/related referenciak, enum ellenorzes.
+- UI: konyvgrid, filter/search toolbar, konyv overlay/modal, related books blokk.
+- Opcionalis: thematic pill osszesito, learning paths oldal.
+- Mobil nezhetoseg: <= 420px (D29) kozelezo.
 
 ## 8. Publish Gate Checklist
 

@@ -13,6 +13,7 @@ const NAV_LINKS = [
   { label: "Phenomena", href: "/admin/phenomena" },
   { label: "Yoga", href: "/admin/yoga" },
   { label: "Chef", href: "/admin/chef" },
+  { label: "Spirit", href: "/admin/spirit" },
 ];
 
 export type AdminTopBarProps = {

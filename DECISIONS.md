@@ -1262,31 +1262,27 @@ Birdwatch logging should reflect “I saw X at place Y”, and help selection by
 
 ---
 
-## D60 — Public read layer: cached view-model services for Explorer pages v1
+## D60 - Spirit Library admin app v1 (Studio)
 
 **Status:** Accepted  
-**Date:** 2026-03-13  
-**Scope:** Explorer/public pages + public API routes. No runtime AI. No URL/UX changes.
+**Date:** 2026-03-21  
+**Scope:** Studio admin only. No Explorer/runtime AI. No DB.
 
 ### Context
-- Public pages frequently assembled view data at render time (Supabase queries, publication gating, derived grouping, and storage URL signing).
-- This increases TTFB risk, encourages query fan-out, and mixes data access patterns into public rendering modules.
-- We already introduced an ISR + cached aggregator for `/public`; we need a repeatable pattern for other public pages.
+- Szukseg van egy konnyu, lokalis/statisztikus konyvtar-appra spiritualis/filozofiai konyvekhez.
+- Az adatmodell rogzitett (thematic pills + books + optional paths).
+- A cel egy read-only UI: grid + szurok + overlay, egyetlen JSON forrasbol.
 
 ### Decision
-1) **Introduce a dedicated “public read” layer.**
-   - New module namespace: `src/lib/publicRead/*`.
-   - Exposes page/API-oriented, stable view-model contracts (e.g. `PublicBirdDetailV1`) that already enforce publish + approved gating.
-2) **Cache-first execution model.**
-   - Public read services must be ISR-compatible and may use `unstable_cache()` with short revalidate windows.
-   - Avoid per-request heavy assembly in page modules.
-3) **Render-path rules (public pages).**
-   - Public pages should not perform storage signing, heavy data assembly, geojson/layer generation, or publication filtering in the page module.
-   - These operations belong in the public read layer (and are amortized by ISR/cache).
+1) **Uj admin menu:** `/admin/spirit`.
+2) **Egyetlen JSON forras:** repo-ban tarolt, kliensoldalon betoltott adat.
+3) **Build-time validacio:** egyedi id-k, themes/related referenciak, enum ellenorzes.
+4) **Nincs runtime AI, nincs DB, nincs auth-valtoztatas.**
 
 ### Out of scope (v1)
-- Materialized views / denormalized “public_*” tables in Supabase.
-- Migrating all Explorer pages in one batch.
+- Backend perzisztencia vagy admin CRUD.
+- Automatikus ajanlorendszer / learning path engine.
+- Public/Explorer felulet.
 
 ---
 

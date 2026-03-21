@@ -6,8 +6,7 @@ import {
   getSignedApprovedHabitatTileUrlsByAssetKeys,
   listHabitatStockAssets,
 } from "@/lib/habitatStockAssetService";
-import { SIGNED_IMAGE_URL_TTL_SECONDS } from "@/lib/imageSigning";
-import { getSignedImageUrl, listApprovedCurrentIconicImagesForBirds } from "@/lib/imageService";
+import { getPublicImageUrl, listApprovedCurrentIconicImagesForBirds } from "@/lib/imageService";
 import { buildPlacesMapLayersV1 } from "@/lib/placesMapLayers";
 import { listPublishedPlaceDashboardMarkers, listPublishedPlacesByPrimaryType } from "@/lib/placeService";
 import { getCurrentSeasonKey, type SeasonKey } from "@/lib/season";
@@ -74,12 +73,6 @@ const getPublicDashboardV1Cached = unstable_cache(
     const generatedAtIso = new Date().toISOString();
     const spotlightGroups = PUBLIC_DASHBOARD_SPOTLIGHT_GROUPS_V1;
     const currentSeasonLabelHu = seasonLabelHu(currentSeason);
-
-    if (isObsEnabled() && PUBLIC_DASHBOARD_REVALIDATE_SECONDS >= SIGNED_IMAGE_URL_TTL_SECONDS) {
-      console.warn(
-        `[publicDashboard] revalidate (${PUBLIC_DASHBOARD_REVALIDATE_SECONDS}s) >= signedUrlTtl (${SIGNED_IMAGE_URL_TTL_SECONDS}s) — assets may expire before ISR refresh`
-      );
-    }
 
     const allSpotlightPlaceTypes = Array.from(new Set(spotlightGroups.flatMap((g) => g.placeTypes)));
 
@@ -233,8 +226,8 @@ const getPublicDashboardV1Cached = unstable_cache(
     const iconicPreviewByBirdId: Record<string, string | null> = {};
     await Promise.all(
       iconicImages.map(async (image) => {
-        const signedUrl = image.storage_path ? await getSignedImageUrl(image.storage_path) : null;
-        iconicPreviewByBirdId[image.entity_id] = signedUrl ?? null;
+        const publicUrl = image.storage_path ? getPublicImageUrl(image.storage_path) : null;
+        iconicPreviewByBirdId[image.entity_id] = publicUrl ?? null;
       })
     );
 

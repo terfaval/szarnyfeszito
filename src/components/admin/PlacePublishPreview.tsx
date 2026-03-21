@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import type { PlacesMapLayersV1 } from "@/types/placesMap";
@@ -11,6 +11,7 @@ import BirdIcon from "@/components/admin/BirdIcon";
 import PlacesMap from "@/components/maps/PlacesMap";
 import type { PlacesMapInteractionMode, PlacesMapProps } from "@/components/maps/PlacesMap";
 import { Card } from "@/ui/components/Card";
+import { Button } from "@/ui/components/Button";
 import styles from "./PlacePublishPreview.module.css";
 
 type PlacePublishBird = {
@@ -128,6 +129,26 @@ export default function PlacePublishPreview({
   const seasonalText = variants?.seasonal_snippet?.[currentSeason] ?? "";
   const seasonLabel = SEASON_LABEL_HU[currentSeason];
 
+  const initialIconicPreviewById = useMemo(() => {
+    const out: Record<string, string | null> = {};
+    birds.forEach((bird) => {
+      if (typeof bird.iconicSrc === "string" && bird.iconicSrc) {
+        out[bird.id] = bird.iconicSrc;
+      }
+    });
+    return out;
+  }, [birds]);
+
+  const [iconicPreviewById, setIconicPreviewById] = useState<Record<string, string | null>>(
+    initialIconicPreviewById
+  );
+  const [iconicPreviewLoading, setIconicPreviewLoading] = useState(false);
+  const [iconicPreviewError, setIconicPreviewError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setIconicPreviewById(initialIconicPreviewById);
+  }, [initialIconicPreviewById]);
+
   const hasExtras =
     !!variants &&
     (nonEmpty(variants.who_is_it_for) || nonEmpty(variants.when_to_go) || nonEmpty(variants.practical_tip));
@@ -194,6 +215,42 @@ export default function PlacePublishPreview({
       ? `Mutatott: ${visibleBirds.length} / ${filteredAndSortedBirds.length}`
       : `${visibleBirds.length} madár`;
   const noBirdsMessage = `No published birds linked to this place for ${seasonLabel}.`;
+
+  const pendingPreviewIds = useMemo(() => {
+    const out: string[] = [];
+    visibleBirds.forEach((bird) => {
+      if (!iconicPreviewById[bird.id]) {
+        out.push(bird.id);
+      }
+    });
+    return out.slice(0, 30);
+  }, [visibleBirds, iconicPreviewById]);
+
+  const loadIconicPreviews = async () => {
+    if (iconicPreviewLoading || pendingPreviewIds.length === 0) return;
+    setIconicPreviewLoading(true);
+    setIconicPreviewError(null);
+
+    try {
+      const params = new URLSearchParams();
+      pendingPreviewIds.forEach((id) => params.append("id", id));
+      const response = await fetch(`/api/birds/iconic-previews?${params.toString()}`, {
+        method: "GET",
+        cache: "no-store",
+      });
+      const payload = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        setIconicPreviewError(payload?.error ?? "Unable to load image previews.");
+        return;
+      }
+
+      const updates = (payload?.data ?? {}) as Record<string, string | null>;
+      setIconicPreviewById((prev) => ({ ...prev, ...updates }));
+    } finally {
+      setIconicPreviewLoading(false);
+    }
+  };
 
   return (
     <section className={styles.previewRoot} aria-label="Place publish preview">
@@ -344,6 +401,30 @@ export default function PlacePublishPreview({
                     </div>
                   </div>
                 ) : null}
+
+                {pendingPreviewIds.length ? (
+                  <div className={styles.birdToolbar} aria-label="El?n?zet bet?lt?s">
+                    <p className={styles.birdToolbarStatus}>
+                      Hi?nyz? el?n?zet: {pendingPreviewIds.length}
+                    </p>
+                    <div className={styles.birdToolbarActions}>
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        disabled={iconicPreviewLoading}
+                        onClick={loadIconicPreviews}
+                      >
+                        {iconicPreviewLoading ? "Bet?lt?s?" : "El?n?zetek bet?lt?se"}
+                      </Button>
+                    </div>
+                    {iconicPreviewError ? (
+                      <p className="admin-message admin-message--error" aria-live="assertive">
+                        {iconicPreviewError}
+                      </p>
+                    ) : null}
+                  </div>
+                ) : null}
+
                 {visibleBirds.length ? (
                   <div className={styles.birdGrid} aria-label="Linked birds">
                     {visibleBirds.map((bird) => (
@@ -353,7 +434,7 @@ export default function PlacePublishPreview({
                         className={styles.birdCard}
                         aria-label={`Open bird: ${bird.name_hu}`}
                       >
-                        <BirdIcon iconicSrc={bird.iconicSrc} showHabitatBackground={false} size={64} />
+                        <BirdIcon iconicSrc={iconicPreviewById[bird.id] ?? bird.iconicSrc ?? null} showHabitatBackground={false} size={64} />
                         <div className={styles.birdText}>
                           <span className={styles.birdName}>{bird.name_hu}</span>
                           <span className={styles.birdFrequency}>{frequencyLabelHu(bird.frequency_band)}</span>

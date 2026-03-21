@@ -63,6 +63,18 @@ type SuggestedBirdQueueItem = {
 
 export default function BirdListShell({ birds }: BirdListShellProps) {
   const router = useRouter();
+  const initialIconicPreviewById = useMemo(() => {
+    const out: Record<string, string | null> = {};
+    birds.forEach((bird) => {
+      if (typeof bird.iconicPreviewUrl === "string" && bird.iconicPreviewUrl) {
+        out[bird.id] = bird.iconicPreviewUrl;
+      }
+    });
+    return out;
+  }, [birds]);
+  const [iconicPreviewById, setIconicPreviewById] = useState<Record<string, string | null>>(
+    initialIconicPreviewById
+  );
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<BirdStatus | "all">("all");
   const [sizeFilter, setSizeFilter] = useState<BirdSizeCategory | "all" | "missing">("all");
@@ -75,6 +87,8 @@ export default function BirdListShell({ birds }: BirdListShellProps) {
   const [suggestedQueueError, setSuggestedQueueError] = useState<string | null>(null);
   const [suggestedQueueMessage, setSuggestedQueueMessage] = useState<string | null>(null);
   const [creatingQueueKey, setCreatingQueueKey] = useState<string | null>(null);
+  const [iconicPreviewLoading, setIconicPreviewLoading] = useState(false);
+  const [iconicPreviewError, setIconicPreviewError] = useState<string | null>(null);
 
   const normalizedSearch = search.trim().toLowerCase();
 
@@ -104,6 +118,10 @@ export default function BirdListShell({ birds }: BirdListShellProps) {
   useEffect(() => {
     refreshSuggestedQueue();
   }, []);
+
+  useEffect(() => {
+    setIconicPreviewById(initialIconicPreviewById);
+  }, [initialIconicPreviewById]);
 
   const quickCreateFromSuggestion = async (item: SuggestedBirdQueueItem) => {
     if (!item?.name_hu?.trim()) return;
@@ -238,6 +256,49 @@ export default function BirdListShell({ birds }: BirdListShellProps) {
 
     return sorted;
   }, [birds, normalizedSearch, statusFilter, sizeFilter, visibilityFilter, sortKey]);
+
+  const pendingPreviewIds = useMemo(() => {
+    const out: string[] = [];
+    for (const bird of filteredBirds) {
+      if (!iconicPreviewById[bird.id]) {
+        out.push(bird.id);
+      }
+      if (out.length >= 30) break;
+    }
+    return out;
+  }, [filteredBirds, iconicPreviewById]);
+
+  const totalMissingPreviews = useMemo(() => {
+    return filteredBirds.reduce((count, bird) => {
+      return iconicPreviewById[bird.id] ? count : count + 1;
+    }, 0);
+  }, [filteredBirds, iconicPreviewById]);
+
+  const loadIconicPreviews = async () => {
+    if (iconicPreviewLoading || pendingPreviewIds.length === 0) return;
+    setIconicPreviewLoading(true);
+    setIconicPreviewError(null);
+
+    try {
+      const params = new URLSearchParams();
+      pendingPreviewIds.forEach((id) => params.append("id", id));
+      const response = await fetch(`/api/birds/iconic-previews?${params.toString()}`, {
+        method: "GET",
+        cache: "no-store",
+      });
+      const payload = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        setIconicPreviewError(payload?.error ?? "Unable to load image previews.");
+        return;
+      }
+
+      const updates = (payload?.data ?? {}) as Record<string, string | null>;
+      setIconicPreviewById((prev) => ({ ...prev, ...updates }));
+    } finally {
+      setIconicPreviewLoading(false);
+    }
+  };
 
   const statusCounts = useMemo(() => {
     const initial = BIRD_STATUS_VALUES.reduce<Record<BirdStatus, number>>((acc, status) => {
@@ -484,6 +545,29 @@ export default function BirdListShell({ birds }: BirdListShellProps) {
       </div>
 
       <div className="space-y-4">
+        <Card className="flex flex-wrap items-center justify-between gap-3 text-sm">
+          <p className="admin-note-small">
+            Image previews loaded for {filteredBirds.length - totalMissingPreviews} of {filteredBirds.length} birds.
+          </p>
+          <div className="flex flex-wrap items-center gap-3">
+            <Button
+              type="button"
+              variant="secondary"
+              disabled={iconicPreviewLoading || pendingPreviewIds.length === 0}
+              onClick={loadIconicPreviews}
+            >
+              {iconicPreviewLoading ? "Loading previews…" : "Load next previews"}
+            </Button>
+            {pendingPreviewIds.length === 0 ? (
+              <span className="admin-note-small">All visible previews loaded.</span>
+            ) : null}
+          </div>
+          {iconicPreviewError ? (
+            <p className="admin-message admin-message--error" aria-live="assertive">
+              {iconicPreviewError}
+            </p>
+          ) : null}
+        </Card>
         {filteredBirds.length === 0 ? (
           <Card className="admin-stat-card admin-stat-card--note">
             No birds match the current filters. Adjust the search or status to continue.
@@ -495,7 +579,7 @@ export default function BirdListShell({ birds }: BirdListShellProps) {
                 <div className="admin-bird-list-grid">
                   <BirdIcon
                     habitatSrc={bird.habitatIconSrc}
-                    iconicSrc={bird.iconicPreviewUrl}
+                    iconicSrc={iconicPreviewById[bird.id] ?? bird.iconicPreviewUrl ?? null}
                     showHabitatBackground
                     size={76}
                   />

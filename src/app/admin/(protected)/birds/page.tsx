@@ -12,6 +12,7 @@ export const metadata = {
 export default async function BirdsPage() {
   const birds = await listBirds();
   const birdIds = birds.map((bird) => bird.id);
+  const initialPreviewIds = birdIds.slice(0, 24);
 
   const fallbackHabitatKeys = birds
     .map((bird) => (Array.isArray(bird.habitat_stock_asset_keys) ? bird.habitat_stock_asset_keys[0] : ""))
@@ -27,7 +28,7 @@ export default async function BirdsPage() {
     }
   }
 
-  const iconicImages = await listCurrentIconicImagesForBirds(birdIds);
+  const iconicImages = await listCurrentIconicImagesForBirds(initialPreviewIds);
   const iconicPreviewByBirdId = new Map<string, string>();
   await Promise.all(
     iconicImages.map(async (image) => {

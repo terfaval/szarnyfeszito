@@ -57,10 +57,11 @@ export default async function PlacePublishPage({
 
   const seasonalBirdRows = placeBirds.filter(isBirdVisibleInSeason);
   const birdIds = seasonalBirdRows.map((row) => row.bird?.id).filter((id): id is string => Boolean(id));
+  const initialPreviewIds = birdIds.slice(0, 24);
   const iconicRows = await listApprovedCurrentIconicImagesForBirds(birdIds);
   const storagePathByBirdId = new Map(iconicRows.map((row) => [row.entity_id, row.storage_path]));
   const signedPairs = await Promise.all(
-    birdIds.map(async (birdId) => {
+    initialPreviewIds.map(async (birdId) => {
       const storagePath = storagePathByBirdId.get(birdId) ?? null;
       const signedUrl = storagePath ? await getSignedImageUrl(storagePath) : null;
       return [birdId, signedUrl] as const;
