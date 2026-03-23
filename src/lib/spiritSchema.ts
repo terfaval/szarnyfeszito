@@ -8,6 +8,8 @@ export const SpiritStatusEnum = z.enum(["olvasatlan", "folyamatban", "befejezett
 export const SpiritPillSchema = z.object({
   slug: z.string().min(1),
   label: z.string().min(1),
+  short_label: z.string().min(1),
+  color: z.string().regex(/^#([0-9a-fA-F]{6})$/, "Invalid hex color."),
 });
 
 export const SpiritBookSchema = z.object({

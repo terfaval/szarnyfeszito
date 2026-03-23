@@ -5,8 +5,8 @@ export const metadata = {
   title: "Spirit Library | Szarnyfeszito admin",
 };
 
-export default function SpiritLibraryPage() {
-  const library = loadSpiritLibrary();
+export default async function SpiritLibraryPage() {
+  const library = await loadSpiritLibrary();
 
   return <SpiritLibraryApp library={library} />;
 }

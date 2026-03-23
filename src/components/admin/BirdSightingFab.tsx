@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import BirdIcon from "@/components/admin/BirdIcon";
 import { Button } from "@/ui/components/Button";
 import { Card } from "@/ui/components/Card";
@@ -56,6 +56,9 @@ function toggleInList<T extends string>(list: T[], value: T) {
 
 export default function BirdSightingFab() {
   const router = useRouter();
+  const pathname = usePathname() ?? "";
+  if (pathname.startsWith("/admin/spirit")) return null;
+  const isYoga = pathname.startsWith("/admin/yoga");
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -549,10 +552,22 @@ export default function BirdSightingFab() {
       <button
         type="button"
         className={styles.fabButton}
-        aria-label="Birdwatch rögzítés megnyitása"
-        onClick={() => setOpen(true)}
+        aria-label={isYoga ? "Yoga Guru megnyitása" : "Birdwatch rögzítés megnyitása"}
+        onClick={() => {
+          if (isYoga) {
+            router.push("/admin/yoga/guru");
+            return;
+          }
+          setOpen(true);
+        }}
       >
-        <Image src="/icon_birdwatch.svg" alt="" width={28} height={28} className={styles.fabIcon} />
+        <Image
+          src={isYoga ? "/YOGA/ICONS/icon_yoga.svg" : "/icon_birdwatch.svg"}
+          alt=""
+          width={28}
+          height={28}
+          className={styles.fabIcon}
+        />
       </button>
     </div>
   );

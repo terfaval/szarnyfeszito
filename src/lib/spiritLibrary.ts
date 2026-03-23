@@ -1,13 +1,11 @@
-import rawLibrary from "../../data/spirit/library.json";
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
 import { SpiritLibrary, validateSpiritLibrary } from "./spiritSchema";
 
-let cached: SpiritLibrary | null = null;
+const LIBRARY_PATH = join(process.cwd(), "data", "spirit", "library.json");
 
-export function loadSpiritLibrary(): SpiritLibrary {
-  if (cached) {
-    return cached;
-  }
-
-  cached = validateSpiritLibrary(rawLibrary);
-  return cached;
+export async function loadSpiritLibrary(): Promise<SpiritLibrary> {
+  const raw = await readFile(LIBRARY_PATH, "utf-8");
+  const parsed = JSON.parse(raw);
+  return validateSpiritLibrary(parsed);
 }

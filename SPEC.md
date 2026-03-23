@@ -516,6 +516,16 @@ Megjegyzés: a pontos contract és a nyitott döntések a `TICKETS/yoga/yoga_gur
 - Opcionalis: thematic pill osszesito, learning paths oldal.
 - Mobil nezhetoseg: <= 420px (D29) kozelezo.
 
+
+### 7.9 Spirit Library - Add Book with AI (Admin)
+
+- Modal flow on `/admin/spirit` (title + author + optional publisher).
+- External search via OpenAI Responses web_search (SPIRIT_SEARCH_MODEL).
+- Draft generation via OpenAI (SPIRIT_AI_MODEL).
+- Duplicate checks (title+author, slug, fuzzy title).
+- Draft review + edit before save.
+- Atomic write to `data/spirit/library.json`.
+
 ## 8. Publish Gate Checklist
 
 Publish előtt:
