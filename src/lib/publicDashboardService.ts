@@ -221,8 +221,18 @@ const getPublicDashboardV1Cached = unstable_cache(
       }
     }
 
+    const spotlightBirdIds = new Set<string>();
+    for (const group of spotlightGroups) {
+      spotlightBirdsByGroup[group.key].forEach((bird) => spotlightBirdIds.add(bird.id));
+    }
+
     const recentBirdIds = recentBirds.map((bird) => bird.id);
-    const iconicImages = await listApprovedCurrentIconicImagesForBirds(recentBirdIds);
+    const iconicBirdIds = new Set<string>(recentBirdIds);
+    spotlightBirdIds.forEach((id) => iconicBirdIds.add(id));
+
+    const iconicImages = iconicBirdIds.size
+      ? await listApprovedCurrentIconicImagesForBirds(Array.from(iconicBirdIds))
+      : [];
     const iconicPreviewByBirdId: Record<string, string | null> = {};
     await Promise.all(
       iconicImages.map(async (image) => {

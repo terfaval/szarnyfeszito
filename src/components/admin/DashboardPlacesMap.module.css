@@ -12,6 +12,16 @@
   margin-top: calc(-1 * (var(--admin-dashboard-topbar-offset) + var(--admin-shell-pad-block)));
 }
 
+.sectionContained {
+  width: 100%;
+  margin-left: 0;
+  margin-right: 0;
+}
+
+.sectionNoOffset {
+  margin-top: 0;
+}
+
 .layout {
   height: 100%;
 }

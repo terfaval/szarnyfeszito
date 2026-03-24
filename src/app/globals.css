@@ -71,10 +71,14 @@
   color-scheme: light;
 }
 
- *,
+*,
 *::before,
 *::after {
   box-sizing: border-box;
+}
+
+html {
+  overflow-x: hidden;
 }
 
 body {
@@ -84,6 +88,7 @@ body {
   color: var(--foreground);
   font-family: var(--font-body);
   line-height: 1.5;
+  overflow-x: hidden;
 }
 
 h1,
@@ -203,6 +208,7 @@ svg {
   min-height: 100vh;
   background: var(--background);
   color: var(--foreground);
+  overflow-x: hidden;
 }
 
 .admin-shell {
@@ -215,6 +221,10 @@ svg {
   padding-inline: var(--shell-side-pad, 24px);
   position: relative;
   z-index: 2;
+}
+
+.admin-shell--tight {
+  padding-top: 0;
 }
 
 .admin-topbar--dashboard-overlay + .space-y-6 {

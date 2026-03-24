@@ -29,6 +29,14 @@
   pointer-events: auto;
 }
 
+.toolbarRoot {
+  border: 1px solid var(--line);
+  background: var(--panel-2);
+  border-radius: 18px;
+  box-shadow: var(--shadow);
+  overflow: visible;
+}
+
 .toolButton {
   border: 0;
   background: rgba(var(--brand-ink-rgb), 0.08);
@@ -42,6 +50,28 @@
   cursor: pointer;
   font-weight: 700;
   transition: background 0.1s ease;
+}
+
+.toolButtonToolbar {
+  background: transparent;
+  color: var(--brand-ink);
+  border-radius: 0;
+  border-bottom: 0;
+}
+
+.toolButtonToolbar:hover {
+  background: rgba(var(--brand-ink-rgb), 0.08);
+  color: var(--brand-warm);
+}
+
+.toolButtonToolbar:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.toolButtonToolbar:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 .menuButton {
@@ -89,6 +119,14 @@
   padding: 0.45rem;
   box-shadow: var(--shadow);
   min-width: 180px;
+}
+
+.menuListToolbar {
+  top: auto;
+  bottom: 0;
+  right: calc(100% + 0.6rem);
+  max-height: min(60vh, 320px);
+  overflow: auto;
 }
 
 .menuItem {

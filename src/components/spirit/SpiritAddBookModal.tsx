@@ -253,7 +253,13 @@ export default function SpiritAddBookModal({ library, onOpenBook }: Props) {
             </label>
             <label className="form-field">
               <span className="form-field__label">Tradicio</span>
-              <select className="input" value={draft.tradition} onChange={(e) => setDraft({ ...draft, tradition: e.target.value })}>
+              <select
+                className="input"
+                value={draft.tradition}
+                onChange={(e) =>
+                  setDraft({ ...draft, tradition: e.target.value as SpiritDraft["tradition"] })
+                }
+              >
                 {TRADITION_OPTIONS.map((opt) => (
                   <option key={opt.value} value={opt.value}>{opt.label}</option>
                 ))}
@@ -261,7 +267,11 @@ export default function SpiritAddBookModal({ library, onOpenBook }: Props) {
             </label>
             <label className="form-field">
               <span className="form-field__label">Szint</span>
-              <select className="input" value={draft.level} onChange={(e) => setDraft({ ...draft, level: e.target.value })}>
+              <select
+                className="input"
+                value={draft.level}
+                onChange={(e) => setDraft({ ...draft, level: e.target.value as SpiritDraft["level"] })}
+              >
                 {LEVEL_OPTIONS.map((opt) => (
                   <option key={opt.value} value={opt.value}>{opt.label}</option>
                 ))}
@@ -277,7 +287,11 @@ export default function SpiritAddBookModal({ library, onOpenBook }: Props) {
             </label>
             <label className="form-field">
               <span className="form-field__label">Formatum</span>
-              <select className="input" value={draft.format} onChange={(e) => setDraft({ ...draft, format: e.target.value })}>
+              <select
+                className="input"
+                value={draft.format}
+                onChange={(e) => setDraft({ ...draft, format: e.target.value as SpiritDraft["format"] })}
+              >
                 {FORMAT_OPTIONS.map((opt) => (
                   <option key={opt.value} value={opt.value}>{opt.label}</option>
                 ))}
@@ -285,7 +299,11 @@ export default function SpiritAddBookModal({ library, onOpenBook }: Props) {
             </label>
             <label className="form-field">
               <span className="form-field__label">Statusz</span>
-              <select className="input" value={draft.status} onChange={(e) => setDraft({ ...draft, status: e.target.value })}>
+              <select
+                className="input"
+                value={draft.status}
+                onChange={(e) => setDraft({ ...draft, status: e.target.value as SpiritDraft["status"] })}
+              >
                 {STATUS_OPTIONS.map((opt) => (
                   <option key={opt.value} value={opt.value}>{opt.label}</option>
                 ))}

@@ -45,6 +45,11 @@
   gap: 10px;
 }
 
+.toolBarSlot {
+  display: flex;
+  justify-content: flex-end;
+}
+
 .toolBarTop {
   position: absolute;
   top: clamp(12px, 2.5vw, 24px);

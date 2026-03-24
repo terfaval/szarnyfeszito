@@ -163,13 +163,18 @@ export default function PlacesMap({
     mapRef.current = map;
 
     if (
-      !defaultBounds &&
       !didApplyInitialPanRef.current &&
       defaultPanBy &&
       (defaultPanBy[0] !== 0 || defaultPanBy[1] !== 0)
     ) {
       didApplyInitialPanRef.current = true;
-      map.panBy(defaultPanBy, { animate: false });
+      if (defaultBounds) {
+        map.once("moveend", () => {
+          map.panBy(defaultPanBy, { animate: false });
+        });
+      } else {
+        map.panBy(defaultPanBy, { animate: false });
+      }
     }
   }, [defaultBounds, defaultPanBy]);
 
@@ -256,6 +261,11 @@ export default function PlacesMap({
           ...(mapDefaultBoundsOptions ?? {}),
           animate: opts.animate,
         });
+        if (defaultPanBy && (defaultPanBy[0] !== 0 || defaultPanBy[1] !== 0)) {
+          map.once("moveend", () => {
+            map.panBy(defaultPanBy, { animate: false });
+          });
+        }
         return;
       }
       if (defaultPanBy && (defaultPanBy[0] !== 0 || defaultPanBy[1] !== 0)) {
@@ -286,6 +296,11 @@ export default function PlacesMap({
     map.zoomOut();
   }, []);
 
+  const toolBarTopControlsOverlay =
+    toolBarVariant === "bottom_right_v1" ? null : toolBarTopControls ?? null;
+  const toolBarTopControlsInToolbar =
+    toolBarVariant === "bottom_right_v1" ? toolBarTopControls ?? null : null;
+
   return (
     <div
       className={[
@@ -293,14 +308,19 @@ export default function PlacesMap({
         layoutVariant === "fill_parent_v1" ? styles.layoutFill : styles.layout,
       ].join(" ")}
     >
-      {toolBarTopControls ? (
+      {toolBarTopControlsOverlay ? (
         <div className={styles.toolBarTop} aria-label="Map filters">
-          {toolBarTopControls}
+          {toolBarTopControlsOverlay}
         </div>
       ) : null}
 
       {toolBarVariant === "bottom_right_v1" ? (
         <div className={styles.toolBar} aria-label="Map tools">
+          {toolBarTopControlsInToolbar ? (
+            <div className={styles.toolBarSlot} aria-label="Map filters">
+              {toolBarTopControlsInToolbar}
+            </div>
+          ) : null}
           <div className={styles.toolGroup} role="group" aria-label="Zoom">
             <button
               type="button"

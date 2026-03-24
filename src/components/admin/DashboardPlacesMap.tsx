@@ -62,6 +62,8 @@ export type DashboardPlacesMapProps = {
   placeLinkJoiner?: string;
   placeLinkKey?: "id" | "slug";
   useToolbarFilter?: boolean;
+  edgeToEdge?: boolean;
+  offsetTop?: boolean;
 };
 
 function joinHref(basePath: string, joiner: string, value: string) {
@@ -80,6 +82,8 @@ export default function DashboardPlacesMap({
   placeLinkJoiner = "/",
   placeLinkKey = "id",
   useToolbarFilter = false,
+  edgeToEdge = true,
+  offsetTop = true,
 }: DashboardPlacesMapProps) {
   const [hoveredSlug, setHoveredSlug] = useState<string | null>(null);
   const [pinnedSlug, setPinnedSlug] = useState<string | null>(null);
@@ -215,17 +219,33 @@ export default function DashboardPlacesMap({
   const selectedRegionId = activeMarker?.leaflet_region_id?.trim() || null;
   const boundsOptions = useMemo(() => {
     const inset = Math.max(0, dashboardTopInsetPx);
+    const extraTopPadding = 24;
     return {
       padding: [18, 18] as [number, number],
-      paddingTopLeft: [18, Math.round(inset + 18)] as [number, number],
+      paddingTopLeft: [18, Math.round(inset + extraTopPadding + 18)] as [number, number],
       paddingBottomRight: [18, 18] as [number, number],
     };
+  }, [dashboardTopInsetPx]);
+
+  const defaultPanBy = useMemo(() => {
+    const inset = Math.max(0, dashboardTopInsetPx);
+    if (inset == 0) return [0, 0] as [number, number];
+    return [0, Math.round(inset * 0.6)] as [number, number];
   }, [dashboardTopInsetPx]);
 
   const showInlineFilterControls = !useToolbarFilter;
 
   return (
-    <section className={styles.section} aria-label="Published places map">
+    <section
+      className={[
+        styles.section,
+        edgeToEdge ? "" : styles.sectionContained,
+        offsetTop ? "" : styles.sectionNoOffset,
+      ]
+        .filter(Boolean)
+        .join(" ")}
+      aria-label="Published places map"
+    >
       <div className={styles.layout} style={{ position: "relative" }}>
           <PlacesMap
             markers={visibleMarkers}
@@ -249,6 +269,7 @@ export default function DashboardPlacesMap({
                 />
               ) : undefined
             }
+            defaultPanBy={defaultPanBy}
             regionSlugById={regionSlugById}
             onRegionHover={handleRegionHover}
             defaultBounds={HUNGARY_FULL_BOUNDS_V1}

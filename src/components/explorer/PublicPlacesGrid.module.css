@@ -21,10 +21,16 @@
   border-radius: 12px;
   border: 1px solid rgba(var(--brand-ink-rgb), 0.2);
   padding: 0.55rem 0.7rem;
-  background: white;
+  background: var(--input-bg);
   color: var(--foreground);
   font-size: 0.9rem;
 }
+.select option,
+.select optgroup {
+  background: var(--panel-2);
+  color: var(--foreground);
+}
+
 
 .notice {
   padding: 1rem 1.25rem;
@@ -73,7 +79,7 @@
   height: 44px;
   border-radius: 12px;
   border: 1px solid rgba(var(--brand-ink-rgb), 0.2);
-  background: white;
+  background: var(--panel-2);
   object-fit: cover;
   box-shadow: 0 10px 20px rgba(0, 0, 0, 0.12);
 }
@@ -81,7 +87,7 @@
 .regionPill {
   padding: 0.35rem 0.65rem;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.9);
+  background: var(--panel-2);
   font-size: 0.75rem;
   color: var(--foreground);
   border: 1px solid rgba(var(--brand-ink-rgb), 0.2);

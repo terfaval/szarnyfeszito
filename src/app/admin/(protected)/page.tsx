@@ -71,17 +71,6 @@ export default async function AdminPage() {
     if (iconSrc) habitatIconByBirdId.set(birdId, iconSrc);
   }
 
-  const iconicImages = await listCurrentIconicImagesForBirds(recentBirdIds);
-  const iconicPreviewByBirdId = new Map<string, string>();
-  await Promise.all(
-    iconicImages.map(async (image) => {
-      const signedUrl = await getSignedImageUrl(image.storage_path);
-      if (signedUrl) {
-        iconicPreviewByBirdId.set(image.entity_id, signedUrl);
-      }
-    })
-  );
-
   const spotlightGroups: Array<{
     key: "water" | "forest" | "mountain";
     label: string;
@@ -218,12 +207,28 @@ export default async function AdminPage() {
     spotlightBirdsByGroup.set(group.key, list);
   }
 
+  const iconicBirdIds = new Set<string>(recentBirdIds);
+  spotlightBirdIds.forEach((id) => iconicBirdIds.add(id));
+
+  const iconicPreviewByBirdId = new Map<string, string>();
+  if (iconicBirdIds.size > 0) {
+    const iconicImages = await listCurrentIconicImagesForBirds(Array.from(iconicBirdIds));
+    await Promise.all(
+      iconicImages.map(async (image) => {
+        const signedUrl = await getSignedImageUrl(image.storage_path);
+        if (signedUrl) {
+          iconicPreviewByBirdId.set(image.entity_id, signedUrl);
+        }
+      })
+    );
+  }
+
   const mySightings = admin ? await listBirdSightingsForUser(admin.id, { limit: 8 }) : [];
   const formatter = new Intl.DateTimeFormat("hu-HU", { dateStyle: "medium", timeStyle: "short" });
 
   return (
     <section className="admin-stack">
-      <DashboardPlacesMap markers={publishedMarkers} layers={dashboardLayers} />
+      <DashboardPlacesMap markers={publishedMarkers} layers={dashboardLayers} useToolbarFilter />
 
       <Card className="stack">
         <header className="admin-heading">
@@ -244,19 +249,12 @@ export default async function AdminPage() {
                   <div className="mt-3 space-y-3">
                     {birdsForGroup.map((bird) => (
                       <div key={bird.id} className="flex items-start gap-3">
-                        {bird.habitatIconSrc ? (
-                          <img
-                            src={bird.habitatIconSrc}
-                            alt=""
-                            className="h-10 w-10 shrink-0 rounded-xl p-2"
-                            style={{ border: "1px solid var(--line)", background: "var(--panel-2)" }}
-                          />
-                        ) : (
-                          <div
-                            className="h-10 w-10 shrink-0 rounded-xl"
-                            style={{ border: "1px solid var(--line)", background: "var(--panel-2)" }}
-                          />
-                        )}
+                        <BirdIcon
+                          habitatSrc={bird.habitatIconSrc}
+                          iconicSrc={iconicPreviewByBirdId.get(bird.id) ?? null}
+                          size={40}
+                          className="dashboard-spotlight-bird-icon"
+                        />
                         <div className="min-w-0 flex-1">
                           <Link href={`/admin/birds/${bird.id}`} className="admin-nav-link">
                             {bird.name_hu}

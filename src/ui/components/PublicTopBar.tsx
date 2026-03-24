@@ -12,7 +12,7 @@ const NAV_LINKS = [
 
 export function PublicTopBar() {
   const pathname = usePathname() ?? "";
-  const isDashboard = pathname === "/public";
+  const isDashboard = pathname === "/public" || pathname.startsWith("/public/");
   const navId = useId();
   const [menuOpenForPath, setMenuOpenForPath] = useState<string | null>(null);
   const menuOpen = menuOpenForPath === pathname;

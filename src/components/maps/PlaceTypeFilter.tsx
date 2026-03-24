@@ -49,11 +49,21 @@ export default function PlaceTypeFilter({
 
   if (variant === "menu" || variant === "toolbar") {
     return (
-      <div className={[styles.menuRoot, className ?? ""].filter(Boolean).join(" ")} ref={containerRef}>
+      <div
+        className={[
+          styles.menuRoot,
+          variant === "toolbar" ? styles.toolbarRoot : "",
+          className ?? "",
+        ]
+          .filter(Boolean)
+          .join(" ")}
+        ref={containerRef}
+      >
         <button
           type="button"
           className={[
             variant === "toolbar" ? styles.toolButton : styles.menuButton,
+            variant === "toolbar" ? styles.toolButtonToolbar : "",
             variant === "toolbar" ? styles.toolbarButton : "",
           ]
             .filter(Boolean)
@@ -65,7 +75,15 @@ export default function PlaceTypeFilter({
           {variant === "toolbar" ? null : <span className={styles.menuLabel}>{label}</span>}
         </button>
         {open ? (
-          <div className={styles.menuList} role="menu">
+          <div
+            className={[
+              styles.menuList,
+              variant === "toolbar" ? styles.menuListToolbar : "",
+            ]
+              .filter(Boolean)
+              .join(" ")}
+            role="menu"
+          >
             <button
               type="button"
               className={`${styles.menuItem} ${value === "all" ? styles.menuItemActive : ""}`}

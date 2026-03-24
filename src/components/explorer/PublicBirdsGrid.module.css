@@ -26,10 +26,16 @@
   border-radius: 12px;
   border: 1px solid rgba(var(--brand-ink-rgb), 0.2);
   padding: 0.55rem 0.7rem;
-  background: white;
+  background: var(--input-bg);
   color: var(--foreground);
   font-size: 0.9rem;
 }
+.select option,
+.select optgroup {
+  background: var(--panel-2);
+  color: var(--foreground);
+}
+
 
 .colorFilter {
   display: grid;
@@ -52,7 +58,7 @@
   border-radius: 999px;
   border: 1px solid rgba(var(--brand-ink-rgb), 0.25);
   padding: 0.35rem 0.75rem;
-  background: white;
+  background: var(--panel-2);
   font-size: 0.85rem;
   color: var(--foreground);
 }

@@ -37,6 +37,8 @@ export default async function PublicHomePage() {
           placeLinkJoiner=""
           placeLinkKey="slug"
           useToolbarFilter
+          edgeToEdge
+          offsetTop
         />
 
         <Card className="stack">
@@ -70,7 +72,7 @@ export default async function PublicHomePage() {
                           <div key={bird.id} className="dashboard-spotlight-bird">
                             <BirdIcon
                               habitatSrc={habitatAsset ?? bird.habitatIconSrc}
-                              iconicSrc={null}
+                              iconicSrc={dashboard.iconicPreviewByBirdId[bird.id] ?? null}
                               size={64}
                               className="dashboard-spotlight-bird-icon"
                             />
@@ -190,3 +192,4 @@ export default async function PublicHomePage() {
     </PublicShell>
   );
 }
+
