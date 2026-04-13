@@ -10,6 +10,11 @@ import {
   getPublicImageUrl,
   listApprovedCurrentIconicImagesForBirds,
 } from "@/lib/imageService";
+import {
+  getSignedApprovedHabitatTileUrlsByAssetKeys,
+  listHabitatStockAssets,
+  resolveHabitatStockAssetKeyForPlaceType,
+} from "@/lib/habitatStockAssetService";
 import { listLatestApprovedContentBlocksForBirds } from "@/lib/contentService";
 import { logPublicReadRegenerate, PUBLIC_READ_REVALIDATE_SECONDS } from "@/lib/publicRead/cache";
 import type { PlaceFrequencyBand, PlaceNotableUnit, PlaceType } from "@/types/place";
@@ -29,6 +34,7 @@ export type PublicPlaceDetailV1 = {
     nearest_city: string | null;
     distance_from_nearest_city_km: number | null;
     settlement: string | null;
+    habitat_src: string | null;
     location_precision: string;
     sensitivity_level: string;
     is_beginner_friendly: boolean;
@@ -47,6 +53,7 @@ export type PublicPlaceDetailV1 = {
     id: string;
     slug: string;
     name_hu: string;
+    name_latin: string;
     iconicSrc: string | null;
     rank: number;
     frequency_band: PlaceFrequencyBand;
@@ -112,7 +119,7 @@ async function buildPublicPlaceDetailV1(key: string): Promise<PublicPlaceDetailV
   const { data: birdLinks, error } = await supabase
     .from("place_birds")
     .select(
-      "id,place_id,bird_id,pending_bird_name_hu,review_status,rank,frequency_band,is_iconic,visible_in_spring,visible_in_summer,visible_in_autumn,visible_in_winter,seasonality_note,bird:birds(id,slug,name_hu,status)"
+      "id,place_id,bird_id,pending_bird_name_hu,review_status,rank,frequency_band,is_iconic,visible_in_spring,visible_in_summer,visible_in_autumn,visible_in_winter,seasonality_note,bird:birds(id,slug,name_hu,name_latin,status)"
     )
     .eq("place_id", place.id)
     .eq("review_status", "approved")
@@ -124,7 +131,7 @@ async function buildPublicPlaceDetailV1(key: string): Promise<PublicPlaceDetailV
   }
 
   type BirdLinkRow = {
-    bird?: Array<{ id?: unknown; slug?: unknown; name_hu?: unknown; status?: unknown }> | null;
+    bird?: Array<{ id?: unknown; slug?: unknown; name_hu?: unknown; name_latin?: unknown; status?: unknown }> | null;
   };
 
   const publishedBirdLinks = (birdLinks ?? [])
@@ -136,7 +143,7 @@ async function buildPublicPlaceDetailV1(key: string): Promise<PublicPlaceDetailV
       }
       return {
         ...row,
-        bird: { id: bird.id, slug: bird.slug, name_hu: bird.name_hu },
+        bird: { id: bird.id, slug: bird.slug, name_hu: bird.name_hu, name_latin: bird.name_latin ?? "" },
       };
     })
     .filter(Boolean);
@@ -177,6 +184,7 @@ async function buildPublicPlaceDetailV1(key: string): Promise<PublicPlaceDetailV
         id: bird.id,
         slug: bird.slug,
         name_hu: bird.name_hu,
+        name_latin: typeof (bird as { name_latin?: unknown }).name_latin === "string" ? (bird as { name_latin?: string }).name_latin ?? "" : "",
         iconicSrc: iconicUrlByBirdId.get(bird.id) ?? null,
         rank: typeof r.rank === "number" ? r.rank : 0,
         frequency_band: typeof r.frequency_band === "string" ? (r.frequency_band as PlaceFrequencyBand) : "regular",
@@ -208,6 +216,16 @@ async function buildPublicPlaceDetailV1(key: string): Promise<PublicPlaceDetailV
     ? getPublicImageUrl(heroStoragePath)
     : null;
 
+  const habitatAssets = await listHabitatStockAssets();
+  const habitatKey = resolveHabitatStockAssetKeyForPlaceType({
+    placeType: place.place_type,
+    assets: habitatAssets,
+  });
+  const habitatUrlByKey = habitatKey
+    ? await getSignedApprovedHabitatTileUrlsByAssetKeys([habitatKey])
+    : new Map();
+  const habitatSrc = habitatKey ? habitatUrlByKey.get(habitatKey) ?? null : null;
+
   const out: PublicPlaceDetailV1 = {
     generatedAtIso,
     place: {
@@ -223,6 +241,7 @@ async function buildPublicPlaceDetailV1(key: string): Promise<PublicPlaceDetailV
       nearest_city: place.nearest_city,
       distance_from_nearest_city_km: place.distance_from_nearest_city_km,
       settlement: place.settlement,
+      habitat_src: habitatSrc,
       location_precision: place.location_precision,
       sensitivity_level: place.sensitivity_level,
       is_beginner_friendly: place.is_beginner_friendly,

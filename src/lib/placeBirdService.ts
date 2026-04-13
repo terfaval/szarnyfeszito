@@ -52,7 +52,7 @@ export type ApprovedPublishedPlaceBirdLink = Pick<
 export async function listApprovedPublishedBirdLinksForPlace(
   placeId: string
 ): Promise<ApprovedPublishedPlaceBirdLink[]> {
-  type BirdWithStatus = { id: string; slug: string; name_hu: string; status?: string };
+  type BirdWithStatus = { id: string; slug: string; name_hu: string; name_latin?: string | null; status?: string };
   type RowWithStatus = Pick<
     PlaceBirdLink,
     | "id"
@@ -73,7 +73,7 @@ export async function listApprovedPublishedBirdLinksForPlace(
   const { data, error } = await supabaseServerClient
     .from("place_birds")
     .select(
-      "id,place_id,bird_id,rank,frequency_band,is_iconic,visible_in_spring,visible_in_summer,visible_in_autumn,visible_in_winter,updated_at,bird:birds!place_birds_bird_id_fkey(id,slug,name_hu,status)"
+      "id,place_id,bird_id,rank,frequency_band,is_iconic,visible_in_spring,visible_in_summer,visible_in_autumn,visible_in_winter,updated_at,bird:birds!place_birds_bird_id_fkey(id,slug,name_hu,name_latin,status)"
     )
     .eq("place_id", placeId)
     .eq("review_status", "approved")
@@ -94,7 +94,14 @@ export async function listApprovedPublishedBirdLinksForPlace(
     .filter((row) => row.bird?.status === "published")
     .map((row) => ({
       ...row,
-      bird: row.bird ? { id: row.bird.id, slug: row.bird.slug, name_hu: row.bird.name_hu } : null,
+      bird: row.bird
+        ? {
+            id: row.bird.id,
+            slug: row.bird.slug,
+            name_hu: row.bird.name_hu,
+            name_latin: row.bird.name_latin ?? "",
+          }
+        : null,
     })) as ApprovedPublishedPlaceBirdLink[];
 }
 
