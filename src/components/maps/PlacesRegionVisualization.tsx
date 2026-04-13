@@ -1,7 +1,7 @@
 "use client";
 
 import type { Feature, FeatureCollection } from "geojson";
-import type { Layer, PathOptions } from "leaflet";
+import type { Layer, LeafletMouseEvent, PathOptions } from "leaflet";
 import { GeoJSON } from "react-leaflet";
 
 import type { PlaceMarker } from "@/types/place";
@@ -20,7 +20,7 @@ export type PlacesRegionVisualizationVariant =
 export type PlacesRegionFillMode = "uniform_v1" | "place_type_category_v1";
 
 export type RegionEventHandlers = {
-  onClick?: (regionId: string) => void;
+  onClick?: (regionId: string, event: LeafletMouseEvent) => void;
   onMouseOver?: (regionId: string) => void;
   onMouseOut?: (regionId: string) => void;
 };
@@ -137,10 +137,10 @@ export default function PlacesRegionVisualization({
   const attachRegionEvents = (feature: Feature, layer: Layer) => {
     if (!regionEventHandlers) return;
     const regionId = resolveRegionId(feature);
-    if (!regionId) return;
-    if (regionEventHandlers.onClick) {
-      layer.on("click", () => regionEventHandlers.onClick?.(regionId));
-    }
+  if (!regionId) return;
+  if (regionEventHandlers.onClick) {
+    layer.on("click", (event) => regionEventHandlers.onClick?.(regionId, event as LeafletMouseEvent));
+  }
     if (regionEventHandlers.onMouseOver) {
       layer.on("mouseover", () => regionEventHandlers.onMouseOver?.(regionId));
     }

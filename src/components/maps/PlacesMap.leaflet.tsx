@@ -3,7 +3,13 @@
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CircleMarker, GeoJSON, useMap } from "react-leaflet";
-import type { FitBoundsOptions, LatLngBoundsExpression, LeafletEventHandlerFnMap, Map as LeafletMap } from "leaflet";
+import type {
+  FitBoundsOptions,
+  LatLngBoundsExpression,
+  LeafletEventHandlerFnMap,
+  LeafletMouseEvent,
+  Map as LeafletMap,
+} from "leaflet";
 import styles from "./PlacesMap.module.css";
 import { DEFAULT_BASEMAP } from "./basemaps";
 import type { BasemapId, BasemapPresetKey } from "./basemaps";
@@ -83,7 +89,7 @@ export type PlacesMapProps = {
   markers: PlaceMarker[];
   selectedSlug: string | null;
   selectedRegionId?: string | null;
-  onSelect?: (slug: string) => void;
+  onSelect?: (slug: string, meta?: PlaceSelectMeta) => void;
   onRegionHover?: (slug: string | null) => void;
   regionSlugById?: RegionSlugMap;
   layoutVariant?: "responsive_v1" | "fill_parent_v1";
@@ -107,6 +113,12 @@ export type PlacesMapProps = {
     isSelected: boolean;
     isDimmed: boolean;
   }) => ReactNode;
+};
+
+export type PlaceSelectMeta = {
+  containerPoint: { x: number; y: number };
+  mapSize: { x: number; y: number };
+  origin: "marker" | "region";
 };
 
 function MapRefBinder({
@@ -232,13 +244,27 @@ export default function PlacesMap({
     [regionSlugById]
   );
 
+  const buildSelectMeta = useCallback(
+    (event: LeafletMouseEvent, origin: PlaceSelectMeta["origin"]): PlaceSelectMeta | undefined => {
+      const map = mapRef.current;
+      if (!map) return undefined;
+      const size = map.getSize();
+      return {
+        containerPoint: event.containerPoint,
+        mapSize: { x: size.x, y: size.y },
+        origin,
+      };
+    },
+    []
+  );
+
   const handleRegionClick = useCallback(
-    (regionId: string) => {
+    (regionId: string, event: LeafletMouseEvent) => {
       const slug = resolveSlugForRegion(regionId);
       if (!slug) return;
-      onSelect?.(slug);
+      onSelect?.(slug, buildSelectMeta(event, "region"));
     },
-    [onSelect, resolveSlugForRegion]
+    [buildSelectMeta, onSelect, resolveSlugForRegion]
   );
 
   const handleRegionMouseOver = useCallback(
@@ -432,7 +458,7 @@ export default function PlacesMap({
             ...(handlers ?? {}),
             click: (event) => {
               handlers?.click?.(event);
-              onSelect?.(marker.slug);
+              onSelect?.(marker.slug, buildSelectMeta(event as LeafletMouseEvent, "marker"));
             },
           };
           return (
