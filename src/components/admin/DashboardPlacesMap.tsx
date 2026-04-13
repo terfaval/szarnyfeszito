@@ -11,6 +11,7 @@ import { HUNGARY_FULL_BOUNDS_V1 } from "@/components/maps/viewPresets";
 import type { PlacesMapLayersV1 } from "@/types/placesMap";
 import type { PlaceMarker, PlaceType } from "@/types/place";
 import { sortPlaceTypes } from "@/lib/placeTypeMeta";
+import { resolvePanelSide, type PanelSide } from "@/lib/mapPanelSide";
 import styles from "./DashboardPlacesMap.module.css";
 
 const Tooltip = dynamic(() => import("react-leaflet").then((module) => module.Tooltip), {
@@ -92,6 +93,7 @@ export default function DashboardPlacesMap({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [dashboardTopInsetPx, setDashboardTopInsetPx] = useState<number>(0);
+  const [panelSide, setPanelSide] = useState<PanelSide>("right");
 
   const cacheRef = useRef<Map<string, HoverPlaceDetail>>(new Map());
   const activeSlug = pinnedSlug ?? hoveredSlug;
@@ -108,9 +110,11 @@ export default function DashboardPlacesMap({
   const panelOpen = Boolean(
     pinnedSlug && visibleMarkers.some((marker) => marker.slug === pinnedSlug)
   );
-  const cardDetail = filteredActiveSlug ? detail : null;
-  const cardLoading = filteredActiveSlug ? loading : false;
-  const cardError = filteredActiveSlug ? error : null;
+  const overlaySlug = pinnedSlug && visibleMarkers.some((marker) => marker.slug === pinnedSlug) ? pinnedSlug : null;
+  const cardDetail = overlaySlug ? detail : null;
+  const cardLoading = overlaySlug ? loading : false;
+  const cardError = overlaySlug ? error : null;
+  const panelDetail = overlaySlug && detail?.place?.slug === overlaySlug ? detail : null;
 
   const regionSlugById = useMemo(() => {
     const map = new Map<string, string>();
@@ -155,12 +159,17 @@ export default function DashboardPlacesMap({
   }, []);
 
   useEffect(() => {
-    if (!filteredActiveSlug) return;
+    if (!pinnedSlug) {
+      setLoading(false);
+      setError(null);
+      setDetail(null);
+      return;
+    }
 
     const ctrl = new AbortController();
     const run = async () => {
       try {
-        const cached = cacheRef.current.get(filteredActiveSlug);
+        const cached = cacheRef.current.get(pinnedSlug);
         if (cached) {
           setDetail(cached);
           setError(null);
@@ -169,7 +178,7 @@ export default function DashboardPlacesMap({
 
         setLoading(true);
         setError(null);
-        const response = await fetch(`${detailApiBasePath}/${encodeURIComponent(filteredActiveSlug)}`, {
+        const response = await fetch(`${detailApiBasePath}/${encodeURIComponent(pinnedSlug)}`, {
           signal: ctrl.signal,
         });
         const payload = await response.json().catch(() => null);
@@ -179,7 +188,7 @@ export default function DashboardPlacesMap({
           return;
         }
         const next = payload?.data as HoverPlaceDetail;
-        cacheRef.current.set(filteredActiveSlug, next);
+        cacheRef.current.set(pinnedSlug, next);
         setDetail(next);
       } catch (err) {
         if (ctrl.signal.aborted) {
@@ -194,7 +203,7 @@ export default function DashboardPlacesMap({
 
     run();
     return () => ctrl.abort();
-  }, [detailApiBasePath, filteredActiveSlug]);
+  }, [detailApiBasePath, pinnedSlug]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -275,7 +284,17 @@ export default function DashboardPlacesMap({
             defaultBounds={HUNGARY_FULL_BOUNDS_V1}
             defaultBoundsOptions={boundsOptions}
             showResetViewButton
-            onSelect={(slug) => setPinnedSlug((prev) => (prev === slug ? null : slug))}
+            onSelect={(slug, meta) => {
+              setPinnedSlug((prev) => (prev === slug ? null : slug));
+              if (meta) {
+                setPanelSide(
+                  resolvePanelSide({
+                    containerX: meta.containerPoint.x,
+                    containerWidth: meta.mapSize.x,
+                  })
+                );
+              }
+            }}
             markerEventHandlers={(marker) => ({
               mouseover: () => setHoveredSlug(marker.slug),
               mouseout: () => {
@@ -288,6 +307,11 @@ export default function DashboardPlacesMap({
             if (!isSelected) return null;
             if (panelOpen) return null;
             const isPinned = pinnedSlug === marker.slug;
+            const cachedDetail = cacheRef.current.get(marker.slug) ?? null;
+            const tooltipDetail = cachedDetail ?? (detail?.place?.slug === marker.slug ? detail : null);
+            const tooltipName = tooltipDetail?.place?.name ?? marker.name;
+            const tooltipRegion =
+              tooltipDetail?.place?.county ?? tooltipDetail?.place?.nearest_city ?? "";
             return (
               <Tooltip
                 className="sf-map-tooltip--chrome-less"
@@ -298,66 +322,8 @@ export default function DashboardPlacesMap({
                 interactive
               >
                 <div className={styles.tooltipCard}>
-                  <p className={styles.tooltipMeta}>
-                    {detail?.place?.place_type ?? marker.place_type}
-                    {detail?.place?.county ? ` · ${detail.place.county}` : ""}
-                    {detail?.place?.nearest_city ? ` · ${detail.place.nearest_city}` : ""}
-                  </p>
-                  <p className={styles.tooltipName}>{detail?.place?.name ?? marker.name}</p>
-
-                  {loading ? (
-                    <p className={styles.tooltipCopy}>Betöltés…</p>
-                  ) : error ? (
-                    <p className={styles.tooltipCopy}>{error}</p>
-                  ) : detail ? (
-                    <>
-                      {detail.content.short ? <p className={styles.tooltipCopy}>{detail.content.short}</p> : null}
-
-                      <p className={styles.tooltipSectionLabel}>Szezon · {seasonLabelHu(detail.content.season)}</p>
-                      {detail.content.seasonal_snippet ? (
-                        <p className={styles.tooltipCopy}>{detail.content.seasonal_snippet}</p>
-                      ) : (
-                        <p className={styles.tooltipCopy}>Nincs szezon snippet.</p>
-                      )}
-
-                      <p className={styles.tooltipSectionLabel}>Top madarak</p>
-                      {detail.birds.length ? (
-                        <div className={styles.tooltipBirdList}>
-                          {detail.birds.slice(0, 5).map((bird) => (
-                            <Link
-                              key={bird.id}
-                              href={joinHref(
-                                birdLinkBasePath,
-                                birdLinkJoiner,
-                                birdLinkKey === "slug" ? bird.slug : bird.id
-                              )}
-                              className={styles.tooltipBirdLink}
-                            >
-                              <span className={styles.tooltipBirdName}>{bird.name_hu}</span>
-                              <span className={styles.tooltipBirdMeta}>
-                                #{bird.rank} · {bird.frequency_band}
-                              </span>
-                            </Link>
-                          ))}
-                        </div>
-                      ) : (
-                        <p className={styles.tooltipCopy}>Nincs publikált madár a szezonban ehhez a helyhez.</p>
-                      )}
-
-                      <div className={styles.tooltipFooter}>
-                        <Link
-                          href={joinHref(
-                            placeLinkBasePath,
-                            placeLinkJoiner,
-                            placeLinkKey === "slug" ? detail.place.slug : detail.place.id
-                          )}
-                          className={styles.tooltipFooterLink}
-                        >
-                          Helyszín
-                        </Link>
-                      </div>
-                    </>
-                  ) : null}
+                  <p className={styles.tooltipName}>{tooltipName}</p>
+                  {tooltipRegion ? <p className={styles.tooltipMeta}>{tooltipRegion}</p> : null}
                 </div>
               </Tooltip>
             );
@@ -382,69 +348,78 @@ export default function DashboardPlacesMap({
             </div>
           ) : null}
           <div className={styles.overlayCardWrapper}>
-            {cardDetail ? (
-              <PlaceCardShort
-                className={styles.placeCard}
-                place={cardDetail.place}
-                shortDescription={cardDetail.content.short}
-                birds={cardDetail.birds.map((bird) => ({
-                  id: bird.id,
-                  slug: bird.slug,
-                  name_hu: bird.name_hu,
-                  iconicSrc: bird.iconic_src,
-                }))}
-                placeLinkBasePath={placeLinkBasePath}
-                placeLinkJoiner={placeLinkJoiner}
-                birdLinkBasePath={birdLinkBasePath}
-                birdLinkJoiner={birdLinkJoiner}
-                birdLinkKey={birdLinkKey}
-                onClose={() => {
-                  setHoveredSlug(null);
-                  setPinnedSlug(null);
-                }}
-              />
-            ) : filteredActiveSlug ? (
-              <div className={styles.overlayCard}>
-                <p className={styles.overlayTitle}>{cardError ? "Hiba" : cardLoading ? "Betöltés…" : "Published places"}</p>
-                <p className={styles.overlaySubtitle}>
-                  {cardError ? cardError : cardLoading ? "Betöltés…" : activeMarker?.name ?? "Magyarország"}
-                </p>
-              </div>
-            ) : (
-              <div className={styles.overlayCard}>
-                <p className={styles.overlayTitle}>Published places</p>
-                <p className={styles.overlaySubtitle}>{activeMarker ? activeMarker.name : "Magyarország"}</p>
-              </div>
-            )}
+            {!panelOpen ? (
+              cardDetail ? (
+                <PlaceCardShort
+                  className={styles.placeCard}
+                  place={cardDetail.place}
+                  shortDescription={cardDetail.content.short}
+                  birds={cardDetail.birds.map((bird) => ({
+                    id: bird.id,
+                    slug: bird.slug,
+                    name_hu: bird.name_hu,
+                    iconicSrc: bird.iconic_src,
+                  }))}
+                  placeLinkBasePath={placeLinkBasePath}
+                  placeLinkJoiner={placeLinkJoiner}
+                  birdLinkBasePath={birdLinkBasePath}
+                  birdLinkJoiner={birdLinkJoiner}
+                  birdLinkKey={birdLinkKey}
+                  onClose={() => {
+                    setHoveredSlug(null);
+                    setPinnedSlug(null);
+                  }}
+                />
+              ) : (
+                <div className={styles.overlayCard}>
+                  <p className={styles.overlayTitle}>
+                    {cardError ? "Hiba" : cardLoading ? "Betöltés…" : "Published places"}
+                  </p>
+                  <p className={styles.overlaySubtitle}>
+                    {cardError ? cardError : cardLoading ? "Betöltés…" : "Magyarország"}
+                  </p>
+                </div>
+              )
+            ) : null}
           </div>
         </div>
       </div>
 
       {panelOpen && filteredActiveSlug ? (
-        <div className={styles.detailOverlay} role="dialog" aria-modal="true" aria-label="Helyszín részletek">
+        <>
           <button
             type="button"
-            className={styles.detailBackdrop}
+            className={styles.floatingPanelBackdrop}
             onClick={() => setPinnedSlug(null)}
-            aria-label="Close"
+            aria-label="Bezárás"
           />
-          <div className={styles.detailPanel}>
+          <div
+            className={[
+              styles.floatingPanel,
+              panelSide === "left" ? styles.floatingPanelLeft : styles.floatingPanelRight,
+            ]
+              .filter(Boolean)
+              .join(" ")}
+            role="dialog"
+            aria-modal="false"
+            aria-label="Helyszín részletek"
+          >
             <header className={styles.detailHeader}>
               <div>
                 <p className={styles.detailTitle}>
-                  {detail?.place?.place_type ?? activeMarker?.place_type ?? "Place"}
-                  {detail?.place?.county ? ` · ${detail.place.county}` : ""}
-                  {detail?.place?.nearest_city ? ` · ${detail.place.nearest_city}` : ""}
+                  {panelDetail?.place?.place_type ?? activeMarker?.place_type ?? "Place"}
+                  {panelDetail?.place?.county ? ` · ${panelDetail.place.county}` : ""}
+                  {panelDetail?.place?.nearest_city ? ` · ${panelDetail.place.nearest_city}` : ""}
                 </p>
-                <p className={styles.detailName}>{detail?.place?.name ?? activeMarker?.name ?? ""}</p>
+                <p className={styles.detailName}>{panelDetail?.place?.name ?? activeMarker?.name ?? ""}</p>
               </div>
               <div className={styles.detailActions}>
-                {detail?.place?.id ? (
+                {panelDetail?.place?.id ? (
                   <Link
                     href={joinHref(
                       placeLinkBasePath,
                       placeLinkJoiner,
-                      placeLinkKey === "slug" ? detail.place.slug : detail.place.id
+                      placeLinkKey === "slug" ? panelDetail.place.slug : panelDetail.place.id
                     )}
                     className="btn btn--secondary"
                   >
@@ -464,14 +439,16 @@ export default function DashboardPlacesMap({
               {loading ? <p className={styles.tooltipCopy}>Betöltés…</p> : null}
               {error ? <p className={styles.tooltipCopy}>{error}</p> : null}
 
-              {!loading && !error && detail ? (
+              {!loading && !error && panelDetail ? (
                 <>
-                  {detail.content.short ? <p className={styles.tooltipCopy}>{detail.content.short}</p> : null}
+                  {panelDetail.content.short ? <p className={styles.tooltipCopy}>{panelDetail.content.short}</p> : null}
 
                   <div>
-                    <p className={styles.tooltipSectionLabel}>Szezon · {seasonLabelHu(detail.content.season)}</p>
-                    {detail.content.seasonal_snippet ? (
-                      <p className={styles.tooltipCopy}>{detail.content.seasonal_snippet}</p>
+                    <p className={styles.tooltipSectionLabel}>
+                      Szezon · {seasonLabelHu(panelDetail.content.season)}
+                    </p>
+                    {panelDetail.content.seasonal_snippet ? (
+                      <p className={styles.tooltipCopy}>{panelDetail.content.seasonal_snippet}</p>
                     ) : (
                       <p className={styles.tooltipCopy}>Nincs szezon snippet.</p>
                     )}
@@ -479,9 +456,9 @@ export default function DashboardPlacesMap({
 
                   <div>
                     <p className={styles.tooltipSectionLabel}>Top madarak</p>
-                    {detail.birds.length ? (
-                      <div className={styles.tooltipBirdList}>
-                        {detail.birds.slice(0, 5).map((bird) => (
+                    {panelDetail.birds.length ? (
+                      <div className={styles.detailBirdList}>
+                        {panelDetail.birds.slice(0, 6).map((bird) => (
                           <Link
                             key={bird.id}
                             href={joinHref(
@@ -489,11 +466,18 @@ export default function DashboardPlacesMap({
                               birdLinkJoiner,
                               birdLinkKey === "slug" ? bird.slug : bird.id
                             )}
-                            className={styles.tooltipBirdLink}
+                            className={styles.detailBirdRow}
                           >
-                            <span className={styles.tooltipBirdName}>{bird.name_hu}</span>
-                            <span className={styles.tooltipBirdMeta}>
-                              #{bird.rank} · {bird.frequency_band}
+                            {bird.iconic_src ? (
+                              <img src={bird.iconic_src} alt="" className={styles.detailBirdIcon} />
+                            ) : (
+                              <span className={styles.detailBirdFallback}>{bird.name_hu.slice(0, 1)}</span>
+                            )}
+                            <span className={styles.detailBirdText}>
+                              <span className={styles.detailBirdName}>{bird.name_hu}</span>
+                              <span className={styles.detailBirdMeta}>
+                                #{bird.rank} · {bird.frequency_band}
+                              </span>
                             </span>
                           </Link>
                         ))}
@@ -506,7 +490,7 @@ export default function DashboardPlacesMap({
               ) : null}
             </div>
           </div>
-        </div>
+        </>
       ) : null}
     </section>
   );
