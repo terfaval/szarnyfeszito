@@ -6,5 +6,5 @@ type PlaceMetaArgs = {
 
 export function buildPlaceMetaLine({ typeLabel, county, nearestCity }: PlaceMetaArgs): string {
   const region = county?.trim() || nearestCity?.trim() || "";
-  return region ? `${typeLabel} · ${region}` : typeLabel;
+  return region ? `${typeLabel} Â· ${region}` : typeLabel;
 }
