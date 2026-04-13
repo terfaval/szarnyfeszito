@@ -14,16 +14,6 @@ import {
 
 export const dynamic = "force-dynamic";
 
-function isBirdVisibleInSeason(
-  row: Awaited<ReturnType<typeof listApprovedPublishedBirdLinksForPlace>>[number],
-  season: ReturnType<typeof getCurrentSeasonKey>
-) {
-  if (season === "spring") return row.visible_in_spring;
-  if (season === "summer") return row.visible_in_summer;
-  if (season === "autumn") return row.visible_in_autumn;
-  return row.visible_in_winter;
-}
-
 export async function GET(_request: Request, ctx: { params: Promise<{ slug: string }> }) {
   const admin = await getAdminUserFromCookies();
   if (!admin) {
@@ -58,8 +48,7 @@ export async function GET(_request: Request, ctx: { params: Promise<{ slug: stri
 
   const placeBirds = await listApprovedPublishedBirdLinksForPlace(place.id);
   const seasonalRows = placeBirds
-    .filter((row) => isBirdVisibleInSeason(row, currentSeason))
-    .slice(0, 5)
+    .slice(0, 6)
     .map((row) => ({
       id: row.bird?.id ?? "",
       slug: row.bird?.slug ?? "",

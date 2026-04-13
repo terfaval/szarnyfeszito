@@ -60,14 +60,14 @@ export type PublicPlaceDetailV1 = {
   }>;
 };
 
-type PlaceBirdRow = {
+export type PlaceBirdRow = {
   rank?: unknown;
   frequency_band?: unknown;
   visible_in_spring?: unknown;
   visible_in_summer?: unknown;
   visible_in_autumn?: unknown;
   visible_in_winter?: unknown;
-  bird?: { id?: unknown; slug?: unknown; name_hu?: unknown; status?: unknown } | null;
+  bird?: { id?: unknown; slug?: unknown; name_hu?: unknown; name_latin?: unknown; status?: unknown } | null;
 };
 
 function isVisibleInSeason(season: SeasonKey, row: PlaceBirdRow) {
@@ -75,6 +75,10 @@ function isVisibleInSeason(season: SeasonKey, row: PlaceBirdRow) {
   if (season === "summer") return Boolean(row.visible_in_summer);
   if (season === "autumn") return Boolean(row.visible_in_autumn);
   return Boolean(row.visible_in_winter);
+}
+
+export function pickApprovedPlaceBirds(rows: PlaceBirdRow[]) {
+  return rows.filter((row) => Boolean((row as { bird?: unknown }).bird));
 }
 
 async function buildPublicPlaceDetailV1(key: string): Promise<PublicPlaceDetailV1 | null> {
@@ -149,7 +153,7 @@ async function buildPublicPlaceDetailV1(key: string): Promise<PublicPlaceDetailV
     .filter(Boolean);
 
   const currentSeason = getCurrentSeasonKey();
-  const visibleBirdLinks = (publishedBirdLinks as PlaceBirdRow[]).filter((row) => isVisibleInSeason(currentSeason, row));
+  const visibleBirdLinks = pickApprovedPlaceBirds(publishedBirdLinks as PlaceBirdRow[]);
   const visibleBirdIds = visibleBirdLinks
     .map((row) => ((row as { bird?: { id?: unknown } | null }).bird?.id as string | undefined) ?? "")
     .filter(Boolean);
