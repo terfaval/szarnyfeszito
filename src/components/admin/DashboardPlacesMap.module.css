@@ -112,18 +112,19 @@
 }
 
 .tooltipCard {
-  width: 360px;
-  max-width: min(360px, 80vw);
+  width: 220px;
+  max-width: min(220px, 80vw);
   background: var(--panel-2);
   border: 1px solid var(--line);
-  border-radius: 16px;
+  border-radius: 12px;
   box-shadow: var(--shadow);
-  padding: 14px 14px 12px;
+  padding: 10px 12px;
 }
 
 .tooltipMeta {
+  margin-top: 4px;
   font-size: 0.7rem;
-  letter-spacing: 0.22em;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--muted);
 }
@@ -285,4 +286,92 @@
 .detailBody {
   display: grid;
   gap: 0.85rem;
+}
+
+.floatingPanelBackdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: transparent;
+  pointer-events: auto;
+}
+
+.floatingPanel {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: min(40vw, 520px);
+  max-height: 85vh;
+  overflow: auto;
+  border-radius: 0;
+  padding: 1.25rem;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+  color: var(--foreground);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  pointer-events: auto;
+}
+
+.floatingPanelLeft {
+  left: clamp(16px, 3vw, 32px);
+}
+
+.floatingPanelRight {
+  right: clamp(16px, 3vw, 32px);
+}
+
+.detailBirdList {
+  display: grid;
+  gap: 10px;
+}
+
+.detailBirdRow {
+  display: grid;
+  grid-template-columns: 36px 1fr;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  text-decoration: none;
+  color: var(--foreground);
+  background: rgba(var(--brand-ink-rgb), 0.04);
+}
+
+.detailBirdRow:hover {
+  background: rgba(var(--brand-ink-rgb), 0.08);
+}
+
+.detailBirdIcon {
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  object-fit: cover;
+}
+
+.detailBirdFallback {
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  background: rgba(var(--brand-ink-rgb), 0.1);
+}
+
+.detailBirdText {
+  display: grid;
+  gap: 2px;
+}
+
+.detailBirdName {
+  font-weight: 600;
+}
+
+.detailBirdMeta {
+  font-size: 0.72rem;
+  color: var(--muted);
 }
