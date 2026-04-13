@@ -6,6 +6,11 @@ import { placeUiVariantsSchemaV1 } from "@/lib/placeContentSchema";
 import { listApprovedPublishedBirdLinksForPlace } from "@/lib/placeBirdService";
 import { getCurrentSeasonKey } from "@/lib/season";
 import { listApprovedCurrentIconicImagesForBirds, getSignedImageUrl } from "@/lib/imageService";
+import {
+  getSignedApprovedHabitatTileUrlsByAssetKeys,
+  listHabitatStockAssets,
+  resolveHabitatStockAssetKeyForPlaceType,
+} from "@/lib/habitatStockAssetService";
 
 export const dynamic = "force-dynamic";
 
@@ -31,6 +36,16 @@ export async function GET(_request: Request, ctx: { params: Promise<{ slug: stri
     return NextResponse.json({ error: "Place not found." }, { status: 404 });
   }
 
+  const habitatAssets = await listHabitatStockAssets();
+  const habitatKey = resolveHabitatStockAssetKeyForPlaceType({
+    placeType: place.place_type,
+    assets: habitatAssets,
+  });
+  const habitatUrlByKey = habitatKey
+    ? await getSignedApprovedHabitatTileUrlsByAssetKeys([habitatKey])
+    : new Map();
+  const habitatSrc = habitatKey ? habitatUrlByKey.get(habitatKey) ?? null : null;
+
   const currentSeason = getCurrentSeasonKey();
   const approvedContent = await getLatestApprovedContentBlockForPlace(place.id);
   const parsedContent =
@@ -49,6 +64,7 @@ export async function GET(_request: Request, ctx: { params: Promise<{ slug: stri
       id: row.bird?.id ?? "",
       slug: row.bird?.slug ?? "",
       name_hu: row.bird?.name_hu ?? "",
+      name_latin: row.bird?.name_latin ?? "",
       rank: row.rank,
       frequency_band: row.frequency_band,
       is_iconic: row.is_iconic,
@@ -81,6 +97,7 @@ export async function GET(_request: Request, ctx: { params: Promise<{ slug: stri
         place_type: place.place_type,
         county: place.county,
         nearest_city: place.nearest_city,
+        habitat_src: habitatSrc,
       },
       content: {
         short: variants?.short ?? "",
