@@ -8,7 +8,6 @@
   border-bottom: 1px solid var(--line);
   background: var(--panel);
   position: relative;
-  z-index: 1;
   margin-top: calc(-1 * (var(--admin-dashboard-topbar-offset) + var(--admin-shell-pad-block)));
 }
 
@@ -261,13 +260,6 @@
   border-bottom: 1px solid rgba(var(--brand-accent-rgb), 0.15);
 }
 
-.detailTitle {
-  font-size: 0.7rem;
-  letter-spacing: 0.32em;
-  text-transform: uppercase;
-  color: var(--muted);
-}
-
 .detailName {
   margin-top: 8px;
   font-size: 1.5rem;
@@ -275,12 +267,12 @@
   color: var(--foreground);
 }
 
-.detailActions {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-  justify-content: flex-end;
+.detailMeta {
+  margin-top: 0.35rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--muted);
 }
 
 .detailBody {
@@ -288,16 +280,8 @@
   gap: 0.85rem;
 }
 
-.floatingPanelBackdrop {
-  position: absolute;
-  inset: 0;
-  border: 0;
-  background: transparent;
-  pointer-events: auto;
-}
-
 .floatingPanel {
-  position: absolute;
+  position: fixed;
   top: 50%;
   transform: translateY(-50%);
   width: min(40vw, 520px);
@@ -313,6 +297,7 @@
   flex-direction: column;
   gap: 1rem;
   pointer-events: auto;
+  z-index: 1300;
 }
 
 .floatingPanelLeft {
@@ -367,11 +352,32 @@
   gap: 2px;
 }
 
+.detailBirdIconShell {
+  flex-shrink: 0;
+}
+
 .detailBirdName {
   font-weight: 600;
 }
 
-.detailBirdMeta {
+.detailBirdLatin {
   font-size: 0.72rem;
   color: var(--muted);
+}
+
+.detailClose {
+  border: 0;
+  background: transparent;
+  color: var(--brand-ink);
+  cursor: pointer;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.detailClose:hover {
+  background: rgba(var(--brand-ink-rgb), 0.08);
 }

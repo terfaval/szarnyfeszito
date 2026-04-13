@@ -46,7 +46,7 @@ export type ApprovedPublishedPlaceBirdLink = Pick<
   | "visible_in_winter"
   | "updated_at"
 > & {
-  bird: { id: string; slug: string; name_hu: string } | null;
+  bird: { id: string; slug: string; name_hu: string; name_latin: string } | null;
 };
 
 export async function listApprovedPublishedBirdLinksForPlace(

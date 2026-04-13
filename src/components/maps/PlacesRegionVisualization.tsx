@@ -2,6 +2,7 @@
 
 import type { Feature, FeatureCollection } from "geojson";
 import type { Layer, LeafletMouseEvent, PathOptions } from "leaflet";
+import { DomEvent } from "leaflet";
 import { GeoJSON } from "react-leaflet";
 
 import type { PlaceMarker } from "@/types/place";
@@ -139,7 +140,10 @@ export default function PlacesRegionVisualization({
     const regionId = resolveRegionId(feature);
   if (!regionId) return;
   if (regionEventHandlers.onClick) {
-    layer.on("click", (event) => regionEventHandlers.onClick?.(regionId, event as LeafletMouseEvent));
+    layer.on("click", (event) => {
+      DomEvent.stopPropagation(event);
+      regionEventHandlers.onClick?.(regionId, event as LeafletMouseEvent);
+    });
   }
     if (regionEventHandlers.onMouseOver) {
       layer.on("mouseover", () => regionEventHandlers.onMouseOver?.(regionId));

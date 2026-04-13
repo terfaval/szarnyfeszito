@@ -10,6 +10,7 @@ import type {
   LeafletMouseEvent,
   Map as LeafletMap,
 } from "leaflet";
+import { DomEvent } from "leaflet";
 import styles from "./PlacesMap.module.css";
 import { DEFAULT_BASEMAP } from "./basemaps";
 import type { BasemapId, BasemapPresetKey } from "./basemaps";
@@ -90,6 +91,7 @@ export type PlacesMapProps = {
   selectedSlug: string | null;
   selectedRegionId?: string | null;
   onSelect?: (slug: string, meta?: PlaceSelectMeta) => void;
+  onMapClick?: (event: LeafletMouseEvent) => void;
   onRegionHover?: (slug: string | null) => void;
   regionSlugById?: RegionSlugMap;
   layoutVariant?: "responsive_v1" | "fill_parent_v1";
@@ -124,9 +126,11 @@ export type PlaceSelectMeta = {
 function MapRefBinder({
   onMap,
   onZoom,
+  onMapClick,
 }: {
   onMap: (map: LeafletMap) => void;
   onZoom: (zoom: number) => void;
+  onMapClick?: (event: LeafletMouseEvent) => void;
 }) {
   const map = useMap();
   useEffect(() => {
@@ -134,10 +138,16 @@ function MapRefBinder({
     const handler = () => onZoom(map.getZoom());
     handler();
     map.on("zoomend", handler);
+    if (onMapClick) {
+      map.on("click", onMapClick);
+    }
     return () => {
       map.off("zoomend", handler);
+      if (onMapClick) {
+        map.off("click", onMapClick);
+      }
     };
-  }, [map, onMap, onZoom]);
+  }, [map, onMap, onZoom, onMapClick]);
   return null;
 }
 
@@ -165,6 +175,7 @@ export default function PlacesMap({
   toolBarTopControls,
   markerEventHandlers,
   renderMarkerChildren,
+  onMapClick,
 }: PlacesMapProps) {
   const { isNight } = useTimeThemeMode();
   const isDark = isNight;
@@ -413,7 +424,7 @@ export default function PlacesMap({
         maxBoundsViscosity={interactions.maxBoundsViscosity}
         attributionControl={false}
       >
-        <MapRefBinder onMap={onMap} onZoom={onZoom} />
+        <MapRefBinder onMap={onMap} onZoom={onZoom} onMapClick={onMapClick} />
         <BasemapLayer basemap={basemap} basemapPreset={basemapPreset} />
         {basemap === "brand" ? (
           <>
@@ -457,6 +468,7 @@ export default function PlacesMap({
           const mergedHandlers: LeafletEventHandlerFnMap = {
             ...(handlers ?? {}),
             click: (event) => {
+              DomEvent.stopPropagation(event);
               handlers?.click?.(event);
               onSelect?.(marker.slug, buildSelectMeta(event as LeafletMouseEvent, "marker"));
             },
