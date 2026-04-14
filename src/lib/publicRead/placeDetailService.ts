@@ -18,6 +18,7 @@ import {
 import { listLatestApprovedContentBlocksForBirds } from "@/lib/contentService";
 import { logPublicReadRegenerate, PUBLIC_READ_REVALIDATE_SECONDS } from "@/lib/publicRead/cache";
 import type { PlaceFrequencyBand, PlaceNotableUnit, PlaceType } from "@/types/place";
+import { pickApprovedPlaceBirds } from "@/lib/placeBirdFilters";
 
 export type PublicPlaceDetailV1 = {
   generatedAtIso: string;
@@ -75,10 +76,6 @@ function isVisibleInSeason(season: SeasonKey, row: PlaceBirdRow) {
   if (season === "summer") return Boolean(row.visible_in_summer);
   if (season === "autumn") return Boolean(row.visible_in_autumn);
   return Boolean(row.visible_in_winter);
-}
-
-export function pickApprovedPlaceBirds(rows: PlaceBirdRow[]) {
-  return rows.filter((row) => Boolean((row as { bird?: unknown }).bird));
 }
 
 async function buildPublicPlaceDetailV1(key: string): Promise<PublicPlaceDetailV1 | null> {
