@@ -46,13 +46,6 @@ type HoverPlaceDetail = {
   }>;
 };
 
-function seasonLabelHu(season: HoverPlaceDetail["content"]["season"]) {
-  if (season === "spring") return "Tavasz";
-  if (season === "summer") return "Nyár";
-  if (season === "autumn") return "Ősz";
-  return "Tél";
-}
-
 export type DashboardPlacesMapProps = {
   markers: PlaceMarker[];
   layers: PlacesMapLayersV1 | null;
@@ -406,20 +399,29 @@ export default function DashboardPlacesMap({
           aria-label="Helyszín részletek"
         >
           <header className={styles.detailHeader}>
-            <div>
-              <p className={styles.detailName}>{panelDetail?.place?.name ?? activeMarker?.name ?? ""}</p>
-              {panelDetail ? (
-                <p className={styles.detailMeta}>
-                  {buildPlaceMetaLine({
-                    typeLabel:
-                      PLACE_TYPE_LABELS[panelDetail.place.place_type] ??
-                      PLACE_TYPE_LABELS[activeMarker?.place_type ?? "lake"] ??
-                      "",
-                    county: panelDetail.place.county ?? null,
-                    nearestCity: panelDetail.place.nearest_city ?? null,
-                  })}
-                </p>
-              ) : null}
+            <div className={styles.detailHeading}>
+              <div className={styles.detailHabitatSquare} aria-hidden="true">
+                {panelHabitatSrc ? (
+                  <img src={panelHabitatSrc} alt="" className={styles.detailHabitatImg} />
+                ) : (
+                  <div className={styles.detailHabitatFallback} />
+                )}
+              </div>
+              <div>
+                <p className={styles.detailName}>{panelDetail?.place?.name ?? activeMarker?.name ?? ""}</p>
+                {panelDetail ? (
+                  <p className={styles.detailMeta}>
+                    {buildPlaceMetaLine({
+                      typeLabel:
+                        PLACE_TYPE_LABELS[panelDetail.place.place_type] ??
+                        PLACE_TYPE_LABELS[activeMarker?.place_type ?? "lake"] ??
+                        "",
+                      county: panelDetail.place.county ?? null,
+                      nearestCity: panelDetail.place.nearest_city ?? null,
+                    })}
+                  </p>
+                ) : null}
+              </div>
             </div>
             <button
               type="button"
@@ -440,18 +442,7 @@ export default function DashboardPlacesMap({
                 {panelDetail.content.short ? <p className={styles.tooltipCopy}>{panelDetail.content.short}</p> : null}
 
                 <div>
-                  <p className={styles.tooltipSectionLabel}>
-                    Szezon · {seasonLabelHu(panelDetail.content.season)}
-                  </p>
-                  {panelDetail.content.seasonal_snippet ? (
-                    <p className={styles.tooltipCopy}>{panelDetail.content.seasonal_snippet}</p>
-                  ) : (
-                    <p className={styles.tooltipCopy}>Nincs szezon snippet.</p>
-                  )}
-                </div>
-
-                <div>
-                  <p className={styles.tooltipSectionLabel}>Top madarak</p>
+                  <p className={styles.tooltipSectionLabel}>Jellemző madarak</p>
                   {panelDetail.birds.length ? (
                     <div className={styles.detailBirdList}>
                       {panelDetail.birds.slice(0, 6).map((bird) => (
@@ -479,7 +470,7 @@ export default function DashboardPlacesMap({
                       ))}
                     </div>
                   ) : (
-                    <p className={styles.tooltipCopy}>Nincs publikált madár a szezonban ehhez a helyhez.</p>
+                    <p className={styles.tooltipCopy}>Nincs publikált, jóváhagyott madár ehhez a helyszínhez.</p>
                   )}
                 </div>
               </>

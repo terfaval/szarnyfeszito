@@ -33,7 +33,7 @@ export async function GET(_request: Request, ctx: { params: Promise<{ slug: stri
           seasonal_snippet: seasonalSnippet,
           season: detail.current_season,
         },
-        birds: detail.birds.slice(0, 8).map((bird) => ({
+        birds: detail.birds.slice(0, 6).map((bird) => ({
           id: bird.id,
           slug: bird.slug,
           name_hu: bird.name_hu,

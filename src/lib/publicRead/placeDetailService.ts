@@ -15,7 +15,6 @@ import {
   listHabitatStockAssets,
   resolveHabitatStockAssetKeyForPlaceType,
 } from "@/lib/habitatStockAssetService";
-import { listLatestApprovedContentBlocksForBirds } from "@/lib/contentService";
 import { logPublicReadRegenerate, PUBLIC_READ_REVALIDATE_SECONDS } from "@/lib/publicRead/cache";
 import type { PlaceFrequencyBand, PlaceNotableUnit, PlaceType } from "@/types/place";
 import { pickApprovedPlaceBirds } from "@/lib/placeBirdFilters";
@@ -70,13 +69,6 @@ export type PlaceBirdRow = {
   visible_in_winter?: unknown;
   bird?: { id?: unknown; slug?: unknown; name_hu?: unknown; name_latin?: unknown; status?: unknown } | null;
 };
-
-function isVisibleInSeason(season: SeasonKey, row: PlaceBirdRow) {
-  if (season === "spring") return Boolean(row.visible_in_spring);
-  if (season === "summer") return Boolean(row.visible_in_summer);
-  if (season === "autumn") return Boolean(row.visible_in_autumn);
-  return Boolean(row.visible_in_winter);
-}
 
 async function buildPublicPlaceDetailV1(key: string): Promise<PublicPlaceDetailV1 | null> {
   const generatedAtIso = new Date().toISOString();
@@ -154,14 +146,8 @@ async function buildPublicPlaceDetailV1(key: string): Promise<PublicPlaceDetailV
   const visibleBirdIds = visibleBirdLinks
     .map((row) => ((row as { bird?: { id?: unknown } | null }).bird?.id as string | undefined) ?? "")
     .filter(Boolean);
-
-  const approvedContentByBirdId = await listLatestApprovedContentBlocksForBirds(visibleBirdIds);
-  const publicBirdIds = visibleBirdIds.filter((birdId) => approvedContentByBirdId.has(birdId));
-  const publicBirdIdSet = new Set(publicBirdIds);
-  const publicBirdLinks = visibleBirdLinks.filter((row) => {
-    const birdId = ((row as { bird?: { id?: unknown } | null }).bird?.id as string | undefined) ?? "";
-    return birdId ? publicBirdIdSet.has(birdId) : false;
-  });
+  const publicBirdIds = visibleBirdIds;
+  const publicBirdLinks = visibleBirdLinks;
 
   const iconicRows = await listApprovedCurrentIconicImagesForBirds(publicBirdIds);
   const storagePathByBirdId = new Map(iconicRows.map((row) => [row.entity_id, row.storage_path]));
