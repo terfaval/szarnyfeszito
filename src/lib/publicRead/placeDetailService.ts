@@ -124,16 +124,23 @@ async function buildPublicPlaceDetailV1(key: string): Promise<PublicPlaceDetailV
   }
 
   type BirdLinkRow = {
-    bird?: Array<{ id?: unknown; slug?: unknown; name_hu?: unknown; name_latin?: unknown; status?: unknown }> | null;
+    // Supabase can return either an object (many-to-one) or an array depending on select/join shape.
+    bird?:
+      | { id?: unknown; slug?: unknown; name_hu?: unknown; name_latin?: unknown; status?: unknown }
+      | Array<{ id?: unknown; slug?: unknown; name_hu?: unknown; name_latin?: unknown; status?: unknown }>
+      | null;
   };
 
   const publishedBirdLinks = (birdLinks ?? [])
     .map((row: BirdLinkRow) => {
-      const birdArray = Array.isArray(row.bird) ? row.bird : [];
-      const bird = birdArray[0] ?? null;
+      const birdValue = row.bird ?? null;
+      const bird =
+        Array.isArray(birdValue) ? (birdValue[0] ?? null) : birdValue && typeof birdValue === "object" ? birdValue : null;
+
       if (!bird || bird.status !== "published") {
         return null;
       }
+
       return {
         ...row,
         bird: { id: bird.id, slug: bird.slug, name_hu: bird.name_hu, name_latin: bird.name_latin ?? "" },

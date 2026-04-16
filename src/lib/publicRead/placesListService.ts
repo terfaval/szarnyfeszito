@@ -3,7 +3,7 @@ import { unstable_cache } from "next/cache";
 import { createUserClient } from "@/lib/supabaseServerClient";
 import { listLatestApprovedContentBlocksForPlaces } from "@/lib/placeContentService";
 import { placeUiVariantsSchemaV1 } from "@/lib/placeContentSchema";
-import { getPublicImageUrl } from "@/lib/imageService";
+import { getPublicImageUrl, listApprovedCurrentIconicImagesForBirds } from "@/lib/imageService";
 import {
   getSignedApprovedHabitatTileUrlsByAssetKeys,
   listHabitatStockAssets,
@@ -13,6 +13,21 @@ import { logPublicReadRegenerate, PUBLIC_READ_REVALIDATE_SECONDS } from "@/lib/p
 import type { Place, PlaceType } from "@/types/place";
 
 type ImageRow = { entity_id?: unknown; storage_path?: unknown };
+type PlaceBirdRow = {
+  place_id?: unknown;
+  rank?: unknown;
+  bird?:
+    | { id?: unknown; slug?: unknown; name_hu?: unknown; status?: unknown }
+    | Array<{ id?: unknown; slug?: unknown; name_hu?: unknown; status?: unknown }>
+    | null;
+};
+
+export type PublicPlaceListBirdV1 = {
+  id: string;
+  slug: string;
+  name_hu: string;
+  iconicSrc: string | null;
+};
 
 export type PublicPlaceListItemV1 = {
   id: string;
@@ -27,6 +42,7 @@ export type PublicPlaceListItemV1 = {
   hero_image_src: string | null;
   habitat_key: string | null;
   habitat_src: string | null;
+  birds: PublicPlaceListBirdV1[];
 };
 
 export type PublicPlaceFiltersV1 = {
@@ -66,7 +82,65 @@ async function buildPublicPlacesListV1(): Promise<PublicPlacesListV1> {
   const places = (placeRows ?? []) as Place[];
   const placeIds = places.map((place) => place.id);
 
-  const [contentBlocks, habitatAssets] = await Promise.all([listLatestApprovedContentBlocksForPlaces(placeIds), listHabitatStockAssets()]);
+  const [contentBlocks, habitatAssets] = await Promise.all([
+    listLatestApprovedContentBlocksForPlaces(placeIds),
+    listHabitatStockAssets(),
+  ]);
+
+  const { data: placeBirdRows, error: placeBirdError } = await supabase
+    .from("place_birds")
+    .select("place_id,rank,bird:birds(id,slug,name_hu,status)")
+    .eq("review_status", "approved")
+    .not("bird_id", "is", null)
+    .in("place_id", placeIds)
+    .order("rank", { ascending: true })
+    .limit(5000);
+
+  if (placeBirdError) {
+    throw placeBirdError;
+  }
+
+  const birdRows = (placeBirdRows ?? []) as unknown as PlaceBirdRow[];
+  const birdIdsForIconic = new Set<string>();
+  const birdsByPlaceId = new Map<string, Array<{ id: string; slug: string; name_hu: string; rank: number }>>();
+
+  for (const row of birdRows) {
+    const placeId = typeof row.place_id === "string" ? row.place_id : "";
+    if (!placeId) continue;
+
+    const birdValue = row.bird ?? null;
+    const bird =
+      Array.isArray(birdValue)
+        ? birdValue[0] ?? null
+        : birdValue && typeof birdValue === "object"
+          ? birdValue
+          : null;
+
+    if (!bird || bird.status !== "published") continue;
+    const birdId = typeof bird.id === "string" ? bird.id : "";
+    const slug = typeof bird.slug === "string" ? bird.slug : "";
+    const nameHu = typeof bird.name_hu === "string" ? bird.name_hu : "";
+    if (!birdId || !slug || !nameHu) continue;
+
+    const rank = typeof row.rank === "number" ? row.rank : 0;
+    const list = birdsByPlaceId.get(placeId) ?? [];
+    if (list.length < 4 && !list.some((b) => b.id === birdId)) {
+      list.push({ id: birdId, slug, name_hu: nameHu, rank });
+      birdsByPlaceId.set(placeId, list);
+      birdIdsForIconic.add(birdId);
+    }
+  }
+
+  const iconicRows = birdIdsForIconic.size
+    ? await listApprovedCurrentIconicImagesForBirds(Array.from(birdIdsForIconic))
+    : [];
+  const iconicUrlByBirdId = new Map<string, string | null>();
+  iconicRows.forEach((row) => {
+    const id = row.entity_id;
+    const storagePath = row.storage_path;
+    if (!id || !storagePath) return;
+    iconicUrlByBirdId.set(id, getPublicImageUrl(storagePath));
+  });
 
   const { data: imageRows, error: imageError } = await supabase
     .from("images")
@@ -118,6 +192,12 @@ async function buildPublicPlacesListV1(): Promise<PublicPlacesListV1> {
       const fallbackTeaser = typeof block?.short === "string" ? block.short : "";
       const habitatKey = habitatKeyByPlaceId.get(place.id) ?? null;
       const habitatSrc = habitatKey ? habitatUrlByKey.get(habitatKey) ?? null : null;
+      const birds = (birdsByPlaceId.get(place.id) ?? []).map((bird) => ({
+        id: bird.id,
+        slug: bird.slug,
+        name_hu: bird.name_hu,
+        iconicSrc: iconicUrlByBirdId.get(bird.id) ?? null,
+      }));
       return {
         id: place.id,
         slug: place.slug,
@@ -131,6 +211,7 @@ async function buildPublicPlacesListV1(): Promise<PublicPlacesListV1> {
         hero_image_src: heroUrlByPlaceId.get(place.id) ?? null,
         habitat_key: habitatKey,
         habitat_src: habitatSrc ?? null,
+        birds,
       } satisfies PublicPlaceListItemV1;
     })
     .filter(Boolean) as PublicPlaceListItemV1[];

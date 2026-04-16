@@ -191,15 +191,16 @@ export default function PlacesMap({
       (defaultPanBy[0] !== 0 || defaultPanBy[1] !== 0)
     ) {
       didApplyInitialPanRef.current = true;
-      if (defaultBounds) {
-        map.once("moveend", () => {
+      // React-Leaflet may apply initial `bounds` before/after our binder runs.
+      // `whenReady` calls immediately if the map is already ready, so this is
+      // reliable even when the initial `moveend` already happened.
+      map.whenReady(() => {
+        requestAnimationFrame(() => {
           map.panBy(defaultPanBy, { animate: false });
         });
-      } else {
-        map.panBy(defaultPanBy, { animate: false });
-      }
+      });
     }
-  }, [defaultBounds, defaultPanBy]);
+  }, [defaultPanBy]);
 
   const onZoom = useCallback((zoom: number) => {
     setCurrentZoom(zoom);
@@ -293,22 +294,23 @@ export default function PlacesMap({
 
   const applyDefaultView = useCallback(
     (map: LeafletMap, opts: { animate: boolean }) => {
+      const shouldPan =
+        !!defaultPanBy && (defaultPanBy[0] !== 0 || defaultPanBy[1] !== 0);
+      const panAfterMove = () => {
+        if (!shouldPan || !defaultPanBy) return;
+        map.panBy(defaultPanBy, { animate: false });
+      };
+
       if (mapDefaultBounds) {
-        map.fitBounds(mapDefaultBounds, {
-          ...(mapDefaultBoundsOptions ?? {}),
-          animate: opts.animate,
-        });
-        if (defaultPanBy && (defaultPanBy[0] !== 0 || defaultPanBy[1] !== 0)) {
-          map.once("moveend", () => {
-            map.panBy(defaultPanBy, { animate: false });
-          });
+        // IMPORTANT: attach the move handler BEFORE `fitBounds`, otherwise we can miss it.
+        if (shouldPan) {
+          map.once("moveend", panAfterMove);
         }
+        map.fitBounds(mapDefaultBounds, { ...(mapDefaultBoundsOptions ?? {}), animate: opts.animate });
         return;
       }
-      if (defaultPanBy && (defaultPanBy[0] !== 0 || defaultPanBy[1] !== 0)) {
-        map.once("moveend", () => {
-          map.panBy(defaultPanBy, { animate: false });
-        });
+      if (shouldPan) {
+        map.once("moveend", panAfterMove);
       }
       map.setView(mapDefaultCenter, mapDefaultZoom, { animate: opts.animate });
     },

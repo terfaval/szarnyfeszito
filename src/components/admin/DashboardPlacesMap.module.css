@@ -342,6 +342,57 @@
   gap: 10px;
 }
 
+.detailBirdGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(64px, 1fr));
+  gap: 10px;
+}
+
+.detailBirdTile {
+  aspect-ratio: 1 / 1;
+  display: grid;
+  place-items: center;
+  border-radius: 0;
+  background: rgba(var(--brand-ink-rgb), 0.04);
+  text-decoration: none;
+  color: var(--foreground);
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.detailBirdTile:hover {
+  background: rgba(var(--brand-ink-rgb), 0.08);
+  transform: translateY(-1px);
+}
+
+.detailFooter {
+  position: sticky;
+  bottom: -1px;
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 0.85rem;
+  margin-top: 0.5rem;
+  background: linear-gradient(to top, var(--panel-2) 75%, rgba(0, 0, 0, 0));
+}
+
+.detailCta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 10px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(var(--brand-ink-rgb), 0.2);
+  background: rgba(var(--brand-ink-rgb), 0.06);
+  color: var(--brand-ink);
+  text-decoration: none;
+  font-weight: 650;
+  letter-spacing: 0.02em;
+}
+
+.detailCta:hover {
+  background: rgba(var(--brand-ink-rgb), 0.12);
+}
+
 .detailBirdRow {
   display: grid;
   grid-template-columns: 36px 1fr;

@@ -30,6 +30,7 @@ type PublicPlaceDetail = {
     nearest_city: string | null;
     distance_from_nearest_city_km: number | null;
     settlement: string | null;
+    habitat_src?: string | null;
     location_precision: PlaceLocationPrecision;
     sensitivity_level: PlaceSensitivityLevel;
     is_beginner_friendly: boolean;
@@ -196,21 +197,23 @@ export default function PlacesExplorer() {
         ) : detailError ? (
           <div className="admin-message admin-message--error">{detailError}</div>
         ) : selectedDetail ? (
-          <PlacePublishPreview
-            place={selectedDetail.place}
-            marker={selectedDetail.marker}
-            layers={layers}
-            content={selectedDetail.content}
-            heroImageUrl={selectedDetail.hero_image_src}
-            currentSeason={selectedDetail.current_season}
-            birds={selectedDetail.birds}
-            showSeasonal
-            showHeading={false}
-            birdLinkBasePath="/birds"
-            birdLinkKey="id"
-            mapBasemap="brand"
-            mapInteractionMode="static"
-          />
+            <PlacePublishPreview
+              place={selectedDetail.place}
+              marker={selectedDetail.marker}
+              layers={layers}
+              content={selectedDetail.content}
+              heroImageUrl={selectedDetail.hero_image_src}
+              habitatSrc={selectedDetail.place.habitat_src ?? null}
+              currentSeason={selectedDetail.current_season}
+              birds={selectedDetail.birds}
+              showSeasonal
+              showHeading={false}
+              layoutVariant="public_place_v1"
+              birdLinkBasePath="/birds"
+              birdLinkKey="id"
+              mapBasemap="bird"
+              mapInteractionMode="static"
+            />
         ) : (
           <div className="admin-stat-card admin-stat-card--note">Nincs elérhető részlet.</div>
         )}
@@ -240,8 +243,8 @@ export default function PlacesExplorer() {
             selectedSlug={null}
             selectedRegionId={selectedRegionId}
             onSelect={(slug) => selectSlug(slug)}
-            basemap="brand"
-            regionVisualization="places_regions_v1"
+            basemap="bird"
+            regionVisualization="none"
             markerColorMode="place_type_category_v1"
           />
         )}

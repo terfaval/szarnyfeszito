@@ -24,11 +24,11 @@ export type PublicDashboardSpotlightGroupV1 = {
 export const PUBLIC_DASHBOARD_SPOTLIGHT_GROUPS_V1: PublicDashboardSpotlightGroupV1[] = [
   {
     key: "water",
-    label: "Vízpart",
+    label: "VĂ­zpart",
     placeTypes: ["lake", "river", "fishpond", "reservoir", "marsh", "reedbed", "salt_lake", "urban_waterfront"],
   },
-  { key: "forest", label: "Erdő", placeTypes: ["forest_edge", "protected_area"] },
-  { key: "mountain", label: "Hegység", placeTypes: ["mountain_area"] },
+  { key: "forest", label: "ErdĹ‘", placeTypes: ["forest_edge", "protected_area"] },
+  { key: "mountain", label: "HegysĂ©g", placeTypes: ["mountain_area"] },
 ];
 
 type SpotlightPlaceV1 = { id: string; name: string; slug: string; place_type: PlaceType };
@@ -59,9 +59,9 @@ export type PublicDashboardV1 = {
 
 function seasonLabelHu(currentSeason: SeasonKey) {
   if (currentSeason === "spring") return "Tavasz";
-  if (currentSeason === "summer") return "Nyár";
-  if (currentSeason === "autumn") return "Ősz";
-  return "Tél";
+  if (currentSeason === "summer") return "NyĂˇr";
+  if (currentSeason === "autumn") return "Ĺsz";
+  return "TĂ©l";
 }
 
 function isObsEnabled() {
@@ -165,6 +165,14 @@ const getPublicDashboardV1Cached = unstable_cache(
       const rows = (data ?? []) as unknown as Row[];
       const seasonalRows = rows.filter((row) => {
         if (!row.bird || row.bird.status !== "published") return false;
+
+        const hasAnySeasonFlag =
+          row.visible_in_spring || row.visible_in_summer || row.visible_in_autumn || row.visible_in_winter;
+
+        if (!hasAnySeasonFlag) {
+          return true;
+        }
+
         if (currentSeason === "spring") return row.visible_in_spring;
         if (currentSeason === "summer") return row.visible_in_summer;
         if (currentSeason === "autumn") return row.visible_in_autumn;

@@ -83,6 +83,7 @@ export default function PlacePublishPreview({
   layers,
   content,
   heroImageUrl,
+  habitatSrc = null,
   currentSeason,
   birds,
   showSeasonal,
@@ -91,6 +92,7 @@ export default function PlacePublishPreview({
   birdLinkKey = "id",
   mapBasemap = "bird",
   mapInteractionMode = "bounded_hu_v1",
+  layoutVariant = "admin_preview_v1",
 }: {
   place: Pick<
     Place,
@@ -116,6 +118,7 @@ export default function PlacePublishPreview({
   layers: PlacesMapLayersV1 | null;
   content: PlaceUiVariantsV1 | null;
   heroImageUrl?: string | null;
+  habitatSrc?: string | null;
   currentSeason: SeasonKey;
   birds: PlacePublishBird[];
   showSeasonal: boolean;
@@ -124,10 +127,12 @@ export default function PlacePublishPreview({
   birdLinkKey?: "id" | "slug";
   mapBasemap?: PlacesMapProps["basemap"];
   mapInteractionMode?: PlacesMapInteractionMode;
+  layoutVariant?: "admin_preview_v1" | "public_place_v1";
 }) {
   const variants = content?.variants ?? null;
   const seasonalText = variants?.seasonal_snippet?.[currentSeason] ?? "";
   const seasonLabel = SEASON_LABEL_HU[currentSeason];
+  const isPublicPlace = layoutVariant === "public_place_v1";
 
   const initialIconicPreviewById = useMemo(() => {
     const out: Record<string, string | null> = {};
@@ -155,16 +160,16 @@ export default function PlacePublishPreview({
   const hasDidYouKnow = !!variants && nonEmpty(variants.did_you_know);
   const hasNearbyProtection = !!variants && nonEmpty(variants.nearby_protection_context);
 
-  const shouldOverlayDidYouKnow = hasDidYouKnow && place.location_precision !== "hidden";
+  const shouldOverlayDidYouKnow = !isPublicPlace && hasDidYouKnow && place.location_precision !== "hidden";
   const notableUnits = (place.notable_units_json ?? []) as PlaceNotableUnit[];
   const hasNotableUnits = notableUnits.length > 0;
 
   const subtitle = variants && nonEmpty(variants.teaser) ? variants.teaser : "";
-  const localizationPills = [
-    place.place_type,
-    place.county ? place.county : "",
-    place.nearest_city ? place.nearest_city : "",
-  ].filter((value) => nonEmpty(value));
+  const localizationPills = (
+    isPublicPlace
+      ? [place.county ? place.county : "", place.nearest_city ? place.nearest_city : ""]
+      : [place.place_type, place.county ? place.county : "", place.nearest_city ? place.nearest_city : ""]
+  ).filter((value) => nonEmpty(value));
 
   const markerSlug = nonEmpty(place.slug) ? place.slug : place.id;
   const hasMarker = Boolean(marker && Number.isFinite(marker.lat) && Number.isFinite(marker.lng));
@@ -214,7 +219,7 @@ export default function PlacePublishPreview({
     filteredAndSortedBirds.length > 15
       ? `Mutatott: ${visibleBirds.length} / ${filteredAndSortedBirds.length}`
       : `${visibleBirds.length} madár`;
-  const noBirdsMessage = `No published birds linked to this place for ${seasonLabel}.`;
+  const noBirdsMessage = "Ehhez a helyszínhez még nincs publikált, jóváhagyott madár linkelve.";
 
   const pendingPreviewIds = useMemo(() => {
     const out: string[] = [];
@@ -264,32 +269,36 @@ export default function PlacePublishPreview({
         </header>
       ) : null}
 
-      <Card className="stack">
+      <Card className={`stack ${isPublicPlace ? styles.publicCard : ""}`.trim()}>
         {heroImageUrl ? (
           <div className={styles.heroImageFrame} aria-label="Approved hero image">
             <img src={heroImageUrl} alt="" className={styles.heroImage} />
-            <div className={styles.heroOverlay} aria-label="Hero overlay">
-              <div className={styles.heroPills}>
-                <span className={styles.heroPillTitle}>{place.name || place.slug || "Untitled place"}</span>
-                {subtitle ? <span className={styles.heroPill}>{subtitle}</span> : null}
-                {localizationPills.map((pill) => (
-                  <span key={pill} className={styles.heroPill}>
-                    {pill}
-                  </span>
-                ))}
+            {isPublicPlace ? (
+              <div className={styles.heroTopRight} aria-label="Habitat thumbnail">
+                <div className={styles.habitatThumb} aria-label="Habitat tile">
+                  {habitatSrc ? <img src={habitatSrc} alt="" className={styles.habitatThumbImage} /> : null}
+                </div>
               </div>
-            </div>
+            ) : null}
           </div>
         ) : null}
-
         <header className={styles.placeHeader}>
-          <p className={styles.placeMetaLine}>
-            {place.place_type}
-            {place.county ? ` · ${place.county}` : ""}
-            {place.nearest_city ? ` · ${place.nearest_city}` : ""}
-          </p>
-          {!heroImageUrl ? <h3 className={styles.placeName}>{place.name || place.slug || "Untitled place"}</h3> : null}
-          {!heroImageUrl && variants && nonEmpty(variants.teaser) ? <p className={styles.teaser}>{variants.teaser}</p> : null}
+          {!isPublicPlace ? (
+            <p className={styles.placeMetaLine}>
+              {place.place_type}
+              {place.county ? ` · ${place.county}` : ""}
+              {place.nearest_city ? ` · ${place.nearest_city}` : ""}
+            </p>
+          ) : null}
+          <h3 className={styles.placeName}>{place.name || place.slug || "Untitled place"}</h3>
+          {variants && nonEmpty(variants.teaser) ? <p className={styles.teaser}>{variants.teaser}</p> : null}
+          {isPublicPlace && !heroImageUrl ? (
+            <div className={styles.headerThumbRow} aria-label="Habitat thumbnail">
+              <div className={styles.habitatThumb} aria-label="Habitat tile">
+                {habitatSrc ? <img src={habitatSrc} alt="" className={styles.habitatThumbImage} /> : null}
+              </div>
+            </div>
+          ) : null}
         </header>
 
         {variants ? (
@@ -302,6 +311,7 @@ export default function PlacePublishPreview({
               <p className="admin-note-small">No approved `variants.short` yet.</p>
             )}
 
+            {!isPublicPlace ? (
             <div className={styles.heroMap}>
               {place.location_precision === "hidden" ? (
                 <div className="admin-panel admin-panel--muted">
@@ -310,18 +320,18 @@ export default function PlacePublishPreview({
               ) : (
                 <div className={styles.placeMapStack} aria-label="Place map">
                   {!hasMarker ? <div className={styles.mapOverlayNote}>No location marker set yet.</div> : null}
-                  <PlacesMap
-                    markers={hasMarker ? [placeMarker] : []}
-                    selectedSlug={hasMarker ? markerSlug : null}
-                    selectedRegionId={place.leaflet_region_id}
-                    layers={layers}
-                    basemap={mapBasemap}
-                    regionVisualization="places_regions_v1"
-                    markerColorMode="water_highlight_v1"
-                    interactionMode={mapInteractionMode}
-                    toolBarVariant="bottom_right_v1"
-                    defaultCenter={
-                      hasMarker ? ([placeMarker.lat as number, placeMarker.lng as number] as [number, number]) : undefined
+                   <PlacesMap
+                     markers={hasMarker ? [placeMarker] : []}
+                     selectedSlug={hasMarker ? markerSlug : null}
+                     selectedRegionId={place.leaflet_region_id}
+                     layers={layers}
+                     basemap={mapBasemap}
+                     regionVisualization={isPublicPlace ? "none" : "places_regions_v1"}
+                     markerColorMode="water_highlight_v1"
+                     interactionMode={mapInteractionMode}
+                     toolBarVariant="bottom_right_v1"
+                     defaultCenter={
+                       hasMarker ? ([placeMarker.lat as number, placeMarker.lng as number] as [number, number]) : undefined
                     }
                     defaultZoom={8}
                   />
@@ -344,10 +354,11 @@ export default function PlacePublishPreview({
                 </div>
               )}
             </div>
+            ) : null}
 
             {nonEmpty(variants.long) ? <p className={styles.copyBlock}>{variants.long}</p> : null}
             {nonEmpty(variants.ethics_tip) ? (
-              <p className={styles.ethicsTip} aria-label="Ethics tip">
+              <p className={styles.seasonalSnippet} aria-label="Ethics tip">
                 {variants.ethics_tip}
               </p>
             ) : null}
@@ -355,7 +366,7 @@ export default function PlacePublishPreview({
             {showSeasonal ? (
               <div className="stack">
                 {nonEmpty(seasonalText) ? (
-                  <p className={styles.seasonalSnippet} aria-label={`Seasonal snippet for ${seasonLabel}`}>
+                  <p className={styles.copyBlock} aria-label={`Seasonal snippet for ${seasonLabel}`}>
                     {seasonalText}
                   </p>
                 ) : (
@@ -472,6 +483,33 @@ export default function PlacePublishPreview({
                     <p className={styles.copyBlock}>{variants.practical_tip}</p>
                   </div>
                 ) : null}
+              </div>
+            ) : null}
+
+            {isPublicPlace ? (
+              <div className={styles.heroMap}>
+                {place.location_precision === "hidden" ? null : (
+                  <div className={styles.placeMapStack} aria-label="Place map">
+                    {!hasMarker ? <div className={styles.mapOverlayNote}>No location marker set yet.</div> : null}
+                    <PlacesMap
+                      markers={hasMarker ? [placeMarker] : []}
+                      selectedSlug={hasMarker ? markerSlug : null}
+                      selectedRegionId={null}
+                      layers={null}
+                      basemap={mapBasemap}
+                      regionVisualization="none"
+                      markerColorMode="place_type_category_v1"
+                      interactionMode="static"
+                      toolBarVariant="none"
+                      defaultCenter={
+                        hasMarker
+                          ? ([placeMarker.lat as number, placeMarker.lng as number] as [number, number])
+                          : undefined
+                      }
+                      defaultZoom={10}
+                    />
+                  </div>
+                )}
               </div>
             ) : null}
 

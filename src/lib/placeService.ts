@@ -294,11 +294,19 @@ export async function listPublishedPlaceMarkers(): Promise<PlaceMarker[]> {
     const pinLat =
       bbox && Number.isFinite(bbox.south) && Number.isFinite(bbox.north)
         ? (bbox.south + bbox.north) / 2
-        : (typeof row.lat === "number" ? row.lat : null);
+        : typeof row.lat === "number"
+          ? row.lat
+          : typeof row.lat === "string" && row.lat.trim() !== "" && Number.isFinite(Number(row.lat))
+            ? Number(row.lat)
+            : null;
     const pinLng =
       bbox && Number.isFinite(bbox.west) && Number.isFinite(bbox.east)
         ? (bbox.west + bbox.east) / 2
-        : (typeof row.lng === "number" ? row.lng : null);
+        : typeof row.lng === "number"
+          ? row.lng
+          : typeof row.lng === "string" && row.lng.trim() !== "" && Number.isFinite(Number(row.lng))
+            ? Number(row.lng)
+            : null;
 
     if (pinLat === null || pinLng === null) return;
 
@@ -353,11 +361,19 @@ export async function listPublishedPlaceDashboardMarkers(): Promise<PlaceMarker[
     const pinLat =
       bbox && Number.isFinite(bbox.south) && Number.isFinite(bbox.north)
         ? (bbox.south + bbox.north) / 2
-        : (typeof row.lat === "number" ? row.lat : null);
+        : typeof row.lat === "number"
+          ? row.lat
+          : typeof row.lat === "string" && row.lat.trim() !== "" && Number.isFinite(Number(row.lat))
+            ? Number(row.lat)
+            : null;
     const pinLng =
       bbox && Number.isFinite(bbox.west) && Number.isFinite(bbox.east)
         ? (bbox.west + bbox.east) / 2
-        : (typeof row.lng === "number" ? row.lng : null);
+        : typeof row.lng === "number"
+          ? row.lng
+          : typeof row.lng === "string" && row.lng.trim() !== "" && Number.isFinite(Number(row.lng))
+            ? Number(row.lng)
+            : null;
 
     if (pinLat === null || pinLng === null) return;
 
@@ -395,6 +411,18 @@ export async function getPlaceMarkerById(placeId: string): Promise<PlaceMarker |
 
   const row = (data ?? null) as Record<string, unknown> | null;
   if (!row) return null;
+  const lat =
+    typeof row.lat === "number"
+      ? row.lat
+      : typeof row.lat === "string" && row.lat.trim() !== "" && Number.isFinite(Number(row.lat))
+        ? Number(row.lat)
+        : null;
+  const lng =
+    typeof row.lng === "number"
+      ? row.lng
+      : typeof row.lng === "string" && row.lng.trim() !== "" && Number.isFinite(Number(row.lng))
+        ? Number(row.lng)
+        : null;
   return {
     id: String(row.id ?? ""),
     slug: String(row.slug ?? ""),
@@ -405,8 +433,8 @@ export async function getPlaceMarkerById(placeId: string): Promise<PlaceMarker |
     sensitivity_level: row.sensitivity_level as PlaceMarker["sensitivity_level"],
     is_beginner_friendly: Boolean(row.is_beginner_friendly),
     leaflet_region_id: typeof row.leaflet_region_id === "string" ? row.leaflet_region_id : null,
-    lat: typeof row.lat === "number" ? row.lat : null,
-    lng: typeof row.lng === "number" ? row.lng : null,
+    lat,
+    lng,
     updated_at: String(row.updated_at ?? ""),
   };
 }

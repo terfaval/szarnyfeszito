@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import BirdIcon from "@/components/shared/BirdIcon";
 import styles from "./PublicPlacesGrid.module.css";
 import type { PlaceType } from "@/types/place";
 import { PLACE_TYPE_LABELS } from "@/lib/placeTypeMeta";
@@ -19,6 +20,12 @@ type PublicPlaceListItem = {
   hero_image_src: string | null;
   habitat_key: string | null;
   habitat_src: string | null;
+  birds: Array<{
+    id: string;
+    slug: string;
+    name_hu: string;
+    iconicSrc: string | null;
+  }>;
 };
 
 type PublicPlaceFilters = {
@@ -168,8 +175,9 @@ export default function PublicPlacesGrid() {
             return (
               <Link
                 key={place.id}
-                href={`/places?place=${place.slug}`}
+                href={`/places?place=${encodeURIComponent(place.slug)}`}
                 className={`${styles.card} ${styles[typeClass]} admin-card`}
+                aria-label={`Megnyitás: ${place.name}`}
               >
                 <div className={styles.hero}>
                   {place.hero_image_src ? (
@@ -177,24 +185,32 @@ export default function PublicPlacesGrid() {
                   ) : (
                     <div className={styles.heroImage} aria-label="Nincs borítókép" />
                   )}
-                  <div className={styles.heroOverlay}>
-                    {place.habitat_src ? (
-                      <img src={place.habitat_src} alt="" className={styles.habitatIcon} />
-                    ) : null}
-                    {place.region_landscape ? (
-                      <span className={styles.regionPill}>{place.region_landscape}</span>
-                    ) : null}
-                  </div>
                 </div>
+
                 <div className={styles.body}>
-                  <div className={styles.metaRow}>
-                    <span className={`${styles.typePill} ${styles[typeClass]}`}>
-                      {PLACE_TYPE_LABELS[place.place_type]}
-                    </span>
-                    {place.county ? <span className={styles.county}>{place.county}</span> : null}
+                  <div className={styles.pillsRow}>
+                    {place.region_landscape ? (
+                      <span className={styles.pill}>{place.region_landscape}</span>
+                    ) : null}
+                    {place.county ? <span className={styles.pill}>{place.county}</span> : null}
                   </div>
+
                   <h3 className={styles.cardTitle}>{place.name}</h3>
                   <p className={styles.cardShort}>{place.short || place.teaser}</p>
+
+                  {place.birds.length ? (
+                    <div className={styles.birdsRow} aria-label="Jellemző madarak" aria-hidden="true">
+                      {place.birds.slice(0, 4).map((bird) => (
+                        <BirdIcon
+                          key={bird.id}
+                          habitatSrc={place.habitat_src}
+                          iconicSrc={bird.iconicSrc}
+                          showHabitatBackground
+                          size={52}
+                        />
+                      ))}
+                    </div>
+                  ) : null}
                 </div>
               </Link>
             );

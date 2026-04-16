@@ -22,6 +22,10 @@ const Tooltip = dynamic(() => import("react-leaflet").then((module) => module.To
   loading: () => null,
 });
 
+// Shift the initial view down a bit so the "focus area" sits lower in the viewport,
+// while keeping the map container itself unchanged.
+const DASHBOARD_MAP_FOCUS_PAN_Y_PX = 260;
+
 type HoverPlaceDetail = {
   place: {
     id: string;
@@ -234,8 +238,7 @@ export default function DashboardPlacesMap({
 
   const defaultPanBy = useMemo(() => {
     const inset = Math.max(0, dashboardTopInsetPx);
-    if (inset == 0) return [0, 0] as [number, number];
-    return [0, Math.round(inset * 0.6)] as [number, number];
+    return [0, DASHBOARD_MAP_FOCUS_PAN_Y_PX + Math.round(inset * 0.6)] as [number, number];
   }, [dashboardTopInsetPx]);
 
   const showInlineFilterControls = !useToolbarFilter;
@@ -440,12 +443,11 @@ export default function DashboardPlacesMap({
             {!loading && !error && panelDetail ? (
               <>
                 {panelDetail.content.short ? <p className={styles.tooltipCopy}>{panelDetail.content.short}</p> : null}
-
                 <div>
                   <p className={styles.tooltipSectionLabel}>Jellemző madarak</p>
                   {panelDetail.birds.length ? (
-                    <div className={styles.detailBirdList}>
-                      {panelDetail.birds.slice(0, 6).map((bird) => (
+                    <div className={styles.detailBirdGrid}>
+                      {panelDetail.birds.map((bird) => (
                         <Link
                           key={bird.id}
                           href={joinHref(
@@ -453,25 +455,34 @@ export default function DashboardPlacesMap({
                             birdLinkJoiner,
                             birdLinkKey === "slug" ? bird.slug : bird.id
                           )}
-                          className={styles.detailBirdRow}
+                          className={styles.detailBirdTile}
+                          aria-label={`${bird.name_hu} (${bird.name_latin})`}
                         >
                           <BirdIcon
                             iconicSrc={bird.iconic_src}
                             habitatSrc={panelHabitatSrc}
                             showHabitatBackground
-                            size={44}
-                            className={styles.detailBirdIconShell}
+                            size={56}
                           />
-                          <span className={styles.detailBirdText}>
-                            <span className={styles.detailBirdName}>{bird.name_hu}</span>
-                            <span className={styles.detailBirdLatin}>{bird.name_latin}</span>
-                          </span>
                         </Link>
                       ))}
                     </div>
                   ) : (
                     <p className={styles.tooltipCopy}>Nincs publikált, jóváhagyott madár ehhez a helyszínhez.</p>
                   )}
+                </div>
+
+                <div className={styles.detailFooter}>
+                  <Link
+                    href={joinHref(
+                      placeLinkBasePath,
+                      placeLinkJoiner,
+                      placeLinkKey === "slug" ? panelDetail.place.slug : panelDetail.place.id
+                    )}
+                    className={styles.detailCta}
+                  >
+                    Továbbiak
+                  </Link>
                 </div>
               </>
             ) : null}
