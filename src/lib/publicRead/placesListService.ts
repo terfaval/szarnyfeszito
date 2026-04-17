@@ -1,6 +1,7 @@
 import { unstable_cache } from "next/cache";
 
 import { createUserClient } from "@/lib/supabaseServerClient";
+import { supabaseServerClient } from "@/lib/supabaseServerClient";
 import { listLatestApprovedContentBlocksForPlaces } from "@/lib/placeContentService";
 import { placeUiVariantsSchemaV1 } from "@/lib/placeContentSchema";
 import { getPublicImageUrl, listApprovedCurrentIconicImagesForBirds } from "@/lib/imageService";
@@ -11,10 +12,12 @@ import {
 } from "@/lib/habitatStockAssetService";
 import { logPublicReadRegenerate, PUBLIC_READ_REVALIDATE_SECONDS } from "@/lib/publicRead/cache";
 import type { Place, PlaceType } from "@/types/place";
+import { isUuid } from "@/lib/birdService";
 
 type ImageRow = { entity_id?: unknown; storage_path?: unknown };
 type PlaceBirdRow = {
   place_id?: unknown;
+  bird_id?: unknown;
   rank?: unknown;
   bird?:
     | { id?: unknown; slug?: unknown; name_hu?: unknown; status?: unknown }
@@ -89,7 +92,7 @@ async function buildPublicPlacesListV1(): Promise<PublicPlacesListV1> {
 
   const { data: placeBirdRows, error: placeBirdError } = await supabase
     .from("place_birds")
-    .select("place_id,rank,bird:birds(id,slug,name_hu,status)")
+    .select("place_id,bird_id,rank,bird:birds(id,slug,name_hu,status)")
     .eq("review_status", "approved")
     .not("bird_id", "is", null)
     .in("place_id", placeIds)
@@ -103,6 +106,8 @@ async function buildPublicPlacesListV1(): Promise<PublicPlacesListV1> {
   const birdRows = (placeBirdRows ?? []) as unknown as PlaceBirdRow[];
   const birdIdsForIconic = new Set<string>();
   const birdsByPlaceId = new Map<string, Array<{ id: string; slug: string; name_hu: string; rank: number }>>();
+  const pendingBirdIds = new Set<string>();
+  const pendingByPlaceId = new Map<string, Array<{ birdId: string; rank: number }>>();
 
   for (const row of birdRows) {
     const placeId = typeof row.place_id === "string" ? row.place_id : "";
@@ -116,18 +121,77 @@ async function buildPublicPlacesListV1(): Promise<PublicPlacesListV1> {
           ? birdValue
           : null;
 
-    if (!bird || bird.status !== "published") continue;
+    const rank = typeof row.rank === "number" ? row.rank : 0;
+
+    // If join is blocked under RLS, `bird` will be null even when bird_id is present.
+    // We'll try to resolve these later via admin client.
+    if (!bird) {
+      const birdId = typeof row.bird_id === "string" ? row.bird_id : "";
+      if (birdId && isUuid(birdId)) {
+        pendingBirdIds.add(birdId);
+        const list = pendingByPlaceId.get(placeId) ?? [];
+        list.push({ birdId, rank });
+        pendingByPlaceId.set(placeId, list);
+      }
+      continue;
+    }
+
+    if (bird.status !== "published") continue;
     const birdId = typeof bird.id === "string" ? bird.id : "";
     const slug = typeof bird.slug === "string" ? bird.slug : "";
     const nameHu = typeof bird.name_hu === "string" ? bird.name_hu : "";
     if (!birdId || !slug || !nameHu) continue;
 
-    const rank = typeof row.rank === "number" ? row.rank : 0;
     const list = birdsByPlaceId.get(placeId) ?? [];
     if (list.length < 4 && !list.some((b) => b.id === birdId)) {
       list.push({ id: birdId, slug, name_hu: nameHu, rank });
       birdsByPlaceId.set(placeId, list);
       birdIdsForIconic.add(birdId);
+    }
+  }
+
+  if (pendingBirdIds.size > 0) {
+    const { data: birdsRows, error: birdsError } = await supabaseServerClient
+      .from("birds")
+      .select("id,slug,name_hu,status")
+      .in("id", Array.from(pendingBirdIds))
+      .eq("status", "published")
+      .limit(2000);
+
+    if (birdsError) {
+      throw birdsError;
+    }
+
+    const birdById = new Map(
+      (birdsRows ?? [])
+        .filter((b) => b && typeof b.id === "string")
+        .map((b) => [b.id, b] as const)
+    );
+
+    for (const [placeId, pending] of pendingByPlaceId.entries()) {
+      const resolved = pending
+        .map((p) => {
+          const bird = birdById.get(p.birdId) ?? null;
+          if (!bird) return null;
+          const birdId = typeof bird.id === "string" ? bird.id : "";
+          const slug = typeof bird.slug === "string" ? bird.slug : "";
+          const nameHu = typeof bird.name_hu === "string" ? bird.name_hu : "";
+          if (!birdId || !slug || !nameHu) return null;
+          return { id: birdId, slug, name_hu: nameHu, rank: p.rank };
+        })
+        .filter(Boolean) as Array<{ id: string; slug: string; name_hu: string; rank: number }>;
+
+      if (resolved.length === 0) continue;
+      resolved.sort((a, b) => a.rank - b.rank);
+
+      const list = birdsByPlaceId.get(placeId) ?? [];
+      for (const item of resolved) {
+        if (list.length >= 4) break;
+        if (list.some((b) => b.id === item.id)) continue;
+        list.push(item);
+        birdIdsForIconic.add(item.id);
+      }
+      birdsByPlaceId.set(placeId, list);
     }
   }
 
@@ -142,7 +206,7 @@ async function buildPublicPlacesListV1(): Promise<PublicPlacesListV1> {
     iconicUrlByBirdId.set(id, getPublicImageUrl(storagePath));
   });
 
-  const { data: imageRows, error: imageError } = await supabase
+  const { data: imageRows, error: imageError } = await supabaseServerClient
     .from("images")
     .select("entity_id,storage_path")
     .eq("entity_type", "place")
