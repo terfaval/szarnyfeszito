@@ -2,6 +2,7 @@ import { unstable_cache } from "next/cache";
 
 import { createUserClient } from "@/lib/supabaseServerClient";
 import { isUuid } from "@/lib/birdService";
+import { supabaseServerClient } from "@/lib/supabaseServerClient";
 import { getPlaceById, getPlaceBySlug, getPlaceMarkerById } from "@/lib/placeService";
 import { getLatestApprovedContentBlockForPlace } from "@/lib/placeContentService";
 import { placeUiVariantsSchemaV1, type PlaceUiVariantsV1 } from "@/lib/placeContentSchema";
@@ -131,7 +132,7 @@ async function buildPublicPlaceDetailV1(key: string): Promise<PublicPlaceDetailV
       | null;
   };
 
-  const publishedBirdLinks = (birdLinks ?? [])
+  let publishedBirdLinks = (birdLinks ?? [])
     .map((row: BirdLinkRow) => {
       const birdValue = row.bird ?? null;
       const bird =
@@ -147,6 +148,50 @@ async function buildPublicPlaceDetailV1(key: string): Promise<PublicPlaceDetailV
       };
     })
     .filter(Boolean);
+
+  // Fallback: if RLS blocks joining `birds` for anon in some environments, the join yields null `bird`,
+  // which would empty out the list. In that case, fetch the published birds explicitly via admin client.
+  if ((birdLinks ?? []).length > 0 && publishedBirdLinks.length === 0) {
+    const birdIds = (birdLinks ?? [])
+      .map((row) => ((row as { bird_id?: unknown }).bird_id as string | undefined) ?? "")
+      .filter((id) => typeof id === "string" && isUuid(id));
+
+    if (birdIds.length > 0) {
+      const { data: birdsRows, error: birdsError } = await supabaseServerClient
+        .from("birds")
+        .select("id,slug,name_hu,name_latin,status")
+        .in("id", birdIds)
+        .eq("status", "published")
+        .limit(1000);
+
+      if (birdsError) {
+        throw birdsError;
+      }
+
+      const birdById = new Map(
+        (birdsRows ?? [])
+          .filter((b) => b && typeof b.id === "string")
+          .map((b) => [b.id, b] as const)
+      );
+
+      publishedBirdLinks = (birdLinks ?? [])
+        .map((row) => {
+          const birdId = ((row as { bird_id?: unknown }).bird_id as string | undefined) ?? "";
+          const bird = birdById.get(birdId) ?? null;
+          if (!bird) return null;
+          return {
+            ...row,
+            bird: {
+              id: bird.id,
+              slug: bird.slug,
+              name_hu: bird.name_hu,
+              name_latin: bird.name_latin ?? "",
+            },
+          };
+        })
+        .filter(Boolean);
+    }
+  }
 
   const currentSeason = getCurrentSeasonKey();
   const visibleBirdLinks = pickApprovedPlaceBirds(publishedBirdLinks as PlaceBirdRow[]);
@@ -189,7 +234,7 @@ async function buildPublicPlaceDetailV1(key: string): Promise<PublicPlaceDetailV
   const marker = place.location_precision === "hidden" ? null : await getPlaceMarkerById(place.id);
   const safeMarker = marker ? { lat: marker.lat, lng: marker.lng } : null;
 
-  const { data: heroRows, error: heroError } = await supabase
+  const { data: heroRows, error: heroError } = await supabaseServerClient
     .from("images")
     .select("storage_path")
     .eq("entity_type", "place")

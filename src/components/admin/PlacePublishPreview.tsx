@@ -267,7 +267,7 @@ export default function PlacePublishPreview({
             What the public panel will primarily render (UI variants contract), plus the currently linked birds.
           </p>
         </header>
-      ) : null}
+        ) : null}
 
         <Card className={`stack ${isPublicPlace ? styles.publicCard : ""}`.trim()}>
           {heroImageUrl ? (
@@ -308,12 +308,16 @@ export default function PlacePublishPreview({
               <h3 className={styles.placeName}>{place.name || place.slug || "Untitled place"}</h3>
               {variants && nonEmpty(variants.teaser) ? <p className={styles.teaser}>{variants.teaser}</p> : null}
             </>
-          ) : isPublicPlace && !heroImageUrl ? (
-            <div className={styles.headerThumbRow} aria-label="Habitat thumbnail">
-              <div className={styles.habitatThumb} aria-label="Habitat tile">
-                {habitatSrc ? <img src={habitatSrc} alt="" className={styles.habitatThumbImage} /> : null}
+          ) : !heroImageUrl ? (
+            <>
+              <h3 className={styles.placeName}>{place.name || place.slug || "Untitled place"}</h3>
+              {variants && nonEmpty(variants.teaser) ? <p className={styles.teaser}>{variants.teaser}</p> : null}
+              <div className={styles.headerThumbRow} aria-label="Habitat thumbnail">
+                <div className={styles.habitatThumb} aria-label="Habitat tile">
+                  {habitatSrc ? <img src={habitatSrc} alt="" className={styles.habitatThumbImage} /> : null}
+                </div>
               </div>
-            </div>
+            </>
           ) : null}
         </header>
 
