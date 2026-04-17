@@ -87,18 +87,7 @@
 .publicHeroOverlayInner {
   width: min(920px, 100%);
   text-align: center;
-  padding: clamp(0.9rem, 2.5vw, 1.25rem) clamp(1rem, 3vw, 1.75rem);
-  border-radius: 18px;
-  background: rgba(250, 231, 198, 0.78);
-  border: 1px solid rgba(var(--brand-ink-rgb), 0.18);
-  box-shadow: 0 26px 60px rgba(0, 0, 0, 0.22);
-  backdrop-filter: blur(12px);
-}
-
-:global(:root[data-time-theme="night"]) .publicHeroOverlayInner {
-  background: rgba(9, 17, 31, 0.72);
-  border-color: rgba(255, 255, 255, 0.14);
-  box-shadow: 0 26px 60px rgba(0, 0, 0, 0.55);
+  text-shadow: 0 12px 30px rgba(0, 0, 0, 0.45);
 }
 
 .publicHeroTitle {
