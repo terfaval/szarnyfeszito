@@ -22,6 +22,20 @@
 
 .publicHeroImageFrame {
   height: min(52vh, 420px);
+  isolation: isolate;
+}
+
+.publicHeroImageFrame::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(246, 239, 225, 0.4);
+  z-index: 1;
+  pointer-events: none;
+}
+
+:global(:root[data-time-theme="night"]) .publicHeroImageFrame::before {
+  background: rgba(5, 11, 29, 0.4);
 }
 
 .heroTopRight {
@@ -31,7 +45,7 @@
   display: flex;
   gap: 0.75rem;
   align-items: flex-start;
-  z-index: 2;
+  z-index: 3;
   pointer-events: none;
 }
 
@@ -66,27 +80,25 @@
   display: grid;
   place-items: center;
   padding: clamp(1rem, 4vw, 2.5rem);
-  z-index: 1;
+  z-index: 2;
   pointer-events: none;
 }
 
 .publicHeroOverlayInner {
   width: min(920px, 100%);
   text-align: center;
-  color: var(--brand-paper);
-  text-shadow: 0 12px 30px rgba(0, 0, 0, 0.45);
+  padding: clamp(0.9rem, 2.5vw, 1.25rem) clamp(1rem, 3vw, 1.75rem);
+  border-radius: 18px;
+  background: rgba(250, 231, 198, 0.78);
+  border: 1px solid rgba(var(--brand-ink-rgb), 0.18);
+  box-shadow: 0 26px 60px rgba(0, 0, 0, 0.22);
+  backdrop-filter: blur(12px);
 }
 
-.publicHeroOverlay::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(
-    closest-side at 50% 50%,
-    rgba(0, 0, 0, 0.55),
-    rgba(0, 0, 0, 0) 72%
-  );
-  z-index: -1;
+:global(:root[data-time-theme="night"]) .publicHeroOverlayInner {
+  background: rgba(9, 17, 31, 0.72);
+  border-color: rgba(255, 255, 255, 0.14);
+  box-shadow: 0 26px 60px rgba(0, 0, 0, 0.55);
 }
 
 .publicHeroTitle {
@@ -96,6 +108,7 @@
   line-height: 0.98;
   font-size: clamp(2.2rem, 5.8vw, 4rem);
   margin: 0;
+  color: var(--brand-warm);
 }
 
 .publicHeroSubtitle {
@@ -104,6 +117,11 @@
   font-size: clamp(1.05rem, 2.2vw, 1.4rem);
   line-height: 1.35;
   opacity: 0.92;
+  color: var(--brand-ink);
+}
+
+:global(:root[data-time-theme="night"]) .publicHeroSubtitle {
+  color: rgba(255, 255, 255, 0.86);
 }
 
 .mapThumb {
