@@ -269,30 +269,46 @@ export default function PlacePublishPreview({
         </header>
       ) : null}
 
-      <Card className={`stack ${isPublicPlace ? styles.publicCard : ""}`.trim()}>
-        {heroImageUrl ? (
-          <div className={styles.heroImageFrame} aria-label="Approved hero image">
-            <img src={heroImageUrl} alt="" className={styles.heroImage} />
-            {isPublicPlace ? (
-              <div className={styles.heroTopRight} aria-label="Habitat thumbnail">
-                <div className={styles.habitatThumb} aria-label="Habitat tile">
-                  {habitatSrc ? <img src={habitatSrc} alt="" className={styles.habitatThumbImage} /> : null}
+        <Card className={`stack ${isPublicPlace ? styles.publicCard : ""}`.trim()}>
+          {heroImageUrl ? (
+            <div
+              className={[styles.heroImageFrame, isPublicPlace ? styles.publicHeroImageFrame : ""]
+                .filter(Boolean)
+                .join(" ")}
+              aria-label="Approved hero image"
+            >
+              <img src={heroImageUrl} alt="" className={styles.heroImage} />
+              {isPublicPlace ? (
+                <div className={styles.publicHeroOverlay} aria-label="Title overlay">
+                  <div className={styles.publicHeroOverlayInner}>
+                    <h1 className={styles.publicHeroTitle}>{place.name || place.slug || "Untitled place"}</h1>
+                    {variants && nonEmpty(variants.teaser) ? (
+                      <p className={styles.publicHeroSubtitle}>{variants.teaser}</p>
+                    ) : null}
+                  </div>
                 </div>
-              </div>
-            ) : null}
-          </div>
-        ) : null}
+              ) : null}
+              {isPublicPlace ? (
+                <div className={styles.heroTopRight} aria-label="Habitat thumbnail">
+                  <div className={styles.habitatThumb} aria-label="Habitat tile">
+                    {habitatSrc ? <img src={habitatSrc} alt="" className={styles.habitatThumbImage} /> : null}
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
         <header className={styles.placeHeader}>
           {!isPublicPlace ? (
-            <p className={styles.placeMetaLine}>
-              {place.place_type}
-              {place.county ? ` · ${place.county}` : ""}
-              {place.nearest_city ? ` · ${place.nearest_city}` : ""}
-            </p>
-          ) : null}
-          <h3 className={styles.placeName}>{place.name || place.slug || "Untitled place"}</h3>
-          {variants && nonEmpty(variants.teaser) ? <p className={styles.teaser}>{variants.teaser}</p> : null}
-          {isPublicPlace && !heroImageUrl ? (
+            <>
+              <p className={styles.placeMetaLine}>
+                {place.place_type}
+                {place.county ? ` · ${place.county}` : ""}
+                {place.nearest_city ? ` · ${place.nearest_city}` : ""}
+              </p>
+              <h3 className={styles.placeName}>{place.name || place.slug || "Untitled place"}</h3>
+              {variants && nonEmpty(variants.teaser) ? <p className={styles.teaser}>{variants.teaser}</p> : null}
+            </>
+          ) : isPublicPlace && !heroImageUrl ? (
             <div className={styles.headerThumbRow} aria-label="Habitat thumbnail">
               <div className={styles.habitatThumb} aria-label="Habitat tile">
                 {habitatSrc ? <img src={habitatSrc} alt="" className={styles.habitatThumbImage} /> : null}
